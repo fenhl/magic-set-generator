@@ -14,22 +14,57 @@ CACHE = {
 class CommandLineArgs:
     def __init__(self, args=sys.argv[1:]):
         self.verbose = False
-        self.cards = []
+        self.cards = set()
+        self.output = sys.stdout.buffer
+        mode = None
         for arg in args:
-            if arg.startswith('-'):
+            if mode == 'input':
+                self.set_input(arg)
+                mode = None
+            elif mode == 'output':
+                self.output = open(arg, 'wb')
+                mode = None
+            elif arg.startswith('-'):
                 if arg.startswith('--'):
-                    if arg == '--verbose':
+                    if arg == '--input':
+                        mode = 'input'
+                    elif arg.startswith('--input='):
+                        self.set_input(arg[len('--input='):])
+                    elif arg == '--output':
+                        mode = 'output'
+                    elif arg.startswith('--output='):
+                        self.output = open(arg[len('--output='):], 'wb')
+                    elif arg == '--verbose':
                         self.verbose = True
                     else:
                         raise ValueError(f'Unrecognized flag: {arg}')
                 else:
-                    for short_flag in arg[1:]:
-                        if short_flag == 'v':
+                    for i, short_flag in enumerate(arg):
+                        if i == 0:
+                            continue
+                        if short_flag == 'i':
+                            if len(arg) > i + 1:
+                                self.set_input(arg[i + 1:])
+                            else:
+                                mode = 'input'
+                            break
+                        elif short_flag == 'o':
+                            if len(arg) > i + 1:
+                                self.output = open(arg[i + 1:], 'wb')
+                            else:
+                                mode = 'output'
+                            break
+                        elif short_flag == 'v':
                             self.verbose = True
                         else:
                             raise ValueError(f'Unrecognized flag: -{short_flag}')
             else:
-                self.cards.append(arg)
+                self.cards.add(arg)
+
+    def set_input(self, input_filename):
+        with open(input_filename) as f:
+            for line in f:
+                self.cards.add(line.strip())
 
 class MSEDataFile:
     def __init__(self, data={}):
@@ -133,7 +168,7 @@ if __name__ == '__main__':
     if sys.stdin.isatty():
         card_names = args.cards
     else:
-        card_names = [line.strip() for line in sys.stdin] + args.cards
+        card_names = set(line.strip() for line in sys.stdin) | args.cards
     if len(card_names) == 0:
         sys.exit('[!!!!] missing card name')
     set_file = MSEDataFile()
@@ -145,11 +180,11 @@ if __name__ == '__main__':
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(card_names) == 1 else 'These cards were'),
         'set language': 'EN'
     }
-    for card_name in card_names:
+    for card_name in sorted(card_names):
         card = mtg_json(verbose=args.verbose).cards_by_name[card_name]
         set_file.add('card', MSEDataFile.from_card(card))
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:
         f.writestr('set', str(set_file))
-    sys.stdout.buffer.write(buf.getvalue())
-    sys.stdout.buffer.flush()
+    args.output.write(buf.getvalue())
+    args.output.flush()

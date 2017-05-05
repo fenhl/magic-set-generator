@@ -180,9 +180,20 @@ if __name__ == '__main__':
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(card_names) == 1 else 'These cards were'),
         'set language': 'EN'
     }
-    for card_name in sorted(card_names):
+    for i, card_name in enumerate(sorted(card_names)):
         card = mtg_json(verbose=args.verbose).cards_by_name[card_name]
-        set_file.add('card', MSEDataFile.from_card(card))
+        if args.verbose:
+            progress = min(4, 5 * i // len(card_names))
+            print('[{}{}] adding cards to set file: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(card_names)), end='\r', flush=True, file=sys.stderr)
+        try:
+            set_file.add('card', MSEDataFile.from_card(card))
+        except Exception as e:
+            if args.verbose:
+                raise RuntimeError(f'Failed to add card {card_name}') from e
+            else:
+                print(f'[ !! ] Failed to add card {card_name}        ', file=sys.stderr)
+    if args.verbose:
+        print('[ ok ] adding cards to set file: {0} of {0}'.format(len(card_names)), file=sys.stderr)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:
         f.writestr('set', str(set_file))

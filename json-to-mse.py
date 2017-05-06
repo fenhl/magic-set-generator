@@ -114,6 +114,14 @@ class MSEDataFile:
     @classmethod
     def from_card(cls, card_info, db):
         raw_data = card_info._get_raw_data()
+        # check for legality
+        if raw_data.get('border', card_info.set.border) == 'silver':
+            raise ValueError('Un-cards are not supported')
+        if card_info.layout == 'token':
+            raise ValueError('Token cards are not supported')
+        if card_info.name in ['1996 World Champion', 'Fraternal Exaltation', 'Proposal', 'Robot Chicken', 'Shichifukujin Dragon', 'Splendid Genesis']:
+            raise ValueError('This card is blacklisted and will not be supported')
+        # collect printings
         printings = {}
         for set_code, set_info in db.sets.items():
             for iter_card in set_info.cards_by_name.values():

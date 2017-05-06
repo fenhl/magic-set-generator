@@ -120,6 +120,7 @@ class MSEDataFile:
                 if iter_card.name == card_info.name:
                     printings[set_code] = iter_card
         result = cls()
+        frame_features = set()
         # layout
         if card_info.layout == 'normal':
             pass # nothing specific to normal layout
@@ -129,10 +130,16 @@ class MSEDataFile:
         result['name'] = card_info.name
         # mana cost
         if 'manaCost' in raw_data:
-            result['casting cost'] = card_info.manaCost
+            result['casting cost'] = cost_to_mse(card_info.manaCost)
+            #TODO check to add hybrid frame feature
         # color indicator
         if set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
-            pass #TODO
+            if raw_data.get('colors', []) == []:
+                frame_features.add('devoid')
+            else:
+                result['card color'] = result['indicator'] = raw_data.colors
+                #TODO make sure MSE renders two-color gold cards in the correct order
+                #TODO make sure MSE renders 3+ color gold cards without the gradient
         # type line
         if 'supertypes' in raw_data:
             result['super type'] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
@@ -148,6 +155,9 @@ class MSEDataFile:
             result['sub type'] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         # rarity
         result['rarity'] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
+        # stylesheet
+        if 'devoid' in frame_features:
+            result['stylesheet'] = 'm15-devoid'
         return result
 
     def add(self, key, value):
@@ -220,6 +230,45 @@ class Rarity(OrderedEnum):
             'Mythic Rare': cls.MYTHIC,
             'Special': cls.SPECIAL
         }[rarity_str]
+
+def cost_to_mse(cost):
+    def cost_part_to_mse(part):
+        basics = '[WUBRG]'
+        if re.fullmatch(basics, part):
+            # colored mana
+            return part
+        if part == 'C':
+            # colorless mana
+            return 'C'
+        if part == 'S':
+            # snow mana
+            raise NotImplementedError('Snow mana not implemented') #TODO
+        if part == 'X':
+            # variable mana
+            raise NotImplementedError('X mana not implemented') #TODO
+        if re.fullmatch('[0-9]+', part):
+            # colorless mana
+            return part
+        if re.fullmatch('{}/{}'.format(basics, basics), part):
+            # colored/colored hybrid mana
+            raise NotImplementedError('Hybrid mana not implemented') #TODO
+        match = re.fullmatch('({})/P'.format(basics), part)
+        if match:
+            # Phyrexian mana
+            return f'H/{match.group(1)}'
+        if re.fullmatch('2/{}'.format(basics), part):
+            # colorless/colored hybrid mana
+            raise NotImplementedError('Twobrid mana not implemented') #TODO
+        raise ValueError('Unknown mana cost part: {{{}}}'.format(part))
+
+    if cost is None or cost == '':
+        return ''
+    if cost[0] != '{' or cost[-1] != '}':
+        raise ValueError('Cost must start with { and end with }')
+    result = ''
+    for part in cost[1:-1].split('}{'):
+        result += cost_part_to_mse(part)
+    return result
 
 def implicit_colors(cost, short=False):
     def cost_part_colors(part):

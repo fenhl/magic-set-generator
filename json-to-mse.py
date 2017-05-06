@@ -163,6 +163,8 @@ class MSEDataFile:
             result['sub type'] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         if 'Planeswalker' in card_info.types:
             frame_features.add('planeswalker')
+        if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') > 2:
+            frame_features.add('nyx')
         # rarity
         result['rarity'] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
@@ -205,6 +207,8 @@ class MSEDataFile:
             result['stylesheet'] = 'm15-miracle'
         elif 'devoid' in frame_features:
             result['stylesheet'] = 'm15-devoid'
+        elif 'nyx' in frame_features:
+            result['stylesheet'] = 'm15-nyx'
         return result
 
     def add(self, key, value):

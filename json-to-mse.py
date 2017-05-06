@@ -146,7 +146,7 @@ class MSEDataFile:
             if raw_data.get('colors', []) == []:
                 frame_features.add('devoid')
             else:
-                result['card color'] = result['indicator'] = raw_data.colors
+                result['card color'] = result['indicator'] = card_info.colors
                 #TODO make sure MSE renders two-color gold cards in the correct order
                 #TODO make sure MSE renders 3+ color gold cards without the gradient
         # type line

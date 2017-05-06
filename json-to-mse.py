@@ -295,27 +295,42 @@ if __name__ == '__main__':
         args = CommandLineArgs()
     except ValueError as e:
         sys.exit(f'[!!!!] {e.args[0]}')
+    # read card names
     if sys.stdin.isatty():
         card_names = args.cards
     else:
         card_names = set(line.strip() for line in sys.stdin) | args.cards
     if len(card_names) == 0:
         sys.exit('[!!!!] missing card name')
+    # download MTG JSON
+    db = mtg_json(verbose=args.verbose)
+    # normalize card names (DFC, split cards, etc)
+    normalized_card_names = set()
+    for card_name in card_names:
+        match = re.match('(.+?) ?/+ ?.+', card_name)
+        if match:
+            card_name = match.group(1)
+        card = db.cards_by_name[card_name]
+        if 'names' in card._get_raw_data():
+            normalized_card_names.add(card.names[0])
+        else:
+            normalized_card_names.add(card_name)
+    # create set metadata
     set_file = MSEDataFile()
     set_file['mse version'] = '0.3.8'
     set_file['game'] = 'magic'
     set_file['stylesheet'] = 'm15'
     set_file['set info'] = {
         'title': 'MTG JSON card import',
-        'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(card_names) == 1 else 'These cards were'),
+        'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
         'set language': 'EN'
     }
-    db = mtg_json(verbose=args.verbose)
+    # add cards to set
     failed = 0
-    for i, card_name in enumerate(sorted(card_names)):
+    for i, card_name in enumerate(sorted(normalized_card_names)):
         if args.verbose:
-            progress = min(4, 5 * i // len(card_names))
-            print('[{}{}] adding cards to set file: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(card_names)), end='\r', flush=True, file=sys.stderr)
+            progress = min(4, 5 * i // len(normalized_card_names))
+            print('[{}{}] adding cards to set file: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(normalized_card_names)), end='\r', flush=True, file=sys.stderr)
         card = db.cards_by_name[card_name]
         try:
             set_file.add('card', MSEDataFile.from_card(card, db))
@@ -328,7 +343,8 @@ if __name__ == '__main__':
     if failed > 0:
         print('[ ** ] Run again with --verbose for a detailed error message', file=sys.stderr)
     if args.verbose:
-        print('[ ok ] adding cards to set file: {0} of {0}'.format(len(card_names)), file=sys.stderr)
+        print('[ ok ] adding cards to set file: {0} of {0}'.format(len(normalized_card_names)), file=sys.stderr)
+    # zip and write set file
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:
         f.writestr('set', str(set_file))

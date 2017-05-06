@@ -4,6 +4,7 @@ import sys
 
 import enum
 import io
+import more_itertools
 import mtgjson
 import re
 import zipfile

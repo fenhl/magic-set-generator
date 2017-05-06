@@ -416,7 +416,10 @@ if __name__ == '__main__':
         match = re.match('(.+?) ?/+ ?.+', card_name)
         if match:
             card_name = match.group(1)
-        card = db.cards_by_name[card_name]
+        try:
+            card = db.cards_by_name[card_name]
+        except KeyError:
+            sys.exit(f'[!!!!] card not found: {card_name}')
         if 'names' in card._get_raw_data():
             normalized_card_names.add(card.names[0])
         else:

@@ -133,7 +133,7 @@ class MSEDataFile:
         if card_info.layout == 'normal':
             pass # nothing specific to normal layout
         else:
-            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO split, flip, double-faced, token, plane, scheme, phenomenon, leveler, vanguard, meld
+            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO split, flip, double-faced, plane, scheme, phenomenon, leveler, vanguard, meld
         # name
         result['name'] = card_info.name
         # mana cost

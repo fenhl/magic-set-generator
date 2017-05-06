@@ -155,8 +155,31 @@ class MSEDataFile:
             result['sub type'] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         # rarity
         result['rarity'] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
+        # text
+        if 'text' in raw_data:
+            text = ''
+            for ability in card_info.text.split('\n'):
+                ability = re.sub(' ?\\([^)]+\\)', '', ability)
+                if ability == '':
+                    continue
+                if text != '':
+                    text += '\n'
+                for j, word in enumerate(ability.split(' ')):
+                    if j > 0:
+                        text += ' '
+                    if j == 0 and word == 'Miracle':
+                        frame_features.add('miracle')
+                    match = re.match('\\{(.+)\\}([:.,]?)', word)
+                    if match:
+                        text += f'<sym>{cost_to_mse(match.group(1))}</sym>{match.group(2)}'
+                    elif re.match('[0-9]+', word):
+                        text += f'</sym>{word}<sym>'
+                    else:
+                        text += word
         # stylesheet
-        if 'devoid' in frame_features:
+        if 'miracle' in frame_features:
+            result['stylesheet'] = 'm15-miracle'
+        elif 'devoid' in frame_features:
             result['stylesheet'] = 'm15-devoid'
         return result
 
@@ -240,12 +263,18 @@ def cost_to_mse(cost):
         if part == 'C':
             # colorless mana
             return 'C'
+        if part == 'Q':
+            # untap symbol
+            raise NotImplementedError('Untap symbol not implemented') #TODO
         if part == 'S':
             # snow mana
             raise NotImplementedError('Snow mana not implemented') #TODO
+        if part == 'T':
+            # tap symbol
+            return 'T'
         if part == 'X':
             # variable mana
-            raise NotImplementedError('X mana not implemented') #TODO
+            raise NotImplementedError('Variable mana not implemented') #TODO
         if re.fullmatch('[0-9]+', part):
             # colorless mana
             return part

@@ -323,7 +323,8 @@ if __name__ == '__main__':
     set_file['set info'] = {
         'title': 'MTG JSON card import',
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
-        'set language': 'EN'
+        'set language': 'EN',
+        'wedge mana costs': 'yes'
     }
     # add cards to set
     failed = 0

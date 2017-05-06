@@ -153,15 +153,21 @@ class MSEDataFile:
             else:
                 card_type = card_info.types[0].lower()
             result['sub type'] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
+        if 'Planeswalker' in card_info.types:
+            frame_features.add('planeswalker')
         # rarity
         result['rarity'] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
         if 'text' in raw_data:
             text = ''
-            for ability in card_info.text.split('\n'):
+            for i, ability in enumerate(card_info.text.split('\n')):
                 ability = re.sub(' ?\\([^)]+\\)', '', ability)
                 if ability == '':
                     continue
+                match = re.match('(\\+[0-9]+|-[0-9]+|0): ()', ability)
+                if 'Planeswalker' in card_info.type and match:
+                    result[f'loyalty cost {i + 1}'] = match.group(1)
+                    ability = match.group(2)
                 if text != '':
                     text += '\n'
                 for j, word in enumerate(ability.split(' ')):
@@ -176,8 +182,18 @@ class MSEDataFile:
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
+        # P/T
+        if 'power' in raw_data:
+            result['power'] = card_info.power
+        if 'toughness' in raw_data:
+            result['toughness'] = card_info.toughness
+        # loyalty
+        if 'loyalty' in raw_data:
+            result['loyalty'] = card_info.loyalty
         # stylesheet
-        if 'miracle' in frame_features:
+        if 'planeswalker' in frame_features:
+            result['stylesheet'] = 'm15-planeswalker'
+        elif 'miracle' in frame_features:
             result['stylesheet'] = 'm15-miracle'
         elif 'devoid' in frame_features:
             result['stylesheet'] = 'm15-devoid'

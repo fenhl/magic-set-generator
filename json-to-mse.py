@@ -192,6 +192,7 @@ class MSEDataFile:
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
+        result['rule text'] = text
         # P/T
         if 'power' in raw_data:
             result['power'] = card_info.power

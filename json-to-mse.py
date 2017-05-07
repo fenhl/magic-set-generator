@@ -103,6 +103,11 @@ class MSEDataFile:
         else:
             return result
 
+    def __ior__(self, other):
+        for key, value in other.items:
+            self[key] = value
+        return self
+
     def __setitem__(self, key, value):
         for iter_key, iter_value in self.items:
             if iter_key == key:
@@ -224,6 +229,7 @@ class MSEDataFile:
             if 'split' in frame_features:
                 if 'fuse' in frame_features:
                     result['stylesheet'] = 'm15-split-fuse'
+                    result['rule text 3'] = 'Fuse' #TODO reminder text based on options
                 elif 'aftermath' in frame_features:
                     raise NotImplementedError('Aftermath not implemented') #TODO
                 else:

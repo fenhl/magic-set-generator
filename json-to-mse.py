@@ -188,7 +188,7 @@ class MSEDataFile:
                         text += ' '
                     if j == 0 and word == 'Miracle':
                         frame_features.add('miracle')
-                    match = re.match('\\({.+\\})([:.,]?)', word)
+                    match = re.match('(\\{.+\\})([:.,]?)', word)
                     if match:
                         text += f'<sym>{cost_to_mse(match.group(1))}</sym>{match.group(2)}'
                     elif re.match('[0-9]+', word):

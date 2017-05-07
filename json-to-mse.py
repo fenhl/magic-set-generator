@@ -113,7 +113,13 @@ class MSEDataFile:
         return self.to_string()
 
     @classmethod
-    def from_card(cls, card_info, db):
+    def from_card(cls, card_info, db, *, alt=False):
+        def alt_key(key_name):
+            if alt:
+                return f'{key_name} {alt}'
+            else:
+                return key_name
+
         raw_data = card_info._get_raw_data()
         # check for legality
         if raw_data.get('border', card_info.set.border) == 'silver':
@@ -134,28 +140,32 @@ class MSEDataFile:
         if card_info.layout == 'normal':
             pass # nothing specific to normal layout
         elif card_info.layout == 'split':
-            raise NotImplementedError('Unsupported layout: split') #TODO
+            if not alt:
+                frame_features.add('split')
+                alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
+                result |= alt_result
+                frame_features |= alt_frame_features
         else:
             raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO flip, double-faced, plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
         # name
-        result['name'] = card_info.name
+        result[key_name('name')] = card_info.name
         # mana cost
         if 'manaCost' in raw_data:
-            result['casting cost'] = cost_to_mse(card_info.manaCost)
+            result[key_name('casting cost')] = cost_to_mse(card_info.manaCost)
             #TODO check to add hybrid frame feature
         # color indicator
         if set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
             if raw_data.get('colors', []) == []:
                 frame_features.add('devoid')
             else:
-                result['card color'] = result['indicator'] = card_info.colors
+                result[key_name('card color')] = result[key_name('indicator')] = card_info.colors
                 #TODO make sure MSE renders two-color gold cards in the correct order
                 #TODO make sure MSE renders 3+ color gold cards without the gradient
         # type line
         if 'supertypes' in raw_data:
-            result['super type'] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
+            result[key_name('super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:
-            result['super type'] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
+            result[key_name('super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
         if 'subtypes' in raw_data:
             if 'Creature' in card_info.types:
                 card_type = 'race'
@@ -163,19 +173,22 @@ class MSEDataFile:
                 card_type = 'spell'
             else:
                 card_type = card_info.types[0].lower()
-            result['sub type'] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
+            result[key_name('sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         if 'Planeswalker' in card_info.types:
             frame_features.add('planeswalker')
         if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') > 2:
             frame_features.add('nyx')
         # rarity
-        result['rarity'] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
+        result[key_name('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
         if 'text' in raw_data:
             text = ''
             for i, ability in enumerate(card_info.text.split('\n')):
                 ability = re.sub(' ?\\([^)]+\\)', '', ability)
                 if ability == '':
+                    continue
+                elif ability == 'Fuse':
+                    frame_features.add('fuse')
                     continue
                 match = re.match('(\\+[0-9]+|-[0-9]+|0): ()', ability)
                 if 'Planeswalker' in card_info.type and match:
@@ -186,8 +199,8 @@ class MSEDataFile:
                 for j, word in enumerate(ability.split(' ')):
                     if j > 0:
                         text += ' '
-                    if j == 0 and word == 'Miracle':
-                        frame_features.add('miracle')
+                    if j == 0 and word == 'Fuse':
+                        frame_features.add('fuse')
                     match = re.match('(\\{.+\\})([:.,]?)', word)
                     if match:
                         text += f'<sym>{cost_to_mse(match.group(1))}</sym>{match.group(2)}'
@@ -195,25 +208,35 @@ class MSEDataFile:
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
-        result['rule text'] = text
+        result[key_name('rule text')] = text
         # P/T
         if 'power' in raw_data:
-            result['power'] = card_info.power
+            result[key_name('power')] = card_info.power
         if 'toughness' in raw_data:
-            result['toughness'] = card_info.toughness
+            result[key_name('toughness')] = card_info.toughness
         # loyalty
         if 'loyalty' in raw_data:
-            result['loyalty'] = card_info.loyalty
+            result[key_name('loyalty')] = card_info.loyalty
         # stylesheet
-        if 'planeswalker' in frame_features:
-            result['stylesheet'] = 'm15-planeswalker'
-        elif 'miracle' in frame_features:
-            result['stylesheet'] = 'm15-miracle'
-        elif 'devoid' in frame_features:
-            result['stylesheet'] = 'm15-devoid'
-        elif 'nyx' in frame_features:
-            result['stylesheet'] = 'm15-nyx'
-        return result
+        if alt:
+            return result, frame_features
+        else:
+            if 'split' in frame_features:
+                if 'fuse' in frame_features:
+                    result['stylesheet'] = 'm15-split-fuse'
+                elif 'aftermath' in frame_features:
+                    raise NotImplementedError('Aftermath not implemented') #TODO
+                else:
+                    result['stylesheet'] = 'm15-split'
+            elif 'planeswalker' in frame_features:
+                result['stylesheet'] = 'm15-planeswalker'
+            elif 'miracle' in frame_features:
+                result['stylesheet'] = 'm15-miracle'
+            elif 'devoid' in frame_features:
+                result['stylesheet'] = 'm15-devoid'
+            elif 'nyx' in frame_features:
+                result['stylesheet'] = 'm15-nyx'
+            return result
 
     def add(self, key, value):
         if isinstance(value, dict):

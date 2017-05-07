@@ -321,34 +321,22 @@ def cost_to_mse(cost):
         if re.fullmatch(basics, part):
             # colored mana
             return part
-        if part == 'C':
-            # colorless mana
-            return 'C'
-        if part == 'Q':
-            # untap symbol
-            raise NotImplementedError('Untap symbol not implemented') #TODO
-        if part == 'S':
-            # snow mana
-            raise NotImplementedError('Snow mana not implemented') #TODO
-        if part == 'T':
-            # tap symbol
-            return 'T'
-        if part == 'X':
-            # variable mana
-            return 'X'
+        if part in ('C', 'Q', 'S', 'T', 'X'):
+            # colorless mana, untap symbol, snow mana, tap symbol, variable mana
+            return part
         if re.fullmatch('[0-9]+', part):
             # colorless mana
             return part
         if re.fullmatch('{}/{}'.format(basics, basics), part):
             # colored/colored hybrid mana
-            raise NotImplementedError('Hybrid mana not implemented') #TODO
+            return part
         match = re.fullmatch('({})/P'.format(basics), part)
         if match:
             # Phyrexian mana
             return f'H/{match.group(1)}'
         if re.fullmatch('2/{}'.format(basics), part):
             # colorless/colored hybrid mana
-            raise NotImplementedError('Twobrid mana not implemented') #TODO
+            return part
         raise ValueError('Unknown mana cost part: {{{}}}'.format(part))
 
     if cost is None or cost == '':

@@ -77,6 +77,16 @@ class CommandLineArgs:
             for line in f:
                 self.cards.add(line.strip())
 
+class FrameFeatures(enum.Flag):
+    NONE = 0
+    AFTERMATH = enum.auto()
+    DEVOID = enum.auto()
+    FUSE = enum.auto()
+    MIRACLE = enum.auto()
+    NYX = enum.auto()
+    PLANESWALKER = enum.auto()
+    SPLIT = enum.auto()
+
 class MSEDataFile:
     def __init__(self, data={}):
         self.items = []
@@ -140,13 +150,13 @@ class MSEDataFile:
                 if iter_card.name == card_info.name:
                     printings[set_code] = iter_card
         result = cls()
-        frame_features = set()
+        frame_features = FrameFeatures.NONE
         # layout
         if card_info.layout == 'normal':
             pass # nothing specific to normal layout
         elif card_info.layout == 'split':
             if not alt:
-                frame_features.add('split')
+                frame_features |= FrameFeatures.SPLIT
                 alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
                 result |= alt_result
                 frame_features |= alt_frame_features
@@ -161,7 +171,7 @@ class MSEDataFile:
         # color indicator
         if set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
             if raw_data.get('colors', []) == []:
-                frame_features.add('devoid')
+                frame_features |= FrameFeature.DEVOID
             else:
                 result[alt_key('card color')] = result[alt_key('indicator')] = card_info.colors
                 #TODO make sure MSE renders two-color gold cards in the correct order
@@ -180,9 +190,9 @@ class MSEDataFile:
                 card_type = card_info.types[0].lower()
             result[alt_key('sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         if 'Planeswalker' in card_info.types:
-            frame_features.add('planeswalker')
+            frame_features |= FrameFeatures.PLANESWALKER
         if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') > 2:
-            frame_features.add('nyx')
+            frame_features |= FrameFeatures.NYX
         # rarity
         result[alt_key('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
@@ -193,19 +203,19 @@ class MSEDataFile:
                 if ability == '':
                     continue
                 elif ability == 'Fuse':
-                    frame_features.add('fuse')
+                    frame_features |= FrameFeatures.FUSE
                     continue
                 match = re.fullmatch('(\\+[0-9]+|-[0-9]+|\u2212[0-9]+|0): (.*)', ability)
                 if 'Planeswalker' in card_info.type and match:
-                    result[f'loyalty cost {i + 1}'] = match.group(1).replace('\u2212', '-')
+                    result[f'loyalty cost {4 * alt + i + 1}'] = match.group(1).replace('\u2212', '-')
                     ability = match.group(2)
                 if text != '':
                     text += '\n'
                 for j, word in enumerate(ability.split(' ')):
                     if j > 0:
                         text += ' '
-                    if j == 0 and word == 'Fuse':
-                        frame_features.add('fuse')
+                    if j == 0 and word == 'Miracle':
+                        frame_features |= FrameFeatures.MIRACLE
                     match = re.fullmatch('("?)(\\{.+\\})([:.,]?)', word)
                     if match:
                         text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
@@ -226,21 +236,21 @@ class MSEDataFile:
         if alt:
             return result, frame_features
         else:
-            if 'split' in frame_features:
-                if 'fuse' in frame_features:
+            if FrameFeatures.SPLIT in frame_features:
+                if FrameFeatures.FUSE in frame_features:
                     result['stylesheet'] = 'm15-split-fuse'
                     result['rule text 3'] = 'Fuse' #TODO reminder text based on options
-                elif 'aftermath' in frame_features:
+                elif FrameFeatures.AFTERMATH in frame_features:
                     raise NotImplementedError('Aftermath not implemented') #TODO
                 else:
                     result['stylesheet'] = 'm15-split'
-            elif 'planeswalker' in frame_features:
+            elif FrameFeatures.PLANESWALKER in frame_features:
                 result['stylesheet'] = 'm15-planeswalker'
-            elif 'miracle' in frame_features:
+            elif FrameFeatures.MIRACLE in frame_features:
                 result['stylesheet'] = 'm15-miracle'
-            elif 'devoid' in frame_features:
+            elif FrameFeatures.DEVOID' in frame_features:
                 result['stylesheet'] = 'm15-devoid'
-            elif 'nyx' in frame_features:
+            elif FrameFeatures.NYX in frame_features:
                 result['stylesheet'] = 'm15-nyx'
             return result
 

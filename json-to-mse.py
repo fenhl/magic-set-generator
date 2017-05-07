@@ -329,7 +329,7 @@ def cost_to_mse(cost):
             return 'T'
         if part == 'X':
             # variable mana
-            raise NotImplementedError('Variable mana not implemented') #TODO
+            return 'X'
         if re.fullmatch('[0-9]+', part):
             # colorless mana
             return part

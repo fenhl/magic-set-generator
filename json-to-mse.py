@@ -133,8 +133,10 @@ class MSEDataFile:
         # layout
         if card_info.layout == 'normal':
             pass # nothing specific to normal layout
+        elif card_info.layout == 'split':
+            raise NotImplementedError('Unsupported layout: split') #TODO
         else:
-            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO split, flip, double-faced, plane, scheme, phenomenon, leveler, vanguard, meld
+            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO flip, double-faced, plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
         # name
         result['name'] = card_info.name
         # mana cost
@@ -186,7 +188,7 @@ class MSEDataFile:
                         text += ' '
                     if j == 0 and word == 'Miracle':
                         frame_features.add('miracle')
-                    match = re.match('\\{(.+)\\}([:.,]?)', word)
+                    match = re.match('\\({.+\\})([:.,]?)', word)
                     if match:
                         text += f'<sym>{cost_to_mse(match.group(1))}</sym>{match.group(2)}'
                     elif re.match('[0-9]+', word):

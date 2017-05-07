@@ -195,9 +195,9 @@ class MSEDataFile:
                 elif ability == 'Fuse':
                     frame_features.add('fuse')
                     continue
-                match = re.fullmatch('(\\+[0-9]+|-[0-9]+|0): (.*)', ability)
+                match = re.fullmatch('(\\+[0-9]+|-[0-9]+|\u2212[0-9]+|0): (.*)', ability)
                 if 'Planeswalker' in card_info.type and match:
-                    result[f'loyalty cost {i + 1}'] = match.group(1)
+                    result[f'loyalty cost {i + 1}'] = match.group(1).replace('\u2212', '-')
                     ability = match.group(2)
                 if text != '':
                     text += '\n'

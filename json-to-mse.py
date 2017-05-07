@@ -190,7 +190,7 @@ class MSEDataFile:
                 elif ability == 'Fuse':
                     frame_features.add('fuse')
                     continue
-                match = re.match('(\\+[0-9]+|-[0-9]+|0): ()', ability)
+                match = re.fullmatch('(\\+[0-9]+|-[0-9]+|0): (.*)', ability)
                 if 'Planeswalker' in card_info.type and match:
                     result[f'loyalty cost {i + 1}'] = match.group(1)
                     ability = match.group(2)
@@ -201,10 +201,10 @@ class MSEDataFile:
                         text += ' '
                     if j == 0 and word == 'Fuse':
                         frame_features.add('fuse')
-                    match = re.match('(\\{.+\\})([:.,]?)', word)
+                    match = re.fullmatch('("?)(\\{.+\\})([:.,]?)', word)
                     if match:
-                        text += f'<sym>{cost_to_mse(match.group(1))}</sym>{match.group(2)}'
-                    elif re.match('[0-9]+', word):
+                        text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
+                    elif re.fullmatch('[0-9]+', word):
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
@@ -440,7 +440,7 @@ if __name__ == '__main__':
     # normalize card names (DFC, split cards, etc)
     normalized_card_names = set()
     for card_name in card_names:
-        match = re.match('(.+?) ?/+ ?.+', card_name)
+        match = re.fullmatch('(.+?) ?/+ ?.+', card_name)
         if match:
             card_name = match.group(1)
         try:

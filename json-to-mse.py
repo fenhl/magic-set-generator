@@ -148,24 +148,24 @@ class MSEDataFile:
         else:
             raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO flip, double-faced, plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
         # name
-        result[key_name('name')] = card_info.name
+        result[alt_key('name')] = card_info.name
         # mana cost
         if 'manaCost' in raw_data:
-            result[key_name('casting cost')] = cost_to_mse(card_info.manaCost)
+            result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost)
             #TODO check to add hybrid frame feature
         # color indicator
         if set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
             if raw_data.get('colors', []) == []:
                 frame_features.add('devoid')
             else:
-                result[key_name('card color')] = result[key_name('indicator')] = card_info.colors
+                result[alt_key('card color')] = result[alt_key('indicator')] = card_info.colors
                 #TODO make sure MSE renders two-color gold cards in the correct order
                 #TODO make sure MSE renders 3+ color gold cards without the gradient
         # type line
         if 'supertypes' in raw_data:
-            result[key_name('super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
+            result[alt_key('super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:
-            result[key_name('super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
+            result[alt_key('super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
         if 'subtypes' in raw_data:
             if 'Creature' in card_info.types:
                 card_type = 'race'
@@ -173,13 +173,13 @@ class MSEDataFile:
                 card_type = 'spell'
             else:
                 card_type = card_info.types[0].lower()
-            result[key_name('sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
+            result[alt_key('sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         if 'Planeswalker' in card_info.types:
             frame_features.add('planeswalker')
         if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') > 2:
             frame_features.add('nyx')
         # rarity
-        result[key_name('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
+        result[alt_key('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
         if 'text' in raw_data:
             text = ''
@@ -208,15 +208,15 @@ class MSEDataFile:
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
-        result[key_name('rule text')] = text
+        result[alt_key('rule text')] = text
         # P/T
         if 'power' in raw_data:
-            result[key_name('power')] = card_info.power
+            result[alt_key('power')] = card_info.power
         if 'toughness' in raw_data:
-            result[key_name('toughness')] = card_info.toughness
+            result[alt_key('toughness')] = card_info.toughness
         # loyalty
         if 'loyalty' in raw_data:
-            result[key_name('loyalty')] = card_info.loyalty
+            result[alt_key('loyalty')] = card_info.loyalty
         # stylesheet
         if alt:
             return result, frame_features

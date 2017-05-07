@@ -248,7 +248,7 @@ class MSEDataFile:
                 result['stylesheet'] = 'm15-planeswalker'
             elif FrameFeatures.MIRACLE in frame_features:
                 result['stylesheet'] = 'm15-miracle'
-            elif FrameFeatures.DEVOID' in frame_features:
+            elif FrameFeatures.DEVOID in frame_features:
                 result['stylesheet'] = 'm15-devoid'
             elif FrameFeatures.NYX in frame_features:
                 result['stylesheet'] = 'm15-nyx'

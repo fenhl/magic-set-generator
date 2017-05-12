@@ -27,6 +27,7 @@ class CommandLineArgs:
         self.verbose = False
         self.cards = set()
         self.output = sys.stdout.buffer
+        self.old_wedge_order = False
         mode = None
         for arg in args:
             if mode == 'input':
@@ -41,6 +42,8 @@ class CommandLineArgs:
                         mode = 'input'
                     elif arg.startswith('--input='):
                         self.set_input(arg[len('--input='):])
+                    elif arg == '--old-wedge-order':
+                        self.old_wedge_order = True
                     elif arg == '--output':
                         mode = 'output'
                     elif arg.startswith('--output='):
@@ -460,12 +463,14 @@ if __name__ == '__main__':
     set_file['mse version'] = '0.3.8'
     set_file['game'] = 'magic'
     set_file['stylesheet'] = 'm15'
-    set_file['set info'] = {
+    set_info = {
         'title': 'MTG JSON card import',
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
         'set language': 'EN',
-        'wedge mana costs': 'yes'
     }
+    if not args.old_wedge_order:
+        set_info['wedge mana costs'] = 'yes'
+    set_file['set info'] = set_info
     # add cards to set
     failed = 0
     for i, card_name in enumerate(sorted(normalized_card_names)):

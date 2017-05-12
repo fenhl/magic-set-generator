@@ -27,11 +27,15 @@ class CommandLineArgs:
         self.verbose = False
         self.cards = set()
         self.output = sys.stdout.buffer
+        self.copyright = 'NOT FOR SALE'
         self.old_wedge_order = False
         self.set_code = 'PROXY'
         mode = None
         for arg in args:
-            if mode == 'input':
+            if mode == 'copyright':
+                self.copyright = arg
+                mode = None
+            elif mode == 'input':
                 self.set_input(arg)
                 mode = None
             elif mode == 'output':
@@ -42,7 +46,11 @@ class CommandLineArgs:
                 mode = None
             elif arg.startswith('-'):
                 if arg.startswith('--'):
-                    if arg == '--input':
+                    if arg == '--copyright':
+                        mode = 'copyright'
+                    elif arg.startswith('--copyright='):
+                        self.copyright = arg[len('--copyright='):]
+                    elif arg == '--input':
                         mode = 'input'
                     elif arg.startswith('--input='):
                         self.set_input(arg[len('--input='):])
@@ -473,6 +481,7 @@ if __name__ == '__main__':
     set_file['stylesheet'] = 'm15'
     set_info = {
         'title': 'MTG JSON card import',
+        'copyright': args.copyright,
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
         'set code': args.set_code,
         'set language': 'EN'

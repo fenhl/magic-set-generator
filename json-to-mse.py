@@ -28,6 +28,7 @@ class CommandLineArgs:
         self.cards = set()
         self.output = sys.stdout.buffer
         self.old_wedge_order = False
+        self.set_code = 'PROXY'
         mode = None
         for arg in args:
             if mode == 'input':
@@ -35,6 +36,9 @@ class CommandLineArgs:
                 mode = None
             elif mode == 'output':
                 self.output = open(arg, 'wb')
+                mode = None
+            elif mode == 'set-code':
+                self.set_code = arg
                 mode = None
             elif arg.startswith('-'):
                 if arg.startswith('--'):
@@ -48,6 +52,10 @@ class CommandLineArgs:
                         mode = 'output'
                     elif arg.startswith('--output='):
                         self.output = open(arg[len('--output='):], 'wb')
+                    elif arg == '--set-code':
+                        mode = 'set-code'
+                    elif arg.startswith('--set-code='):
+                        self.set_code = arg[len('--set-code='):]
                     elif arg == '--verbose':
                         self.verbose = True
                     else:
@@ -466,7 +474,8 @@ if __name__ == '__main__':
     set_info = {
         'title': 'MTG JSON card import',
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
-        'set language': 'EN',
+        'set code': args.set_code,
+        'set language': 'EN'
     }
     if not args.old_wedge_order:
         set_info['wedge mana costs'] = 'yes'

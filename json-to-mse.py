@@ -53,7 +53,7 @@ class CommandLineArgs:
                     if arg == '--border':
                         mode = 'border'
                     elif arg.startswith('--border='):
-                        self.set_border(arg[len('--border='):])
+                        self.set_border_color(arg[len('--border='):])
                     elif arg == '--copyright':
                         mode = 'copyright'
                     elif arg.startswith('--copyright='):
@@ -105,7 +105,7 @@ class CommandLineArgs:
             else:
                 self.cards.add(arg)
 
-    def set_border(self, border_color):
+    def set_border_color(self, border_color):
         if border_color == 'black':
             self.border_color = None
         elif border_color in ('w', 'white'):
@@ -128,11 +128,22 @@ class FrameFeatures(enum.Flag):
     NONE = 0
     AFTERMATH = enum.auto()
     DEVOID = enum.auto()
+    DFC = enum.auto()
     FUSE = enum.auto()
     MIRACLE = enum.auto()
     NYX = enum.auto()
     PLANESWALKER = enum.auto()
+    PLANESWALKER_BACK = enum.auto())
     SPLIT = enum.auto()
+
+    def alt_dfc(self):
+        try:
+            return {
+                FrameFeatures.NONE: FrameFeatures.NONE,
+                FrameFeatures.PLANESWALKER: FrameFeatures.PLANESWALKER_BACK
+            }[self]
+        except KeyError as e:
+            raise NotImplementedError('Frame features {} not implemented for DFC back faces'.format(self.name)) from e
 
 class MSEDataFile:
     def __init__(self, data={}):
@@ -207,6 +218,12 @@ class MSEDataFile:
                 alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
                 result |= alt_result
                 frame_features |= alt_frame_features
+        elif card_info.layout == 'double-faced':
+            if not alt:
+                frame_features |= FrameFeatures.DFC
+                alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
+                result |= alt_result
+                frame_features |= alt_frame_features.alt_dfc()
         else:
             raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO flip, double-faced, plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
         # name
@@ -291,6 +308,17 @@ class MSEDataFile:
                     raise NotImplementedError('Aftermath not implemented') #TODO
                 else:
                     result['stylesheet'] = 'm15-split'
+            elif FrameFeatures.DFC in frame_features:
+                if FrameFeatures.PLANESWALKER in frame_features:
+                    if FrameFeatures.PLANESWALKER_BACK in frame_features:
+                        result['stylesheet'] = 'm15-doublefaced-planeswalker' #TODO borderable?
+                    else:
+                        raise NotImplementedError('Sacrificer DFCs not implemented')
+                else:
+                    if FrameFeatures.PLANESWALKER_BACK in frame_features:
+                        result['stylesheet'] = 'm15-doublefaced-sparker' #TODO borderable?
+                    else:
+                        result['stylesheet'] = 'm15-doublefaced'
             elif FrameFeatures.PLANESWALKER in frame_features:
                 result['stylesheet'] = 'm15-planeswalker'
             elif FrameFeatures.MIRACLE in frame_features:

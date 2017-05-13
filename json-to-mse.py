@@ -133,7 +133,7 @@ class FrameFeatures(enum.Flag):
     MIRACLE = enum.auto()
     NYX = enum.auto()
     PLANESWALKER = enum.auto()
-    PLANESWALKER_BACK = enum.auto())
+    PLANESWALKER_BACK = enum.auto()
     SPLIT = enum.auto()
 
     def alt_dfc(self):

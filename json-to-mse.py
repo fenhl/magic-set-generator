@@ -2,6 +2,7 @@
 
 import sys
 
+import contextlib
 import enum
 import io
 import more_itertools

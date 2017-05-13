@@ -561,6 +561,13 @@ if __name__ == '__main__':
     if args.border_color is not None:
         set_info['border color'] = args.border_color
     set_file['set info'] = set_info
+    set_file['styling'] = { # styling needs to be above cards
+        'magic-m15': {
+            'text box mana symbols': 'magic-mana-small.mse-symbol-font',
+            'center text': 'short text only',
+            'overlay': ''
+        }
+    }
     # add cards to set
     failed = 0
     for i, card_name in enumerate(sorted(normalized_card_names)):
@@ -581,13 +588,6 @@ if __name__ == '__main__':
     if args.verbose:
         print('[ ok ] adding cards to set file: {0} of {0}'.format(len(normalized_card_names)), file=sys.stderr)
     # generate stylesheet settings
-    styling = {
-        'magic-m15': {
-            'text box mana symbols': 'magic-mana-small.mse-symbol-font',
-            'center text': 'short text only',
-            'overlay': ''
-        }
-    }
     if hasattr(set_file, 'stylesheets'):
         for stylesheet in set_file.stylesheets:
             styling[f'magic-{stylesheet}'] = {

@@ -27,12 +27,16 @@ class CommandLineArgs:
         self.verbose = False
         self.cards = set()
         self.output = sys.stdout.buffer
+        self.border_color = None
         self.copyright = 'NOT FOR SALE'
         self.old_wedge_order = False
         self.set_code = 'PROXY'
         mode = None
         for arg in args:
-            if mode == 'copyright':
+            if mode == 'border':
+                self.set_border_color(arg)
+                mode = None
+            elif mode == 'copyright':
                 self.copyright = arg
                 mode = None
             elif mode == 'input':
@@ -46,7 +50,11 @@ class CommandLineArgs:
                 mode = None
             elif arg.startswith('-'):
                 if arg.startswith('--'):
-                    if arg == '--copyright':
+                    if arg == '--border':
+                        mode = 'border'
+                    elif arg.startswith('--border='):
+                        self.set_border(arg[len('--border='):])
+                    elif arg == '--copyright':
                         mode = 'copyright'
                     elif arg.startswith('--copyright='):
                         self.copyright = arg[len('--copyright='):]
@@ -90,6 +98,14 @@ class CommandLineArgs:
                             raise ValueError(f'Unrecognized flag: -{short_flag}')
             else:
                 self.cards.add(arg)
+
+    def set_border(self, border_color):
+        if border_color == 'black':
+            self.border_color = None
+        elif border_color == 'bronze':
+            self.border_color = 'rgb(222,127,50)'
+        else:
+            raise ValueError(f'Unrecognized border color: {border_color}')
 
     def set_input(self, input_filename):
         with open(input_filename) as f:
@@ -488,6 +504,8 @@ if __name__ == '__main__':
     }
     if not args.old_wedge_order:
         set_info['wedge mana costs'] = 'yes'
+    if args.border_color is not None:
+        set_info['border color'] = args.border_color
     set_file['set info'] = set_info
     # add cards to set
     failed = 0

@@ -189,6 +189,15 @@ class MSEDataFile:
     def __str__(self):
         return self.to_string()
 
+    def add_card(self, card_info, db):
+        card = self.__class__.from_card(card_info, db)
+        self.add('card', card)
+        with contextlib.suppress(KeyError):
+            stylesheet = card['stylesheet']
+            if not hasattr(self, 'stylesheets'):
+                self.stylesheets = set()
+            self.stylesheets.add(stylesheet)
+
     @classmethod
     def from_card(cls, card_info, db, *, alt=False):
         def alt_key(key_name):
@@ -559,7 +568,7 @@ if __name__ == '__main__':
             print('[{}{}] adding cards to set file: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(normalized_card_names)), end='\r', flush=True, file=sys.stderr)
         card = db.cards_by_name[card_name]
         try:
-            set_file.add('card', MSEDataFile.from_card(card, db))
+            set_file.add_card(card, db)
         except Exception as e:
             if args.verbose:
                 raise RuntimeError(f'Failed to add card {card_name}') from e
@@ -570,6 +579,17 @@ if __name__ == '__main__':
         print('[ ** ] Run again with --verbose for a detailed error message', file=sys.stderr)
     if args.verbose:
         print('[ ok ] adding cards to set file: {0} of {0}'.format(len(normalized_card_names)), file=sys.stderr)
+    # generate stylesheet settings
+    if hasattr(set_file, 'stylesheets'):
+        styling = {}
+        for stylesheet in set_file.stylesheets:
+            styling[stylesheet] = {
+                'text box mana symbols': 'magic-mana-small.mse-symbol-font',
+                'center text': 'short text only',
+                'overlay': ''
+            }
+        set_file['styling'] = styling
+
     # zip and write set file
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:

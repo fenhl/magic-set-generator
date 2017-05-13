@@ -302,7 +302,7 @@ class MSEDataFile:
                         text += ' '
                     if j == 0 and word == 'Miracle':
                         frame_features |= FrameFeatures.MIRACLE
-                    match = re.fullmatch('("?)(\\{.+\\})([:.,]?)', word)
+                    match = re.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word)
                     if match:
                         text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
                     elif re.fullmatch('[0-9]+', word):

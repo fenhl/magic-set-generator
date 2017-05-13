@@ -309,9 +309,9 @@ class MSEDataFile:
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
-        result[alt_key('rule text')] = text
+            result[alt_key('rule text')] = text
         # mana symbol
-        if result[alt_key('rule text')] == '':
+        if alt_key('rule text') not in result or result[alt_key('rule text')] == '':
             if 'subtypes' in raw_data and more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in card_info.subtypes) == 1:
                 subtype = more_itertools.one(subtype for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
                 result[alt_key('watermark')] = 'mana symbol {}'.format(COLOR_ABBREVIATIONS[BASIC_LAND_TYPES[subtype]].lower())
@@ -545,7 +545,7 @@ if __name__ == '__main__':
     db = mtg_json(verbose=args.verbose)
     # normalize card names (DFC, split cards, etc)
     normalized_card_names = set()
-    for card_name in card_names:
+    for card_name in sorted(card_names):
         match = re.fullmatch('(.+?) ?/+ ?.+', card_name)
         if match:
             card_name = match.group(1)

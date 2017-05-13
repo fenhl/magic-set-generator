@@ -250,7 +250,7 @@ class MSEDataFile:
             if raw_data.get('colors', []) == []:
                 frame_features |= FrameFeature.DEVOID
             else:
-                result[alt_key('card color')] = result[alt_key('indicator')] = card_info.colors
+                result[alt_key('card color')] = result[alt_key('indicator')] = ', '.join(card_info.colors)
                 #TODO make sure MSE renders two-color gold cards in the correct order
                 #TODO make sure MSE renders 3+ color gold cards without the gradient
         # type line

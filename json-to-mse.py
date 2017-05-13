@@ -15,6 +15,14 @@ CACHE = {
     'db_x': None
 }
 
+BASIC_LAND_TYPES = {
+    'Plains': 'W',
+    'Island': 'U',
+    'Swamp': 'B',
+    'Mountain': 'R',
+    'Forest': 'G'
+]
+
 COLOR_ABBREVIATIONS = {
     'W': 'White',
     'U': 'Blue',
@@ -302,6 +310,11 @@ class MSEDataFile:
                     else:
                         text += word
         result[alt_key('rule text')] = text
+        # mana symbol
+        if result[alt_key('rule text')] == '':
+            if 'subtypes' in raw_data and more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in card_info.subtypes) == 1:
+                subtype = more_itertools.one(subtype for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
+                result[alt_key('watermark')] = COLOR_ABBREVIATIONS[BASIC_LAND_TYPES[subtype]].lower()
         # P/T
         if 'power' in raw_data:
             result[alt_key('power')] = card_info.power

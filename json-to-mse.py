@@ -80,7 +80,13 @@ class CommandLineArgs:
                     for i, short_flag in enumerate(arg):
                         if i == 0:
                             continue
-                        if short_flag == 'i':
+                        if short_flag == 'b':
+                            if len(arg) > i + 1:
+                                self.set_border_color(arg[i + 1:])
+                            else:
+                                mode = 'border'
+                            break
+                        elif short_flag == 'i':
                             if len(arg) > i + 1:
                                 self.set_input(arg[i + 1:])
                             else:
@@ -102,7 +108,13 @@ class CommandLineArgs:
     def set_border(self, border_color):
         if border_color == 'black':
             self.border_color = None
-        elif border_color == 'bronze':
+        elif border_color in ('w', 'white'):
+            self.border_color = 'rgb(255,255,255)'
+        elif border_color in ('s', 'silver'):
+            self.border_color = 'rgb(128,128,128)'
+        elif border_color in ('g', 'gold'):
+            self.border_color = 'rgb(200,180,0)'
+        elif border_color in ('b', 'bronze'):
             self.border_color = 'rgb(222,127,50)'
         else:
             raise ValueError(f'Unrecognized border color: {border_color}')

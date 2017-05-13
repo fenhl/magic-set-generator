@@ -51,10 +51,15 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
 
 `json-to-mse.py` accepts the following command line options:
 
+* `-b`, `--border=<color>`: Set the card border color. Supported colors are:
+    * `black`, the default
+    * `w` or `white`
+    * `s` or `silver`
+    * `g` or `gold`
+    * `b` or `bronze`, for clearly marking cards as proxies
 * `-i`, `--input=<path>`: Read card names from the plain text file located at `<path>`. This can be specified multiple times to combine multiple input files into one MSE set file.
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Report progress while generating the set file, and give more detailed error messages if anything goes wrong.
-* `--border=<color>`: Set the card border color. Supported colors are `black` (the default) and `bronze`.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
 * `--old-wedge-order`: In mana costs, order three-color wedges using the old order (e.g. `BGW`) instead of the new one (e.g. `WBG`).
 * `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.

@@ -567,7 +567,8 @@ if __name__ == '__main__':
         'copyright': args.copyright,
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
         'set code': args.set_code,
-        'set language': 'EN'
+        'set language': 'EN',
+        'mark errors': 'no'
     }
     if not args.old_wedge_order:
         set_info['wedge mana costs'] = 'yes'

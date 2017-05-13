@@ -582,7 +582,7 @@ if __name__ == '__main__':
         print('[ ok ] adding cards to set file: {0} of {0}'.format(len(normalized_card_names)), file=sys.stderr)
     # generate stylesheet settings
     styling = {
-        'm15': {
+        'magic-m15': {
             'text box mana symbols': 'magic-mana-small.mse-symbol-font',
             'center text': 'short text only',
             'overlay': ''
@@ -590,7 +590,7 @@ if __name__ == '__main__':
     }
     if hasattr(set_file, 'stylesheets'):
         for stylesheet in set_file.stylesheets:
-            styling[stylesheet] = {
+            styling[f'magic-{stylesheet}'] = {
                 'text box mana symbols': 'magic-mana-small.mse-symbol-font',
                 'center text': 'short text only',
                 'overlay': ''

@@ -21,7 +21,7 @@ BASIC_LAND_TYPES = {
     'Swamp': 'B',
     'Mountain': 'R',
     'Forest': 'G'
-]
+}
 
 COLOR_ABBREVIATIONS = {
     'W': 'White',

@@ -590,12 +590,11 @@ if __name__ == '__main__':
     # generate stylesheet settings
     if hasattr(set_file, 'stylesheets'):
         for stylesheet in set_file.stylesheets:
-            styling[f'magic-{stylesheet}'] = {
+            set_file['styling'][f'magic-{stylesheet}'] = {
                 'text box mana symbols': 'magic-mana-small.mse-symbol-font',
                 'center text': 'short text only',
                 'overlay': ''
             }
-    set_file['styling'] = styling
     # zip and write set file
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:

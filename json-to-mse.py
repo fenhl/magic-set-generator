@@ -122,6 +122,10 @@ class CommandLineArgs:
     def set_input(self, input_filename):
         with open(input_filename) as f:
             for line in f:
+                if line.strip() == '':
+                    continue
+                if line.strip().startswith('#'):
+                    continue
                 self.cards.add(line.strip())
 
 class FrameFeatures(enum.Flag):

@@ -58,7 +58,7 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
     * `s` or `silver`
     * `g` or `gold`
     * `b` or `bronze`, for clearly marking cards as proxies
-* `-i`, `--input=<path>`: Read card names from the plain text file located at `<path>`. This can be specified multiple times to combine multiple input files into one MSE set file.
+* `-i`, `--input=<path>`: Read card names from the plain text file located at `<path>`. This can be specified multiple times to combine multiple input files into one MSE set file. Lines starting with `#` are ignored.
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.

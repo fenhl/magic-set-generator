@@ -257,7 +257,7 @@ class MSEDataFile:
         # color indicator
         if set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
             if raw_data.get('colors', []) == []:
-                frame_features |= FrameFeature.DEVOID
+                frame_features |= FrameFeatures.DEVOID
             else:
                 result[alt_key('card color')] = result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
                 #TODO make sure MSE renders two-color gold cards in the correct order

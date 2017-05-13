@@ -251,7 +251,7 @@ class MSEDataFile:
             if raw_data.get('colors', []) == []:
                 frame_features |= FrameFeature.DEVOID
             else:
-                result[alt_key('card color')] = result[alt_key('indicator')] = ', '.join(card_info.colors)
+                result[alt_key('card color')] = result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
                 #TODO make sure MSE renders two-color gold cards in the correct order
                 #TODO make sure MSE renders 3+ color gold cards without the gradient
         # type line
@@ -581,16 +581,21 @@ if __name__ == '__main__':
     if args.verbose:
         print('[ ok ] adding cards to set file: {0} of {0}'.format(len(normalized_card_names)), file=sys.stderr)
     # generate stylesheet settings
+    styling = {
+        'm15': {
+            'text box mana symbols': 'magic-mana-small.mse-symbol-font',
+            'center text': 'short text only',
+            'overlay': ''
+        }
+    }
     if hasattr(set_file, 'stylesheets'):
-        styling = {}
         for stylesheet in set_file.stylesheets:
             styling[stylesheet] = {
                 'text box mana symbols': 'magic-mana-small.mse-symbol-font',
                 'center text': 'short text only',
                 'overlay': ''
             }
-        set_file['styling'] = styling
-
+    set_file['styling'] = styling
     # zip and write set file
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:

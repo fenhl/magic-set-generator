@@ -604,11 +604,15 @@ if __name__ == '__main__':
     # generate stylesheet settings
     if hasattr(set_file, 'stylesheets'):
         for stylesheet in set_file.stylesheets:
-            set_file['styling'][f'magic-{stylesheet}'] = {
+            styling = {
                 'text box mana symbols': 'magic-mana-small.mse-symbol-font',
-                'center text': 'short text only',
                 'overlay': ''
             }
+            if stylesheet in ('m15-split', 'm15-split-fuse'):
+                styling['center text 1'] = styling['center text 2'] = 'always'
+            else:
+                styling['center text'] = 'short text only'
+            set_file['styling'][f'magic-{stylesheet}'] = styling
     # zip and write set file
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:

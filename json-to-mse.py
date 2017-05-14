@@ -38,7 +38,7 @@ class CommandLineArgs:
         self.output = sys.stdout.buffer
         self.border_color = None
         self.copyright = 'NOT FOR SALE'
-        self.old_wedge_order = False
+        self.new_wedge_order = False
         self.set_code = 'PROXY'
         mode = None
         for arg in args:
@@ -71,8 +71,8 @@ class CommandLineArgs:
                         mode = 'input'
                     elif arg.startswith('--input='):
                         self.set_input(arg[len('--input='):])
-                    elif arg == '--old-wedge-order':
-                        self.old_wedge_order = True
+                    elif arg == '--new-wedge-order':
+                        self.new_wedge_order = True
                     elif arg == '--output':
                         mode = 'output'
                     elif arg.startswith('--output='):
@@ -570,7 +570,7 @@ if __name__ == '__main__':
         'set language': 'EN',
         'mark errors': 'no'
     }
-    if not args.old_wedge_order:
+    if args.new_wedge_order:
         set_info['wedge mana costs'] = 'yes'
     if args.border_color is not None:
         set_info['border color'] = args.border_color

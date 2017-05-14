@@ -150,12 +150,15 @@ class FrameFeatures(enum.Flag):
     PLANESWALKER = enum.auto()
     PLANESWALKER_BACK = enum.auto()
     SPLIT = enum.auto()
+    TRUE_COLORLESS = enum.auto()
+    TRUE_COLORLESS_BACK = enum.auto()
 
     def alt_dfc(self):
         try:
             return {
                 FrameFeatures.NONE: FrameFeatures.NONE,
-                FrameFeatures.PLANESWALKER: FrameFeatures.PLANESWALKER_BACK
+                FrameFeatures.PLANESWALKER: FrameFeatures.PLANESWALKER_BACK,
+                FrameFeatures.TRUE_COLORLESS: FrameFeatures.TRUE_COLORLESS_BACK
             }[self]
         except KeyError as e:
             raise NotImplementedError('Frame features {} not implemented for DFC back faces'.format(self.name)) from e
@@ -265,6 +268,8 @@ class MSEDataFile:
                 result[alt_key('card color')] = result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
                 #TODO make sure MSE renders two-color gold cards in the correct order
                 #TODO make sure MSE renders 3+ color gold cards without the gradient
+        elif set(raw_data.get('colors', [])):
+            frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
         if 'supertypes' in raw_data:
             result[alt_key('super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
@@ -289,7 +294,7 @@ class MSEDataFile:
         # text
         if 'text' in raw_data:
             text = ''
-            for i, ability in enumerate(card_info.text.split('\n')):
+            for i, ability in enumerate(card_info.text.replace('‘', "'").split('\n')):
                 ability = re.sub(' ?\\([^)]+\\)', '', ability)
                 if ability == '':
                     continue

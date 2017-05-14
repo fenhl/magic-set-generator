@@ -152,6 +152,7 @@ class FrameFeatures(enum.Flag):
     SPLIT = enum.auto()
     TRUE_COLORLESS = enum.auto()
     TRUE_COLORLESS_BACK = enum.auto()
+    VEHICLE = enum.auto()
 
     def alt_dfc(self):
         try:
@@ -289,6 +290,8 @@ class MSEDataFile:
             frame_features |= FrameFeatures.PLANESWALKER
         if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') >= 2:
             frame_features |= FrameFeatures.NYX
+        if 'subtypes' in raw_data and 'Vehicle' in card_info.subtypes:
+            frame_features |= FrameFeatures.VEHICLE
         # rarity
         result[alt_key('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
@@ -373,6 +376,8 @@ class MSEDataFile:
                 result['stylesheet'] = 'm15-miracle'
             elif FrameFeatures.DEVOID in frame_features:
                 result['stylesheet'] = 'm15-devoid'
+            elif FrameFeatures.VEHICLE in frame_features:
+                result['stylesheet'] = 'vehicles'
             elif FrameFeatures.NYX in frame_features:
                 result['stylesheet'] = 'm15-nyx'
             return result

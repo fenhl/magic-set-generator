@@ -362,7 +362,7 @@ class MSEDataFile:
                     else:
                         result['stylesheet'] = 'm15-doublefaced'
             elif FrameFeatures.PLANESWALKER in frame_features:
-                result['stylesheet'] = 'm15-planeswalker'
+                result['stylesheet'] = 'm15-planeswalker-2abil'
             elif FrameFeatures.CONSPIRACY in frame_features:
                 result['stylesheet'] = 'm15-ttk-conspiracy'
                 result['watermark'] = 'other magic symbols conspiracy stamp'

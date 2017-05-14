@@ -140,8 +140,10 @@ class CommandLineArgs:
 class FrameFeatures(enum.Flag):
     NONE = 0
     AFTERMATH = enum.auto()
+    CONSPIRACY = enum.auto()
     DEVOID = enum.auto()
     DFC = enum.auto()
+    DRAFT_MATTERS = enum.auto()
     FUSE = enum.auto()
     MIRACLE = enum.auto()
     NYX = enum.auto()
@@ -275,6 +277,8 @@ class MSEDataFile:
             else:
                 card_type = card_info.types[0].lower()
             result[alt_key('sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
+        if 'Conspiracy' in card_info.types:
+            frame_features |= FrameFeatures.CONSPIRACY
         if 'Planeswalker' in card_info.types:
             frame_features |= FrameFeatures.PLANESWALKER
         if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') >= 2:
@@ -302,6 +306,8 @@ class MSEDataFile:
                         text += ' '
                     if j == 0 and word == 'Miracle':
                         frame_features |= FrameFeatures.MIRACLE
+                    if re.fullmatch('[Dd]raft(ed)?', word):
+                        frame_features |= FrameFeatures.DRAFT_MATTERS
                     match = re.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word)
                     if match:
                         text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
@@ -348,6 +354,12 @@ class MSEDataFile:
                         result['stylesheet'] = 'm15-doublefaced'
             elif FrameFeatures.PLANESWALKER in frame_features:
                 result['stylesheet'] = 'm15-planeswalker'
+            elif FrameFeatures.CONSPIRACY in frame_features:
+                result['stylesheet'] = 'm15-ttk-conspiracy'
+                result['watermark'] = 'other magic symbols conspiracy stamp'
+            elif FrameFeatures.DRAFT_MATTERS in frame_features:
+                result['stylesheet'] = 'm15-ttk-frames'
+                result['watermark'] = 'other magic symbols conspiracy stamp'
             elif FrameFeatures.MIRACLE in frame_features:
                 result['stylesheet'] = 'm15-miracle'
             elif FrameFeatures.DEVOID in frame_features:

@@ -300,7 +300,10 @@ class MSEDataFile:
                     result[f'loyalty cost {4 * (alt or 1) + i - 3}'] = match.group(1).replace('\u2212', '-')
                     ability = match.group(2)
                 if text != '':
-                    text += '\n'
+                    if ability.startswith('•'):
+                        text += '<soft-line>\n</soft-line>'
+                    else:
+                        text += '\n'
                 for j, word in enumerate(ability.split(' ')):
                     if j > 0:
                         text += ' '

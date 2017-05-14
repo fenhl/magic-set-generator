@@ -277,7 +277,7 @@ class MSEDataFile:
             result[alt_key('sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         if 'Planeswalker' in card_info.types:
             frame_features |= FrameFeatures.PLANESWALKER
-        if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') > 2:
+        if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') >= 2:
             frame_features |= FrameFeatures.NYX
         # rarity
         result[alt_key('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str

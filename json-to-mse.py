@@ -305,7 +305,7 @@ class MSEDataFile:
                     match = re.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word)
                     if match:
                         text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
-                    elif re.fullmatch('[0-9]+', word):
+                    elif re.fullmatch('[0-9]+|X', word):
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word

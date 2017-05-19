@@ -144,6 +144,7 @@ class FrameFeatures(enum.Flag):
     DEVOID = enum.auto()
     DFC = enum.auto()
     DRAFT_MATTERS = enum.auto()
+    FLIP = enum.auto()
     FUSE = enum.auto()
     MIRACLE = enum.auto()
     NYX = enum.auto()
@@ -246,6 +247,11 @@ class MSEDataFile:
                 alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
                 result |= alt_result
                 frame_features |= alt_frame_features
+        elif card_info.layout == 'flip':
+            if not alt:
+                frame_features |= FrameFeatures.FLIP
+                alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
+                result |= alt_result
         elif card_info.layout == 'double-faced':
             if not alt:
                 frame_features |= FrameFeatures.DFC
@@ -253,7 +259,7 @@ class MSEDataFile:
                 result |= alt_result
                 frame_features |= alt_frame_features.alt_dfc()
         else:
-            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO flip, plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
+            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
         # name
         result[alt_key('name')] = card_info.name
         # mana cost
@@ -353,6 +359,8 @@ class MSEDataFile:
                     raise NotImplementedError('Aftermath not implemented') #TODO
                 else:
                     result['stylesheet'] = 'm15-split'
+            elif FrameFeatures.FLIP in frame_features:
+                result['stylesheet'] = 'm15-flip'
             elif FrameFeatures.DFC in frame_features:
                 if FrameFeatures.PLANESWALKER in frame_features:
                     if FrameFeatures.PLANESWALKER_BACK in frame_features:

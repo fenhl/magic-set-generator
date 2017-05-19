@@ -253,7 +253,7 @@ class MSEDataFile:
                 result |= alt_result
                 frame_features |= alt_frame_features.alt_dfc()
         else:
-            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO flip, double-faced, plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
+            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO flip, plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
         # name
         result[alt_key('name')] = card_info.name
         # mana cost

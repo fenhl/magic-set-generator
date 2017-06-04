@@ -467,8 +467,8 @@ def cost_to_mse(cost):
         if re.fullmatch(basics, part):
             # colored mana
             return part
-        if part in ('C', 'Q', 'S', 'T', 'X'):
-            # colorless mana, untap symbol, snow mana, tap symbol, variable mana
+        if part in ('C', 'E', 'Q', 'S', 'T', 'X'):
+            # colorless mana, energy counter, untap symbol, snow mana, tap symbol, variable mana
             return part
         if re.fullmatch('[0-9]+', part):
             # colorless mana

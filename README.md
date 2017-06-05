@@ -62,5 +62,7 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
+* `--[no-]include-planes`: Enable or disable the inclusion of planes as regular-sized cards in the main set file. This is on by default unless `--planes-output` is given.
 * `--new-wedge-order`: In mana costs, order three-color wedges using the new order (e.g. `WBG`) instead of the new one (e.g. `BGW`). Note that because of a bug in MSE, using this option breaks shard color order.
+* `--planes-output=<path>`: Save planes and phenomena to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.

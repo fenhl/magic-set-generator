@@ -35,10 +35,12 @@ class CommandLineArgs:
     def __init__(self, args=sys.argv[1:]):
         self.verbose = False
         self.cards = set()
+        self._include_planes = None
         self.output = sys.stdout.buffer
         self.border_color = None
         self.copyright = 'NOT FOR SALE'
         self.new_wedge_order = False
+        self.planes_output = None
         self.set_code = 'PROXY'
         mode = None
         for arg in args:
@@ -54,6 +56,9 @@ class CommandLineArgs:
             elif mode == 'output':
                 self.output = open(arg, 'wb')
                 mode = None
+            elif mode == 'planes-output':
+                self.planes_output = open(arg, 'wb')
+                mode = None
             elif mode == 'set-code':
                 self.set_code = arg
                 mode = None
@@ -67,6 +72,10 @@ class CommandLineArgs:
                         mode = 'copyright'
                     elif arg.startswith('--copyright='):
                         self.copyright = arg[len('--copyright='):]
+                    elif arg == '--include-planes':
+                        self.include_planes = True
+                    elif arg == '--no-include-planes':
+                        self.include_planes = False
                     elif arg == '--input':
                         mode = 'input'
                     elif arg.startswith('--input='):
@@ -77,6 +86,10 @@ class CommandLineArgs:
                         mode = 'output'
                     elif arg.startswith('--output='):
                         self.output = open(arg[len('--output='):], 'wb')
+                    elif arg == '--planes-output':
+                        mode = 'planes-output'
+                    elif arg.startswith('--planes-output='):
+                        self.planes_output = open(arg[len('--planes-output='):], 'wb')
                     elif arg == '--set-code':
                         mode = 'set-code'
                     elif arg.startswith('--set-code='):
@@ -113,6 +126,17 @@ class CommandLineArgs:
                             raise ValueError(f'Unrecognized flag: -{short_flag}')
             else:
                 self.cards.add(arg)
+
+    @property
+    def include_planes(self):
+        if self._include_planes is None:
+            return self.planes_output is None
+        else:
+            return self._include_planes
+
+    @include_planes.setter
+    def include_planes(self, value):
+        self._include_planes = value
 
     def set_border_color(self, border_color):
         if border_color == 'black':
@@ -205,8 +229,8 @@ class MSEDataFile:
     def __str__(self):
         return self.to_string()
 
-    def add_card(self, card_info, db):
-        card = self.__class__.from_card(card_info, db)
+    def add_card(self, card_info, db, layout=None):
+        card = self.__class__.from_card(card_info, db, layout=layout)
         self.add('card', card)
         with contextlib.suppress(KeyError):
             stylesheet = card['stylesheet']
@@ -215,7 +239,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, *, alt=False):
+    def from_card(cls, card_info, db, layout=None, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -239,27 +263,35 @@ class MSEDataFile:
         result = cls()
         frame_features = FrameFeatures.NONE
         # layout
-        if card_info.layout == 'normal':
-            pass # nothing specific to normal layout
-        elif card_info.layout == 'split':
-            if not alt:
-                frame_features |= FrameFeatures.SPLIT
-                alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
-                result |= alt_result
-                frame_features |= alt_frame_features
-        elif card_info.layout == 'flip':
-            if not alt:
-                frame_features |= FrameFeatures.FLIP
-                alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
-                result |= alt_result
-        elif card_info.layout == 'double-faced':
-            if not alt:
-                frame_features |= FrameFeatures.DFC
-                alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, alt=2)
-                result |= alt_result
-                frame_features |= alt_frame_features.alt_dfc()
+        if layout is None:
+            if card_info.layout in ('normal', 'plane', 'phenomenon'):
+                pass # nothing specific to these layouts
+            elif card_info.layout == 'split':
+                if not alt:
+                    frame_features |= FrameFeatures.SPLIT
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    result |= alt_result
+                    frame_features |= alt_frame_features
+            elif card_info.layout == 'flip':
+                if not alt:
+                    frame_features |= FrameFeatures.FLIP
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    result |= alt_result
+            elif card_info.layout == 'double-faced':
+                if not alt:
+                    frame_features |= FrameFeatures.DFC
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    result |= alt_result
+                    frame_features |= alt_frame_features.alt_dfc()
+            else:
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO scheme, leveler, vanguard, meld, aftermath
+        elif layout == 'planechase':
+            if card_info.layout in ('plane', 'phenomenon'):
+                pass # nothing specific to these layouts
+            else:
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}')
         else:
-            raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO plane, scheme, phenomenon, leveler, vanguard, meld, aftermath
+            raise NotImplementedError(f'Unsupported MSE game: {layout}')
         # name
         result[alt_key('name')] = card_info.name
         # mana cost
@@ -279,9 +311,9 @@ class MSEDataFile:
             frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
         if 'supertypes' in raw_data:
-            result[alt_key('super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
+            result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:
-            result[alt_key('super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
+            result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
         if 'subtypes' in raw_data:
             if 'Creature' in card_info.types:
                 card_type = 'race'
@@ -289,7 +321,7 @@ class MSEDataFile:
                 card_type = 'spell'
             else:
                 card_type = card_info.types[0].lower()
-            result[alt_key('sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
+            result[alt_key('subtype' if layout == 'planechase' else 'sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         if 'Conspiracy' in card_info.types:
             frame_features |= FrameFeatures.CONSPIRACY
         if 'Planeswalker' in card_info.types:
@@ -350,6 +382,10 @@ class MSEDataFile:
         # stylesheet
         if alt:
             return result, frame_features
+        elif layout == 'planechase':
+            if 'Phenomenon' in card_info.types:
+                result['stylesheet'] = 'phenomenon'
+            return result
         else:
             if FrameFeatures.SPLIT in frame_features:
                 if FrameFeatures.FUSE in frame_features:
@@ -470,6 +506,9 @@ def cost_to_mse(cost):
         if part in ('C', 'E', 'Q', 'S', 'T', 'X'):
             # colorless mana, energy counter, untap symbol, snow mana, tap symbol, variable mana
             return part
+        if part == 'CHAOS':
+            # chaos symbol (planar die)
+            return 'A'
         if re.fullmatch('[0-9]+', part):
             # colorless mana
             return part
@@ -617,6 +656,31 @@ if __name__ == '__main__':
             'overlay': ''
         }
     }
+    planes_set_file = MSEDataFile()
+    planes_set_file['mse version'] = '0.3.8'
+    planes_set_file['game'] = 'planechase'
+    planes_set_file['stylesheet'] = 'standard'
+    planes_set_info = {
+        'title': 'MTG JSON card import: planes and phenomena',
+        'copyright': args.copyright,
+        'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
+        'set code': args.set_code,
+        'set language': 'EN',
+        'mark errors': 'no',
+        'automatic reminder text': '',
+        'automatic card numbers': 'no'
+    }
+    planes_set_file['set info'] = planes_set_info
+    planes_set_file['styling'] = { # styling needs to be above cards
+        'planechase-standard': {
+            'text box mana symbols': 'magic-mana-small.mse-symbol-font',
+            'tap symbol': 'modern'
+        },
+        'planechase-phenomenon': {
+            'text box mana symbols': 'magic-mana-small.mse-symbol-font',
+            'tap symbol': 'modern'
+        }
+    }
     # add cards to set
     failed = 0
     for i, card_name in enumerate(sorted(normalized_card_names)):
@@ -625,7 +689,12 @@ if __name__ == '__main__':
             print('[{}{}] adding cards to set file: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(normalized_card_names)), end='\r', flush=True, file=sys.stderr)
         card = db.cards_by_name[card_name]
         try:
-            set_file.add_card(card, db)
+            if 'Plane' in card.types:
+                if args.include_planes:
+                    set_file.add_card(card, db)
+                planes_set_file.add_card(card, db, layout='planechase')
+            else:
+                set_file.add_card(card, db)
         except Exception as e:
             if args.verbose:
                 raise RuntimeError(f'Failed to add card {card_name}') from e
@@ -648,9 +717,15 @@ if __name__ == '__main__':
             else:
                 styling['center text'] = 'short text only'
             set_file['styling'][f'magic-{stylesheet}'] = styling
-    # zip and write set file
+    # zip and write set files
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:
         f.writestr('set', str(set_file))
     args.output.write(buf.getvalue())
     args.output.flush()
+    if args.planes_output is not None:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'x') as f:
+            f.writestr('set', str(planes_set_file))
+        args.planes_output.write(buf.getvalue())
+        args.planes_output.flush()

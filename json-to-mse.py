@@ -689,7 +689,7 @@ if __name__ == '__main__':
             print('[{}{}] adding cards to set file: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(normalized_card_names)), end='\r', flush=True, file=sys.stderr)
         card = db.cards_by_name[card_name]
         try:
-            if 'Plane' in card.types:
+            if 'Plane' in card.types or 'Phenomenon' in card.types:
                 if args.include_planes:
                     set_file.add_card(card, db)
                 planes_set_file.add_card(card, db, layout='planechase')

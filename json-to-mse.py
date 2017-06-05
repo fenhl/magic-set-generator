@@ -717,6 +717,9 @@ if __name__ == '__main__':
             else:
                 styling['center text'] = 'short text only'
             set_file['styling'][f'magic-{stylesheet}'] = styling
+    # generate footers
+    set_file['version control'] = planes_set_file['version control'] = {'type': 'none'}
+    set_file['apprentice code'] = planes_set_file['apprentice code'] = ''
     # zip and write set files
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:

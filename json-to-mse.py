@@ -347,7 +347,7 @@ class MSEDataFile:
                     result[f'loyalty cost {4 * (alt or 1) + i - 3}'] = match.group(1).replace('\u2212', '-')
                     ability = match.group(2)
                 if text != '':
-                    if ability.startswith('•'):
+                    if ability.startswith('•') or (layout == 'planechase' and not ability.startswith('Whenever you roll {CHAOS}')):
                         text += '<soft-line>\n</soft-line>'
                     else:
                         text += '\n'

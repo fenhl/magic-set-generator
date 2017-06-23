@@ -33,15 +33,17 @@ COLOR_ABBREVIATIONS = {
 
 class CommandLineArgs:
     def __init__(self, args=sys.argv[1:]):
-        self.verbose = False
-        self.cards = set()
-        self._include_planes = None
-        self.output = sys.stdout.buffer
         self.border_color = None
+        self.cards = set()
         self.copyright = 'NOT FOR SALE'
+        self.find_cards = pathlib.Path('/opt/git/github.com/taw/magic-search-engine/master/bin/find_cards')
+        self._include_planes = None
         self.new_wedge_order = False
+        self.output = sys.stdout.buffer
         self.planes_output = None
+        self.queries = set()
         self.set_code = 'PROXY'
+        self.verbose = False
         mode = None
         for arg in args:
             if mode == 'border':
@@ -49,6 +51,9 @@ class CommandLineArgs:
                 mode = None
             elif mode == 'copyright':
                 self.copyright = arg
+                mode = None
+            elif mode == 'find-cards':
+                self.find_cards = pathlib.Path(arg)
                 mode = None
             elif mode == 'input':
                 self.set_input(arg)
@@ -72,6 +77,10 @@ class CommandLineArgs:
                         mode = 'copyright'
                     elif arg.startswith('--copyright='):
                         self.copyright = arg[len('--copyright='):]
+                    elif arg == '--find-cards':
+                        mode = 'find-cards'
+                    elif arg.startswith('--find-cards='):
+                        self.find_cards = pathlib.Path(arg[len('--find-cards='):])
                     elif arg == '--include-planes':
                         self.include_planes = True
                     elif arg == '--no-include-planes':
@@ -158,6 +167,9 @@ class CommandLineArgs:
                 if line.strip() == '':
                     continue
                 if line.strip().startswith('#'):
+                    continue
+                if line.strip().startswith('='):
+                    self.queries.add(line.strip()[1:])
                     continue
                 self.cards.add(line.strip())
 
@@ -608,10 +620,11 @@ if __name__ == '__main__':
     except ValueError as e:
         sys.exit(f'[!!!!] {e.args[0]}')
     # read card names
-    if sys.stdin.isatty():
-        card_names = args.cards
-    else:
-        card_names = set(line.strip() for line in sys.stdin) | args.cards
+    card_names = args.cards
+    if not sys.stdin.isatty():
+        card_names |= set(line.strip() for line in sys.stdin)
+    for query in args.queries:
+        card_names |= subprocess.run([str(args.find_cards), query]).stdout.decode('utf-8').splitlines()
     if len(card_names) == 0:
         sys.exit('[!!!!] missing card name')
     # download MTG JSON

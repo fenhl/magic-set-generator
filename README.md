@@ -58,10 +58,11 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
     * `s` or `silver`
     * `g` or `gold`
     * `b` or `bronze`, for clearly marking cards as proxies
-* `-i`, `--input=<path>`: Read card names from the plain text file located at `<path>`. This can be specified multiple times to combine multiple input files into one MSE set file. Lines starting with `#` are ignored.
+* `-i`, `--input=<path>`: Read card names from the plain text file located at `<path>`. This can be specified multiple times to combine multiple input files into one MSE set file. Lines starting with `#` are ignored, and lines starting with `=` are parsed accodring to [mtg.wtf syntax](https://mtg.wtf/help/syntax) (but this requires the `find_cards` script from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` below).
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
+* `--find-cards=<path>`: The path to the `find_cards` executable used for [mtg.wtf syntax](https://mtg.wtf/help/syntax). Defaults to `/opt/git/github.com/taw/magic-search-engine/master/bin/find_cards`.
 * `--[no-]include-planes`: Enable or disable the inclusion of planes as regular-sized cards in the main set file. This is on by default unless `--planes-output` is given.
 * `--new-wedge-order`: In mana costs, order three-color wedges using the new order (e.g. `WBG`) instead of the new one (e.g. `BGW`). Note that because of a bug in MSE, using this option breaks shard color order.
 * `--planes-output=<path>`: Save planes and phenomena to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.

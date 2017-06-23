@@ -7,6 +7,7 @@ import enum
 import io
 import more_itertools
 import mtgjson
+import pathlib
 import re
 import zipfile
 

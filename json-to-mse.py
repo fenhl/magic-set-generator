@@ -9,6 +9,7 @@ import more_itertools
 import mtgjson
 import pathlib
 import re
+import subprocess
 import zipfile
 
 CACHE = {

@@ -38,7 +38,7 @@ class CommandLineArgs:
         self.border_color = None
         self.cards = set()
         self.copyright = 'NOT FOR SALE'
-        self.find_cards = pathlib.Path('/opt/git/github.com/taw/magic-search-engine/master/bin/find_cards')
+        self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/bin/find_cards')
         self._include_planes = None
         self.new_wedge_order = False
         self.output = sys.stdout.buffer
@@ -626,7 +626,7 @@ if __name__ == '__main__':
     if not sys.stdin.isatty():
         card_names |= set(line.strip() for line in sys.stdin)
     for query in args.queries:
-        card_names |= subprocess.run([str(args.find_cards), query]).stdout.decode('utf-8').splitlines()
+        card_names |= subprocess.run(['ruby' '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines()
     if len(card_names) == 0:
         sys.exit('[!!!!] missing card name')
     # download MTG JSON

@@ -626,7 +626,11 @@ if __name__ == '__main__':
     if not sys.stdin.isatty():
         card_names |= set(line.strip() for line in sys.stdin)
     for query in args.queries:
+        if args.verbose:
+            print(f'[....] finding cards: {query}', end='\r', flush=True)
         card_names |= subprocess.run(['ruby', '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines()
+        if args.verbose:
+            print('[ ok ]')
     if len(card_names) == 0:
         sys.exit('[!!!!] missing card name')
     # download MTG JSON

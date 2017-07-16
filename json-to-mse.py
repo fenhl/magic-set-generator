@@ -425,7 +425,6 @@ class MSEDataFile:
                             striations[-1]['text'] = text
                         else:
                             result[alt_key('rule text')] = text
-                        striation += 1
                         striations.append({
                             'from': int(match.group(1)),
                             'to': int(match.group(2))
@@ -437,7 +436,6 @@ class MSEDataFile:
                             striations[-1]['text'] = text
                         else:
                             result[alt_key('rule text')] = text
-                        striation += 1
                         striations.append({
                             'from': int(match.group(1)),
                             'to': None

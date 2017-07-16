@@ -471,14 +471,14 @@ class MSEDataFile:
                 striations[-1]['text'] = text
             else:
                 result[alt_key('rule text')] = text
-        for i, striation in enumerate(striations):
-            if striation['to'] is None:
-                result[f'level {i + 1}'] = f'{striation["from"]}+'
-            else:
-                result[f'level {i + 1}'] = f'{striation["from"]}-{striation["to"]}'
-            result[f'rule text {i + 2}'] = striation['text']
-            result[f'power {i + 2}'] = striation['power']
-            result[f'toughness {i + 2}'] = striation['toughness']
+            for i, striation in enumerate(striations):
+                if striation['to'] is None:
+                    result[f'level {i + 1}'] = f'{striation["from"]}+'
+                else:
+                    result[f'level {i + 1}'] = f'{striation["from"]}-{striation["to"]}'
+                result[f'rule text {i + 2}'] = striation['text']
+                result[f'power {i + 2}'] = striation['power']
+                result[f'toughness {i + 2}'] = striation['toughness']
         # mana symbol
         if alt_key('rule text') not in result or result[alt_key('rule text')] == '':
             if 'subtypes' in raw_data and more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in card_info.subtypes) == 1:

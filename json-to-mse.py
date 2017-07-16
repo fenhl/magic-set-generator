@@ -692,22 +692,23 @@ if __name__ == '__main__':
     card_names = args.cards
     if not sys.stdin.isatty():
         card_names |= set(line.strip() for line in sys.stdin)
-    for decklist_url in args.decklists:
+    for i, decklist_url in enumerate(args.decklists):
         if args.verbose:
-            print(f'[....] downloading decklist: {decklist_url}', end='\r', flush=True)
+            progress = min(4, 5 * i // len(args.decklists))
+            print(f'[....] downloading decklists: {i} of {len(args.decklists)}', end='\r', flush=True, file=sys.stderr)
         card_names |= {
             line.split(' ', 1)[1]
             for line in requests.get(decklist_url).text.splitlines()
             if line not in ('', 'Sideboard:')
         }
-        if args.verbose:
-            print('[ ok ]')
+    if args.verbose and len(args.decklists) > 0:
+        print('[ ok ] downloading decklists: {0} of {0}'.format(len(args.decklists)), file=sys.stderr)
     for query in args.queries:
         if args.verbose:
-            print(f'[....] finding cards: {query}', end='\r', flush=True)
+            print(f'[....] finding cards: {query}', end='\r', flush=True, file=sys.stderr)
         card_names |= set(subprocess.run(['ruby', '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines())
         if args.verbose:
-            print('[ ok ]')
+            print('[ ok ]', file=sys.stderr)
     if len(card_names) == 0:
         sys.exit('[!!!!] missing card name')
     # download MTG JSON

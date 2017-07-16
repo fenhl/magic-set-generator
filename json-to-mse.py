@@ -222,6 +222,7 @@ class FrameFeatures(enum.Flag):
     DRAFT_MATTERS = enum.auto()
     FLIP = enum.auto()
     FUSE = enum.auto()
+    LEVELER = enum.auto()
     MIRACLE = enum.auto()
     NYX = enum.auto()
     PLANESWALKER = enum.auto()
@@ -327,25 +328,27 @@ class MSEDataFile:
         if layout is None:
             if card_info.layout in ('normal', 'plane', 'phenomenon', 'vanguard'):
                 pass # nothing specific to these layouts
-            elif card_info.layout == 'split':
-                if not alt:
-                    frame_features |= FrameFeatures.SPLIT
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
-                    result |= alt_result
-                    frame_features |= alt_frame_features
-            elif card_info.layout == 'flip':
-                if not alt:
-                    frame_features |= FrameFeatures.FLIP
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
-                    result |= alt_result
             elif card_info.layout == 'double-faced':
                 if not alt:
                     frame_features |= FrameFeatures.DFC
                     alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
+            elif card_info.layout == 'flip':
+                if not alt:
+                    frame_features |= FrameFeatures.FLIP
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    result |= alt_result
+            elif card_info.layout == 'leveler':
+                frame_features |= FrameFeatures.LEVELER
+            elif card_info.layout == 'split':
+                if not alt:
+                    frame_features |= FrameFeatures.SPLIT
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    result |= alt_result
+                    frame_features |= alt_frame_features
             else:
-                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO scheme, leveler, vanguard, meld, aftermath
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO scheme, meld, aftermath
         elif layout == 'planechase':
             if card_info.layout in ('plane', 'phenomenon'):
                 pass # nothing specific to these layouts
@@ -406,6 +409,7 @@ class MSEDataFile:
         result[alt_key('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
         if 'text' in raw_data:
+            striations = []
             text = ''
             for i, ability in enumerate(card_info.text.replace('‘', "'").split('\n')):
                 ability = re.sub(' ?\\([^)]+\\)', '', ability)
@@ -414,6 +418,34 @@ class MSEDataFile:
                 elif ability == 'Fuse':
                     frame_features |= FrameFeatures.FUSE
                     continue
+                elif card_info.layout == 'leveler':
+                    match = re.fullmatch('LEVEL ([0-9]+)-([0-9]+)', ability)
+                    if match:
+                        if len(striations) > 0:
+                            striations[-1]['text'] = text
+                        else:
+                            result[alt_key('rule text')] = text
+                        striation += 1
+                        striations.append({
+                            'from': int(match.group(1)),
+                            'to': int(match.group(2))
+                        })
+                        continue
+                    match = re.fullmatch('LEVEL ([0-9]+)\\+', ability)
+                    if match:
+                        if len(striations) > 0:
+                            striations[-1]['text'] = text
+                        else:
+                            result[alt_key('rule text')] = text
+                        striation += 1
+                        striations.append({
+                            'from': int(match.group(1)),
+                            'to': None
+                        })
+                        continue
+                    if len(striations) > 0 and 'power' not in striations[-1]:
+                        striations[-1]['power'], striations[-1]['toughness'] = ability.split('/')
+                        continue
                 match = re.fullmatch('((?:\\+|-|\u2212)(?:[0-9]+|X)|0): (.*)', ability)
                 if 'Planeswalker' in card_info.type and match:
                     result[f'loyalty cost {4 * (alt or 1) + i - 3}'] = match.group(1).replace('\u2212', '-')
@@ -437,7 +469,18 @@ class MSEDataFile:
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
-            result[alt_key('rule text')] = text
+            if len(striations) > 0:
+                striations[-1]['text'] = text
+            else:
+                result[alt_key('rule text')] = text
+        for i, striation in enumerate(striations):
+            if striation['to'] is None:
+                result[f'level {i + 1}'] = f'{striation["from"]}+'
+            else:
+                result[f'level {i + 1}'] = f'{striation["from"]}-{striation["to"]}'
+            result[f'rule text {i + 2}'] = striation['text']
+            result[f'power {i + 2}'] = striation['power']
+            result[f'toughness {i + 2}'] = striation['toughness']
         # mana symbol
         if alt_key('rule text') not in result or result[alt_key('rule text')] == '':
             if 'subtypes' in raw_data and more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in card_info.subtypes) == 1:
@@ -489,6 +532,8 @@ class MSEDataFile:
                         result['stylesheet'] = 'm15-doublefaced'
             elif FrameFeatures.PLANESWALKER in frame_features:
                 result['stylesheet'] = 'm15-planeswalker-2abil'
+            elif FrameFeatures.LEVELER in frame_features:
+                result['stylesheet'] = 'm15-leveler'
             elif FrameFeatures.CONSPIRACY in frame_features:
                 result['stylesheet'] = 'm15-ttk-conspiracy'
                 result['watermark'] = 'other magic symbols conspiracy stamp'

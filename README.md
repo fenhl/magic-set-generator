@@ -14,7 +14,7 @@ Since MSE is a Windows programm, this guide assumes that you're running `json-to
     ```
     pip3 install more-itertools mtgjson
     ```
-* Some features require the Custom Magic template pack. To install, join [the Custom Magic Discord server](https://discord.gg/FbMK9UE) and follow the instructions in the message pinned in #resources.
+* Some features require the Custom Magic template pack. To install, join [the Custom Magic Discord server](https://discord.gg/FbMK9UE) and follow the instructions in the message pinned in #resources. (Download the full MTG pack, not the Super Light M15 pack.)
 
 ## Basic usage
 

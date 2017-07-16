@@ -425,6 +425,7 @@ class MSEDataFile:
                             striations[-1]['text'] = text
                         else:
                             result[alt_key('rule text')] = text
+                        text = ''
                         striations.append({
                             'from': int(match.group(1)),
                             'to': int(match.group(2))
@@ -436,6 +437,7 @@ class MSEDataFile:
                             striations[-1]['text'] = text
                         else:
                             result[alt_key('rule text')] = text
+                        text = ''
                         striations.append({
                             'from': int(match.group(1)),
                             'to': None
@@ -883,7 +885,9 @@ if __name__ == '__main__':
                 'text box mana symbols': 'magic-mana-small.mse-symbol-font',
                 'overlay': ''
             }
-            if stylesheet in ('m15-split', 'm15-split-fuse'):
+            if stylesheet == 'm15-leveler':
+                pass # keep leveler cards left-aligned
+            elif stylesheet in ('m15-split', 'm15-split-fuse'):
                 styling['center text 1'] = styling['center text 2'] = 'always'
             else:
                 styling['center text'] = 'short text only'

@@ -174,7 +174,7 @@ class CommandLineArgs:
                 if line.strip().startswith('!'):
                     cmd, *args = shlex.split(line.strip()[1:])
                     if cmd == 'tappedout':
-                        decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
+                        self.decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
                     else:
                         raise ValueError(f'Unrecognized input command: {cmd}')
                     continue

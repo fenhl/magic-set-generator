@@ -744,7 +744,7 @@ if __name__ == '__main__':
     for i, decklist_url in enumerate(args.decklists):
         if args.verbose:
             progress = min(4, 5 * i // len(args.decklists))
-            print(f'[....] downloading decklists: {i} of {len(args.decklists)}', end='\r', flush=True, file=sys.stderr)
+            print('[{}{}] downloading decklists: {} of {}', '=' * progress, '.' * (4 - progress), i, len(args.decklists), end='\r', flush=True, file=sys.stderr)
         card_names |= {
             line.split(' ', 1)[1]
             for line in requests.get(decklist_url).text.splitlines()

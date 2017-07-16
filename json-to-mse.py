@@ -458,13 +458,14 @@ class MSEDataFile:
             elif FrameFeatures.DEVOID in frame_features:
                 if image is None: #TODO or if image isn't full art
                     # don't use devoid frame because it assumes full art
-                    result['stylesheet'] = 'm15-extra'
-                    result['has styling'] = True
-                    result['styling data'] = {
-                        'outer color': 'colorless',
-                        'trim color': 'colorless',
-                        'inner color': 'default'
-                    }
+                    # m15-extra seems to be broken
+                    #result['stylesheet'] = 'm15-extra'
+                    #result['has styling'] = True
+                    #result['styling data'] = {
+                    #    'outer color': 'colorless',
+                    #    'trim color': 'colorless',
+                    #    'inner color': 'default'
+                    #}
                 else:
                     result['stylesheet'] = 'm15-devoid'
             elif FrameFeatures.VEHICLE in frame_features:

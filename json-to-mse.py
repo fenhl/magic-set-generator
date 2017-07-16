@@ -448,8 +448,10 @@ class MSEDataFile:
         if 'loyalty' in raw_data:
             result[alt_key('loyalty')] = card_info.loyalty
         # hand/life modifier
-        result[alt_key('handmod' if layout == 'vanguard' else 'power')] = f'{card_info.hand:+}'
-        result[alt_key('lifemod' if layout == 'vanguard' else 'toughness')] = f'{card_info.life:+}'
+        if 'hand' in raw_data:
+            result[alt_key('handmod' if layout == 'vanguard' else 'power')] = f'{card_info.hand:+}'
+        if 'life' in raw_data:
+            result[alt_key('lifemod' if layout == 'vanguard' else 'toughness')] = f'{card_info.life:+}'
         # stylesheet
         if alt:
             return result, frame_features

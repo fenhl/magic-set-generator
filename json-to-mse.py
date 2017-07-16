@@ -377,7 +377,7 @@ class MSEDataFile:
             frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
         if layout == 'vanguard':
-            result[alt_key('type') = ' '.join((card_info.supertypes if 'supertypes' in raw_data else []) + card_info.types)
+            result[alt_key('type')] = ' '.join((card_info.supertypes if 'supertypes' in raw_data else []) + card_info.types)
         elif 'supertypes' in raw_data:
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:

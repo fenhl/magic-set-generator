@@ -243,6 +243,15 @@ class MSEDataFile:
     def __str__(self):
         return self.to_string()
 
+    def add(self, key, value):
+        if isinstance(value, dict):
+            value = MSEDataFile(value)
+        elif value is True:
+            value = 'true'
+        elif value is False:
+            value = 'false'
+        self.items.append((key, value))
+
     def add_card(self, card_info, db, layout=None):
         card = self.__class__.from_card(card_info, db, layout=layout)
         self.add('card', card)
@@ -453,11 +462,6 @@ class MSEDataFile:
             elif FrameFeatures.NYX in frame_features:
                 result['stylesheet'] = 'm15-nyx'
             return result
-
-    def add(self, key, value):
-        if isinstance(value, dict):
-            value = MSEDataFile(value)
-        self.items.append((key, value))
 
     def get(self, key):
         for iter_key, value in self.items:

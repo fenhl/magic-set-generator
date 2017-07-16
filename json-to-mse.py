@@ -43,11 +43,13 @@ class CommandLineArgs:
         self.decklists = set()
         self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/bin/find_cards')
         self._include_planes = None
+        self._include_vanguards = None
         self.new_wedge_order = False
         self.output = sys.stdout.buffer
         self.planes_output = None
         self.queries = set()
         self.set_code = 'PROXY'
+        self.vanguards_output = None
         self.verbose = False
         mode = None
         for arg in args:
@@ -72,6 +74,9 @@ class CommandLineArgs:
             elif mode == 'set-code':
                 self.set_code = arg
                 mode = None
+            elif mode == 'vanguards-output':
+                self.vanguards_output = open(arg, 'wb')
+                mode = None
             elif arg.startswith('-'):
                 if arg.startswith('--'):
                     if arg == '--border':
@@ -90,6 +95,10 @@ class CommandLineArgs:
                         self.include_planes = True
                     elif arg == '--no-include-planes':
                         self.include_planes = False
+                    elif arg == '--include_vanguards':
+                        self.include_vanguards = True
+                    elif arg == '--no-include-vanguards':
+                        self.include_vanguards = False
                     elif arg == '--input':
                         mode = 'input'
                     elif arg.startswith('--input='):
@@ -108,6 +117,10 @@ class CommandLineArgs:
                         mode = 'set-code'
                     elif arg.startswith('--set-code='):
                         self.set_code = arg[len('--set-code='):]
+                    elif arg == '--vanguards-output':
+                        mode = 'vanguards-output'
+                    elif arg.startswith('--vanguards-output='):
+                        self.vanguards_output = open(arg[len('--vanguards-output='):], 'wb')
                     elif arg == '--verbose':
                         self.verbose = True
                     else:
@@ -151,6 +164,17 @@ class CommandLineArgs:
     @include_planes.setter
     def include_planes(self, value):
         self._include_planes = value
+
+    @property
+    def include_vanguards(self):
+        if self._include_vanguards is None:
+            return self.vanguards_output is None
+        else:
+            return self._include_vanguards
+
+    @include_vanguards.setter
+    def include_vanguards(self, value):
+        self._include_vanguards = value
 
     def set_border_color(self, border_color):
         if border_color == 'black':
@@ -297,7 +321,7 @@ class MSEDataFile:
         frame_features = FrameFeatures.NONE
         # layout
         if layout is None:
-            if card_info.layout in ('normal', 'plane', 'phenomenon'):
+            if card_info.layout in ('normal', 'plane', 'phenomenon', 'vanguard'):
                 pass # nothing specific to these layouts
             elif card_info.layout == 'split':
                 if not alt:
@@ -321,6 +345,11 @@ class MSEDataFile:
         elif layout == 'planechase':
             if card_info.layout in ('plane', 'phenomenon'):
                 pass # nothing specific to these layouts
+            else:
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}')
+        elif layout == 'vanguard':
+            if card_info.layout == 'vanguard':
+                pass # nothing specific to this layout
             else:
                 raise NotImplementedError(f'Unsupported layout: {card_info.layout}')
         else:
@@ -347,7 +376,9 @@ class MSEDataFile:
         elif set(raw_data.get('colors', [])):
             frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
-        if 'supertypes' in raw_data:
+        if layout == 'vanguard':
+            result[alt_key('type') = ' '.join((card_info.supertypes if 'supertypes' in raw_data else []) + card_info.types)
+        elif 'supertypes' in raw_data:
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
@@ -416,12 +447,17 @@ class MSEDataFile:
         # loyalty
         if 'loyalty' in raw_data:
             result[alt_key('loyalty')] = card_info.loyalty
+        # hand/life modifier
+        result[alt_key('handmod' if layout == 'vanguard' else 'power')] = f'{card_info.hand:+}'
+        result[alt_key('lifemod' if layout == 'vanguard' else 'toughness')] = f'{card_info.life:+}'
         # stylesheet
         if alt:
             return result, frame_features
         elif layout == 'planechase':
             if 'Phenomenon' in card_info.types:
                 result['stylesheet'] = 'phenomenon'
+            return result
+        elif layout == 'vanguard':
             return result
         else:
             if FrameFeatures.SPLIT in frame_features:
@@ -718,7 +754,7 @@ if __name__ == '__main__':
     planes_set_file['mse version'] = '0.3.8'
     planes_set_file['game'] = 'planechase'
     planes_set_file['stylesheet'] = 'standard'
-    planes_set_info = {
+    planes_set_file['set info'] = {
         'title': 'MTG JSON card import: planes and phenomena',
         'copyright': args.copyright,
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
@@ -728,7 +764,6 @@ if __name__ == '__main__':
         'automatic reminder text': '',
         'automatic card numbers': 'no'
     }
-    planes_set_file['set info'] = planes_set_info
     planes_set_file['styling'] = { # styling needs to be above cards
         'planechase-standard': {
             'text box mana symbols': 'magic-mana-small.mse-symbol-font',
@@ -737,6 +772,30 @@ if __name__ == '__main__':
         'planechase-phenomenon': {
             'text box mana symbols': 'magic-mana-small.mse-symbol-font',
             'tap symbol': 'modern'
+        }
+    }
+    vanguards_set_file = MSEDataFile()
+    vanguards_set_file['mse version'] = '0.3.8'
+    vanguards_set_file['game'] = 'vanguard'
+    vanguards_set_file['stylesheet'] = 'standard'
+    vanguards_set_info = {
+        'title': 'MTG JSON card import: vanguards',
+        'copyright': args.copyright,
+        'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
+        'set code': args.set_code,
+        'set language': 'EN',
+        'mark errors': 'no',
+        'automatic reminder text': '',
+        'automatic card numbers': 'no'
+    }
+    if args.border_color is not None:
+        vanguards_set_info['border color'] = args.border_color
+    vanguards_set_file['set info'] = vanguards_set_info
+    vanguards_set_file['styling'] = { # styling needs to be above cards
+        'vanguard-standard': {
+            'text box mana symbols': 'magic-mana-small.mse-symbol-font',
+            'tap symbol': 'modern',
+            'flavor text': 'no'
         }
     }
     # add cards to set
@@ -751,6 +810,10 @@ if __name__ == '__main__':
                 if args.include_planes:
                     set_file.add_card(card, db)
                 planes_set_file.add_card(card, db, layout='planechase')
+            elif 'Vanguard' in card.types:
+                if args.include_vanguards:
+                    set_file.add_card(card, db)
+                vanguards_set_file.add_card(card, db, layout='vanguard')
             else:
                 set_file.add_card(card, db)
         except Exception as e:
@@ -790,3 +853,9 @@ if __name__ == '__main__':
             f.writestr('set', str(planes_set_file))
         args.planes_output.write(buf.getvalue())
         args.planes_output.flush()
+    if args.vanguards_output is not None:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'x') as f:
+            f.writestr('set', str(vanguards_set_file))
+        args.vanguards_output.write(buf.getvalue())
+        args.vanguards_output.flush()

@@ -458,7 +458,7 @@ class MSEDataFile:
             elif FrameFeatures.DEVOID in frame_features:
                 if image is None: #TODO or if image isn't full art
                     # don't use devoid frame because it assumes full art
-                    # m15-extra seems to be broken
+                    pass # m15-extra seems to be broken
                     #result['stylesheet'] = 'm15-extra'
                     #result['has styling'] = True
                     #result['styling data'] = {

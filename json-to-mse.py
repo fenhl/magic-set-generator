@@ -9,6 +9,8 @@ import more_itertools
 import mtgjson
 import pathlib
 import re
+import requests
+import shlex
 import subprocess
 import zipfile
 
@@ -38,6 +40,7 @@ class CommandLineArgs:
         self.border_color = None
         self.cards = set()
         self.copyright = 'NOT FOR SALE'
+        self.decklists = set()
         self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/bin/find_cards')
         self._include_planes = None
         self.new_wedge_order = False
@@ -167,6 +170,13 @@ class CommandLineArgs:
         with open(input_filename) as f:
             for line in f:
                 if line.strip() == '':
+                    continue
+                if line.strip().startswith('!'):
+                    cmd, *args = shlex.split(line.strip()[1:])
+                    if cmd == 'tappedout':
+                        decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
+                    else:
+                        raise ValueError(f'Unrecognized input command: {cmd}')
                     continue
                 if line.strip().startswith('#'):
                     continue
@@ -643,6 +653,16 @@ if __name__ == '__main__':
     card_names = args.cards
     if not sys.stdin.isatty():
         card_names |= set(line.strip() for line in sys.stdin)
+    for decklist_url in args.decklists:
+        if args.verbose:
+            print(f'[....] downloading decklist: {decklist_url}', end='\r', flush=True)
+        card_names |= {
+            line.split(' ', 1)[1]
+            for line in requests.get(decklist_url).text.splitlines()
+            if line not in ('', 'Sideboard:')
+        }
+        if args.verbose:
+            print('[ ok ]')
     for query in args.queries:
         if args.verbose:
             print(f'[....] finding cards: {query}', end='\r', flush=True)

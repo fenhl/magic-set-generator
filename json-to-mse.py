@@ -152,7 +152,7 @@ class CommandLineArgs:
                         else:
                             raise ValueError(f'Unrecognized flag: -{short_flag}')
             else:
-                self.cards.add(arg)
+                self.parse_input(arg)
 
     @property
     def include_planes(self):
@@ -190,24 +190,28 @@ class CommandLineArgs:
         else:
             raise ValueError(f'Unrecognized border color: {border_color}')
 
+    def parse_input(self, input_line):
+        line = input_line.strip()
+        if line == '':
+            return
+        if line.startswith('!'):
+            cmd, *args = shlex.split(line[1:])
+            if cmd == 'tappedout':
+                self.decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
+            else:
+                raise ValueError(f'Unrecognized input command: {cmd}')
+            return
+        if line.startswith('#'):
+            return
+        if line.startswith('='):
+            self.queries.add(line[1:])
+            return
+        self.cards.add(line)
+
     def set_input(self, input_filename):
         with open(input_filename) as f:
             for line in f:
-                if line.strip() == '':
-                    continue
-                if line.strip().startswith('!'):
-                    cmd, *args = shlex.split(line.strip()[1:])
-                    if cmd == 'tappedout':
-                        self.decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
-                    else:
-                        raise ValueError(f'Unrecognized input command: {cmd}')
-                    continue
-                if line.strip().startswith('#'):
-                    continue
-                if line.strip().startswith('='):
-                    self.queries.add(line.strip()[1:])
-                    continue
-                self.cards.add(line.strip())
+                self.parse_input(line)
 
 class FrameFeatures(enum.Flag):
     NONE = 0

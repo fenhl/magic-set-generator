@@ -34,7 +34,14 @@ Since MSE is a Windows programm, this guide assumes that you're running `json-to
 
 ## Advanced usage
 
-The script takes any number of command line arguments. Arguments starting with a `-` are interpreted as options (see below). Any other arguments are interpreted as card names. This can be used to specify cards to generate instead of, or in addition to, those read from an input file.
+The script takes any number of command line arguments. Arguments are interpreted as follows:
+
+* Arguments starting with a `-` are interpreted as options (see below).
+* Lines starting with `!` are special commands. The following commands are currently supported:
+    * `!tappedout <deck-id>`: Download the given decklist from [tappedout.net](http://tappedout.net/) and generate all cards from it.
+* Lines starting with `#` are ignored. This can be used in input files (see `-i` below) to write comments.
+* Lines starting with `=` are parsed according to [mtg.wtf syntax](https://mtg.wtf/help/syntax) to generate all cards from the result. This requires the `find_cards` script from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` below.
+* Any other arguments are interpreted as card names. This can be used to specify cards to generate instead of, or in addition to, those read from an input file.
 
 If your shell supports input/output redirection, you can also pipe card names into the script (again, one name per line), and pipe the output into a `.zip` file. For example,
 
@@ -58,7 +65,7 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
     * `s` or `silver`
     * `g` or `gold`
     * `b` or `bronze`, for clearly marking cards as proxies
-* `-i`, `--input=<path>`: Read card names from the plain text file located at `<path>`. This can be specified multiple times to combine multiple input files into one MSE set file. Lines starting with `#` are ignored, and lines starting with `=` are parsed accodring to [mtg.wtf syntax](https://mtg.wtf/help/syntax) (but this requires the `find_cards` script from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` below).
+* `-i`, `--input=<path>`: Read card names from the plain text file located at `<path>`. This can be specified multiple times to combine multiple input files into one MSE set file. Special lines are supported as with directly specified arguments (see “advanced usage” above).
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.

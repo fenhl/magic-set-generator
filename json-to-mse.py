@@ -253,7 +253,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, layout=None, *, alt=False):
+    def from_card(cls, card_info, db, layout=None, image=None, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -312,11 +312,15 @@ class MSEDataFile:
         if 'manaCost' in raw_data:
             result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost)
             #TODO check to add hybrid frame feature
+        # image
+        if image is not None:
+            result[alt_key('image')] = image
         # color indicator
         if set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
             if raw_data.get('colors', []) == []:
                 frame_features |= FrameFeatures.DEVOID
-                result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(card_info.manaCost))
+                if image is not None:
+                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(card_info.manaCost))
             else:
                 result[alt_key('card color')] = result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
                 #TODO make sure MSE renders two-color gold cards in the correct order
@@ -433,7 +437,17 @@ class MSEDataFile:
             elif FrameFeatures.MIRACLE in frame_features:
                 result['stylesheet'] = 'm15-miracle'
             elif FrameFeatures.DEVOID in frame_features:
-                result['stylesheet'] = 'm15-devoid'
+                if image is None: #TODO or if image isn't full art
+                    # don't use devoid frame because it assumes full art
+                    result['stylesheet'] = 'm15-extra'
+                    result['has styling'] = True
+                    result['styling data'] = {
+                        'outer color': 'colorless',
+                        'trim color': 'colorless',
+                        'inner color': 'default'
+                    }
+                else:
+                    result['stylesheet'] = 'm15-devoid'
             elif FrameFeatures.VEHICLE in frame_features:
                 result['stylesheet'] = 'vehicles'
             elif FrameFeatures.NYX in frame_features:

@@ -95,7 +95,7 @@ class CommandLineArgs:
                         self.include_planes = True
                     elif arg == '--no-include-planes':
                         self.include_planes = False
-                    elif arg == '--include_vanguards':
+                    elif arg == '--include-vanguards':
                         self.include_vanguards = True
                     elif arg == '--no-include-vanguards':
                         self.include_vanguards = False

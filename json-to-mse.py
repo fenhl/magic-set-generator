@@ -41,7 +41,7 @@ class CommandLineArgs:
         self.cards = set()
         self.copyright = 'NOT FOR SALE'
         self.decklists = set()
-        self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/bin/find_cards')
+        self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/search-engine/bin/find_cards')
         self._include_planes = None
         self._include_vanguards = None
         self.new_wedge_order = False

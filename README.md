@@ -69,7 +69,7 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
-* `--find-cards=<path>`: The path to the `find_cards` executable used for [mtg.wtf syntax](https://mtg.wtf/help/syntax). Defaults to `git\github.com\taw\magic-search-engine\master\bin\find_cards`.
+* `--find-cards=<path>`: The path to the `find_cards` executable used for [mtg.wtf syntax](https://mtg.wtf/help/syntax). Defaults to `git\github.com\taw\magic-search-engine\master\search-engine\bin\find_cards`.
 * `--[no-]include-planes`: Enable or disable the inclusion of planes and phenomena as regular-sized cards in the main set file. This is on by default unless `--planes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
 * `--new-wedge-order`: In mana costs, order three-color wedges using the new order (e.g. `WBG`) instead of the new one (e.g. `BGW`). Note that because of a bug in MSE, using this option breaks shard color order.

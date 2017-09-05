@@ -745,9 +745,11 @@ if __name__ == '__main__':
         if args.verbose:
             progress = min(4, 5 * i // len(args.decklists))
             print('[{}{}] downloading decklists: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(args.decklists)), end='\r', flush=True, file=sys.stderr)
+        response = requests.get(decklist_url)
+        response.encoding = 'utf-8'
         card_names |= {
             line.split(' ', 1)[1].replace('’', "'")
-            for line in requests.get(decklist_url).text.splitlines()
+            for line in response.text.splitlines()
             if line not in ('', 'Sideboard:')
         }
     if args.verbose and len(args.decklists) > 0:

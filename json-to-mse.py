@@ -8,7 +8,7 @@ import io
 import more_itertools
 import mtgjson
 import pathlib
-import re
+import regex
 import requests
 import shlex
 import subprocess
@@ -383,14 +383,8 @@ class MSEDataFile:
             frame_color.append('artifact')
         if 'Land' in card_info.types:
             if raw_data.get('colors', []) == []:
-                land_colors = {
-                    COLOR_ABBREVIATIONS[BASIC_LAND_TYPES[t]]
-                    for t in raw_data.get('subtypes', [])
-                    if t in BASIC_LAND_TYPES
-                } #TODO include mana abilities
-                if len(land_colors) > 0:
-                    result[alt_key('card color')] = ', '.join(c.lower() for c in land_colors) + ', land'
-                    result[alt_key('indicator')] = 'colorless'
+                result[alt_key('card color')] = ', '.join(c.lower() for c in could_produce(card_info)) + ', land'
+                result[alt_key('indicator')] = 'colorless'
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
@@ -436,14 +430,14 @@ class MSEDataFile:
             striations = []
             text = ''
             for i, ability in enumerate(card_info.text.replace('‘', "'").split('\n')):
-                ability = re.sub(' ?\\([^)]+\\)', '', ability)
+                ability = regex.sub(' ?\\([^)]+\\)', '', ability)
                 if ability == '':
                     continue
                 elif ability == 'Fuse':
                     frame_features |= FrameFeatures.FUSE
                     continue
                 elif card_info.layout == 'leveler':
-                    match = re.fullmatch('LEVEL ([0-9]+)-([0-9]+)', ability)
+                    match = regex.fullmatch('LEVEL ([0-9]+)-([0-9]+)', ability)
                     if match:
                         if len(striations) > 0:
                             striations[-1]['text'] = text
@@ -455,7 +449,7 @@ class MSEDataFile:
                             'to': int(match.group(2))
                         })
                         continue
-                    match = re.fullmatch('LEVEL ([0-9]+)\\+', ability)
+                    match = regex.fullmatch('LEVEL ([0-9]+)\\+', ability)
                     if match:
                         if len(striations) > 0:
                             striations[-1]['text'] = text
@@ -470,7 +464,7 @@ class MSEDataFile:
                     if len(striations) > 0 and 'power' not in striations[-1]:
                         striations[-1]['power'], striations[-1]['toughness'] = ability.split('/')
                         continue
-                match = re.fullmatch('((?:\\+|-|\u2212)(?:[0-9]+|X)|0): (.*)', ability)
+                match = regex.fullmatch('((?:\\+|-|\u2212)(?:[0-9]+|X)|0): (.*)', ability)
                 if 'Planeswalker' in card_info.types and match:
                     result[f'loyalty cost {4 * (alt or 1) + i - 3}'] = match.group(1).replace('\u2212', '-')
                     ability = match.group(2)
@@ -484,12 +478,12 @@ class MSEDataFile:
                         text += ' '
                     if j == 0 and word == 'Miracle':
                         frame_features |= FrameFeatures.MIRACLE
-                    if re.fullmatch('[Dd]raft(ed)?', word):
+                    if regex.fullmatch('[Dd]raft(ed)?', word):
                         frame_features |= FrameFeatures.DRAFT_MATTERS
-                    match = re.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word)
+                    match = regex.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word)
                     if match:
                         text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
-                    elif re.fullmatch('[0-9]+|X', word):
+                    elif regex.fullmatch('[0-9]+|X', word):
                         text += f'</sym>{word}<sym>'
                     else:
                         text += word
@@ -643,7 +637,7 @@ class Rarity(OrderedEnum):
 def cost_to_mse(cost):
     def cost_part_to_mse(part):
         basics = '[WUBRG]'
-        if re.fullmatch(basics, part):
+        if regex.fullmatch(basics, part):
             # colored mana
             return part
         if part in ('C', 'E', 'Q', 'S', 'T', 'X'):
@@ -652,17 +646,17 @@ def cost_to_mse(cost):
         if part == 'CHAOS':
             # chaos symbol (planar die)
             return 'A'
-        if re.fullmatch('[0-9]+', part):
+        if regex.fullmatch('[0-9]+', part):
             # colorless mana
             return part
-        if re.fullmatch('{}/{}'.format(basics, basics), part):
+        if regex.fullmatch('{}/{}'.format(basics, basics), part):
             # colored/colored hybrid mana
             return part
-        match = re.fullmatch('({})/P'.format(basics), part)
+        match = regex.fullmatch('({})/P'.format(basics), part)
         if match:
             # Phyrexian mana
             return f'H/{match.group(1)}'
-        if re.fullmatch('2/{}'.format(basics), part):
+        if regex.fullmatch('2/{}'.format(basics), part):
             # colorless/colored hybrid mana
             return part
         raise ValueError('Unknown mana cost part: {{{}}}'.format(part))
@@ -676,10 +670,36 @@ def cost_to_mse(cost):
         result += cost_part_to_mse(part)
     return result
 
+def could_produce(card_info):
+    """Returns the types of mana that could be produced by this card, assuming an empty game state."""
+    #TODO make this more accurate
+    raw_data = card_info._get_raw_data()
+    result = set()
+    for basic_land_type, mana_color in BASIC_LAND_TYPES.items():
+        if basic_land_type in raw_data.get('subtypes', []):
+            result.add(COLOR_ABBREVIATIONS[mana_color])
+    match = regex.search('add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool', raw_data.get('text', ''))
+    if match:
+        for mana_type in match.captures('types'):
+            if mana_type == 'C':
+                result.add('Colorless')
+            else:
+                result.add(COLOR_ABBREVIATIONS[mana_type])
+    if regex.search('add (one|three) mana of any( one)? color to your mana pool', raw_data.get('text', '')):
+        result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
+    if regex.search('add one mana of that color to your mana pool', raw_data.get('text', '')):
+        if card_info.name == 'Rhystic Cave':
+            result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
+        elif card_info.name == 'Meteor Crater':
+            pass # Meteor Crater does not produce mana on an empty board
+        else:
+            raise NotImplementedError('could_produce for {} not implemented'.format(card_info.name))
+    return result
+
 def implicit_colors(cost, short=False):
     def cost_part_colors(part):
         basics = '[WUBRG]'
-        if re.fullmatch(basics, part):
+        if regex.fullmatch(basics, part):
             # colored mana
             return {COLOR_ABBREVIATIONS[part]}
         if part == 'C':
@@ -691,16 +711,16 @@ def implicit_colors(cost, short=False):
         if part == 'X':
             # variable mana
             return set()
-        if re.fullmatch('[0-9]+', part):
+        if regex.fullmatch('[0-9]+', part):
             # colorless mana
             return set()
-        if re.fullmatch('{}/{}'.format(basics, basics), part):
+        if regex.fullmatch('{}/{}'.format(basics, basics), part):
             # colored/colored hybrid mana
             return {COLOR_ABBREVIATIONS[half] for half in part.split('/')}
-        if re.fullmatch('{}/P'.format(basics), part):
+        if regex.fullmatch('{}/P'.format(basics), part):
             # Phyrexian mana
             return {COLOR_ABBREVIATIONS[part[0]]}
-        if re.fullmatch('2/{}'.format(basics), part):
+        if regex.fullmatch('2/{}'.format(basics), part):
             # colorless/colored hybrid mana
             return {COLOR_ABBREVIATIONS[part[2]]}
         raise ValueError('Unknown mana cost part: {{{}}}'.format(part))
@@ -780,7 +800,7 @@ if __name__ == '__main__':
     # normalize card names (DFC, split cards, etc)
     normalized_card_names = set()
     for card_name in sorted(card_names):
-        match = re.fullmatch('(.+?) ?/+ ?.+', card_name)
+        match = regex.fullmatch('(.+?) ?/+ ?.+', card_name)
         if match:
             card_name = match.group(1)
         try:

@@ -681,6 +681,9 @@ def cost_to_mse(cost):
 
 def could_produce(card_info):
     """Returns the types of mana that could be produced by this card, assuming an empty game state."""
+    # hardcoded edge cases
+    if card_info.name == 'Gemstone Caverns':
+        return {'Colorless'}
     #TODO make this more accurate
     raw_data = card_info._get_raw_data()
     result = set()

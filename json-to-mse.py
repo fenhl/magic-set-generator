@@ -372,10 +372,10 @@ class MSEDataFile:
             result[alt_key('image')] = image
         # frame color & color indicator
         frame_color = []
-        if len(card_info.colors) == 0:
+        if raw_data.get('colors', []) == []:
             if 'Artifact' not in card_info.types:
                 frame_color.append('colorless')
-        if len(card_info.colors) > 2:
+        elif len(card_info.colors) > 2:
             frame_color.append('multicolor')
         else:
             frame_color += [c.lower() for c in card_info.colors]
@@ -397,7 +397,7 @@ class MSEDataFile:
             if raw_data.get('colors', []) == []:
                 if image is not None: #TODO and image is full art
                     frame_features |= FrameFeatures.DEVOID
-                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(card_info.manaCost))
+                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(raw_data.get('manaCost')))
                 else:
                     result[alt_key('card color')] = ', '.join(frame_color)
             else:
@@ -407,7 +407,7 @@ class MSEDataFile:
             frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
         if layout == 'vanguard':
-            result[alt_key('type')] = ' '.join((card_info.supertypes if 'supertypes' in raw_data else []) + card_info.types)
+            result[alt_key('type')] = ' '.join((raw_data.get('supertypes', [])) + card_info.types)
         elif 'supertypes' in raw_data:
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:
@@ -426,7 +426,7 @@ class MSEDataFile:
             frame_features |= FrameFeatures.PLANESWALKER
         if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') >= 2:
             frame_features |= FrameFeatures.NYX
-        if 'subtypes' in raw_data and 'Vehicle' in card_info.subtypes:
+        if 'Vehicle' in raw_data.get('subtypes', []):
             frame_features |= FrameFeatures.VEHICLE
         # rarity
         result[alt_key('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
@@ -470,7 +470,7 @@ class MSEDataFile:
                         striations[-1]['power'], striations[-1]['toughness'] = ability.split('/')
                         continue
                 match = re.fullmatch('((?:\\+|-|\u2212)(?:[0-9]+|X)|0): (.*)', ability)
-                if 'Planeswalker' in card_info.type and match:
+                if 'Planeswalker' in card_info.types and match:
                     result[f'loyalty cost {4 * (alt or 1) + i - 3}'] = match.group(1).replace('\u2212', '-')
                     ability = match.group(2)
                 if text != '':
@@ -506,7 +506,7 @@ class MSEDataFile:
                 result[f'toughness {i + 2}'] = striation['toughness']
         # mana symbol
         if alt_key('rule text') not in result or result[alt_key('rule text')] == '':
-            if 'subtypes' in raw_data and more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in card_info.subtypes) == 1:
+            if more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in raw_data.get('subtypes', [])) == 1:
                 subtype = more_itertools.one(subtype for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
                 result[alt_key('watermark')] = 'mana symbol {}'.format(COLOR_ABBREVIATIONS[BASIC_LAND_TYPES[subtype]].lower())
         # P/T

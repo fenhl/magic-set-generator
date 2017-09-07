@@ -389,7 +389,8 @@ class MSEDataFile:
                     if t in BASIC_LAND_TYPES
                 } #TODO include mana abilities
                 if len(land_colors) > 0:
-                    result[alt_key('card color')] = ', '.join(c.lower() for c in land_colors)
+                    result[alt_key('card color')] = ', '.join(c.lower() for c in land_colors) + ', land'
+                    result[alt_key('indicator')] = 'colorless'
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)

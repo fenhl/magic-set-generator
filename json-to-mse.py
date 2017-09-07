@@ -383,7 +383,7 @@ class MSEDataFile:
             frame_color.append('artifact')
         if 'Land' in card_info.types:
             if raw_data.get('colors', []) == []:
-                result[alt_key('card color')] = ', '.join(c.lower() for c in could_produce(card_info)) + ', land'
+                result[alt_key('card color')] = ', '.join(c.lower() for c in could_produce(card_info) if c != 'Colorless') + ', land'
                 result[alt_key('indicator')] = 'colorless'
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
@@ -678,16 +678,16 @@ def could_produce(card_info):
     for basic_land_type, mana_color in BASIC_LAND_TYPES.items():
         if basic_land_type in raw_data.get('subtypes', []):
             result.add(COLOR_ABBREVIATIONS[mana_color])
-    match = regex.search('add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool', raw_data.get('text', ''))
+    match = regex.search('add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool', raw_data.get('text', ''), regex.IGNORECASE)
     if match:
         for mana_type in match.captures('types'):
             if mana_type == 'C':
                 result.add('Colorless')
             else:
                 result.add(COLOR_ABBREVIATIONS[mana_type])
-    if regex.search('add (one|three) mana of any( one)? color to your mana pool', raw_data.get('text', '')):
+    if regex.search('add (one|three) mana of any( one)? color to your mana pool', raw_data.get('text', ''), regex.IGNORECASE):
         result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
-    if regex.search('add one mana of that color to your mana pool', raw_data.get('text', '')):
+    if regex.search('add one mana of that color to your mana pool', raw_data.get('text', ''), regex.IGNORECASE):
         if card_info.name == 'Rhystic Cave':
             result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
         elif card_info.name == 'Meteor Crater':

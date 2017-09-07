@@ -382,8 +382,17 @@ class MSEDataFile:
         if 'Artifact' in card_info.types:
             frame_color.append('artifact')
         if 'Land' in card_info.types:
+            frame_color.append('land')
+        if 'Land' in card_info.types:
             if raw_data.get('colors', []) == []:
-                result[alt_key('card color')] = ', '.join(c.lower() for c in could_produce(card_info) if c != 'Colorless') + ', land'
+                land_colors = [c.lower() for c in could_produce(card_info) if c != 'Colorless']
+                if len(land_colors) > 2:
+                    frame_color = 'multicolor, land'
+                elif len(land_colors) > 0:
+                    frame_color = ', '.join(land_colors) + ', land'
+                else:
+                    frame_color = 'land'
+                result[alt_key('card color')] = frame_color
                 result[alt_key('indicator')] = 'colorless'
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
@@ -419,7 +428,7 @@ class MSEDataFile:
             frame_features |= FrameFeatures.CONSPIRACY
         if 'Planeswalker' in card_info.types:
             frame_features |= FrameFeatures.PLANESWALKER
-        if 'Enchantment' in card_info.types and more_itertools.ilen(card_type for card_type in card_info.types if card_type != 'Tribal') >= 2:
+        if 'Enchantment' in card_info.types and more_itertools.quantify(card_type != 'Tribal' for card_type in card_info.types) >= 2:
             frame_features |= FrameFeatures.NYX
         if 'Vehicle' in raw_data.get('subtypes', []):
             frame_features |= FrameFeatures.VEHICLE

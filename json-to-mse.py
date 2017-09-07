@@ -370,16 +370,39 @@ class MSEDataFile:
         # image
         if image is not None:
             result[alt_key('image')] = image
-        # color indicator
-        if set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
+        # frame color & color indicator
+        frame_color = []
+        if len(card_info.colors) == 0:
+            if 'Artifact' not in card_info.types:
+                frame_color.append('colorless')
+        if len(card_info.colors) > 2:
+            frame_color.append('multicolor')
+        else:
+            frame_color += [c.lower() for c in card_info.colors]
+        if 'Artifact' in card_info.types:
+            frame_color.append('artifact')
+        if 'Land' in card_info.types:
             if raw_data.get('colors', []) == []:
-                frame_features |= FrameFeatures.DEVOID
-                if image is not None:
-                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(card_info.manaCost))
+                land_colors = {
+                    COLOR_ABBREVIATIONS[BASIC_LAND_TYPES[t]]
+                    for t in raw_data.get('subtypes', [])
+                    if t in BASIC_LAND_TYPES
+                } #TODO include mana abilities
+                if len(land_colors) > 0:
+                    result[alt_key('card color')] = ', '.join(c.lower() for c in land_colors)
             else:
-                result[alt_key('card color')] = result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
-                #TODO make sure MSE renders two-color gold cards in the correct order
-                #TODO make sure MSE renders 3+ color gold cards without the gradient
+                result[alt_key('card color')] = ', '.join(frame_color)
+                result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
+        elif set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
+            if raw_data.get('colors', []) == []:
+                if image is not None: #TODO and image is full art
+                    frame_features |= FrameFeatures.DEVOID
+                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(card_info.manaCost))
+                else:
+                    result[alt_key('card color')] = ', '.join(frame_color)
+            else:
+                result[alt_key('card color')] = ', '.join(frame_color)
+                result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
         elif set(raw_data.get('colors', [])):
             frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
@@ -543,18 +566,7 @@ class MSEDataFile:
             elif FrameFeatures.MIRACLE in frame_features:
                 result['stylesheet'] = 'm15-miracle'
             elif FrameFeatures.DEVOID in frame_features:
-                if image is None: #TODO or if image isn't full art
-                    # don't use devoid frame because it assumes full art
-                    pass # m15-extra seems to be broken
-                    #result['stylesheet'] = 'm15-extra'
-                    #result['has styling'] = True
-                    #result['styling data'] = {
-                    #    'outer color': 'colorless',
-                    #    'trim color': 'colorless',
-                    #    'inner color': 'default'
-                    #}
-                else:
-                    result['stylesheet'] = 'm15-devoid'
+                result['stylesheet'] = 'm15-devoid'
             elif FrameFeatures.VEHICLE in frame_features:
                 result['stylesheet'] = 'vehicles'
             elif FrameFeatures.NYX in frame_features:

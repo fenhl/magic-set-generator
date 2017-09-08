@@ -667,7 +667,7 @@ def cost_to_mse(cost):
             return part
         if part == 'CHAOS':
             # chaos symbol (planar die)
-            return 'A'
+            return 'chaos'
         if regex.fullmatch('[0-9]+', part):
             # colorless mana
             return part

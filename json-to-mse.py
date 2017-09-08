@@ -380,8 +380,11 @@ class MSEDataFile:
             image = images / f'{card_name}.png'
             result[alt_key('image')] = f'image{len(images_to_add) + 1}'
             images_to_add.append(image)
+            with PIL.Image.open(image) as img:
+                image_is_vertical = img.size[1] > img.size[0]
         else:
             image = None
+            image_is_vertical = False
         # frame color & color indicator
         frame_color = []
         if raw_data.get('colors', []) == []:
@@ -411,7 +414,7 @@ class MSEDataFile:
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
         elif set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
             if raw_data.get('colors', []) == []:
-                if image is not None: #TODO and image is full art
+                if image_is_vertical:
                     frame_features |= FrameFeatures.DEVOID
                     result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(raw_data.get('manaCost')))
                 else:
@@ -420,7 +423,8 @@ class MSEDataFile:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
         elif set(raw_data.get('colors', [])):
-            frame_features |= FrameFeatures.TRUE_COLORLESS
+            if not any(card_type in card_info.types for card_type in ['artifact', 'land', 'phenomenon', 'plane', 'scheme', 'vanguard']) and image_is_vertical:
+                frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
         if layout == 'vanguard':
             result[alt_key('type')] = ' '.join((raw_data.get('supertypes', [])) + card_info.types)
@@ -588,6 +592,8 @@ class MSEDataFile:
                 result['stylesheet'] = 'vehicles'
             elif FrameFeatures.NYX in frame_features:
                 result['stylesheet'] = 'm15-nyx'
+            elif FrameFeatures.TRUE_COLORLESS in frame_features:
+                result['stylesheet'] = 'm15-clear'
             return result
 
     def get(self, key):

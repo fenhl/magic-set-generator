@@ -2,6 +2,7 @@
 
 import sys
 
+import PIL.Image
 import contextlib
 import enum
 import io

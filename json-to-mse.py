@@ -42,6 +42,7 @@ class CommandLineArgs:
         self.copyright = 'NOT FOR SALE'
         self.decklists = set()
         self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/search-engine/bin/find_cards')
+        self.images = None
         self._include_planes = None
         self._include_vanguards = None
         self.new_wedge_order = False
@@ -61,6 +62,9 @@ class CommandLineArgs:
                 mode = None
             elif mode == 'find-cards':
                 self.find_cards = pathlib.Path(arg)
+                mode = None
+            elif mode == 'images':
+                self.images = pathlib.Path(arg)
                 mode = None
             elif mode == 'input':
                 self.set_input(arg)
@@ -91,6 +95,10 @@ class CommandLineArgs:
                         mode = 'find-cards'
                     elif arg.startswith('--find-cards='):
                         self.find_cards = pathlib.Path(arg[len('--find-cards='):])
+                    elif arg == '--images':
+                        mode = 'images'
+                    elif arg.startswith('--images='):
+                        self.images = pathlib.Path(arg[len('--images='):])
                     elif arg == '--include-planes':
                         self.include_planes = True
                     elif arg == '--no-include-planes':
@@ -244,6 +252,7 @@ class FrameFeatures(enum.Flag):
 
 class MSEDataFile:
     def __init__(self, data={}):
+        self.images = []
         self.items = []
         for key, value in data.items():
             self[key] = value
@@ -291,8 +300,8 @@ class MSEDataFile:
             value = 'false'
         self.items.append((key, value))
 
-    def add_card(self, card_info, db, layout=None):
-        card = self.__class__.from_card(card_info, db, layout=layout)
+    def add_card(self, card_info, db, layout=None, images=None):
+        card, self.__class__.from_card(card_info, db, layout=layout, images=images, images_to_add=self.images)
         self.add('card', card)
         with contextlib.suppress(KeyError):
             stylesheet = card['stylesheet']
@@ -301,7 +310,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, layout=None, image=None, *, alt=False):
+    def from_card(cls, card_info, db, layout=None, images=None, images_to_add=None, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -331,20 +340,20 @@ class MSEDataFile:
             elif card_info.layout == 'double-faced':
                 if not alt:
                     frame_features |= FrameFeatures.DFC
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    alt_result, alt_frame_features, alt_images = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'flip':
                 if not alt:
                     frame_features |= FrameFeatures.FLIP
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    alt_result, alt_frame_features, alt_images = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
                     result |= alt_result
             elif card_info.layout == 'leveler':
                 frame_features |= FrameFeatures.LEVELER
             elif card_info.layout == 'split':
                 if not alt:
                     frame_features |= FrameFeatures.SPLIT
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, alt=2)
+                    alt_result, alt_frame_features, alt_images = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
@@ -366,10 +375,13 @@ class MSEDataFile:
         # mana cost
         if 'manaCost' in raw_data:
             result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost)
-            #TODO check to add hybrid frame feature
         # image
-        if image is not None:
-            result[alt_key('image')] = image
+        if images_to_add is not None and (images / f'{card_name}.png').exists():
+            image = images / f'{card_name}.png'
+            result[alt_key('image')] = f'image{len(images_to_add) + 1}'
+            images_to_add.append(image)
+        else:
+            image = None
         # frame color & color indicator
         frame_color = []
         if raw_data.get('colors', []) == []:
@@ -526,15 +538,16 @@ class MSEDataFile:
             result[alt_key('handmod' if layout == 'vanguard' else 'power')] = f'{card_info.hand:+}'
         if 'life' in raw_data:
             result[alt_key('lifemod' if layout == 'vanguard' else 'toughness')] = f'{card_info.life:+}'
+        #TODO artist credit
         # stylesheet
         if alt:
-            return result, frame_features
+            return result, frame_features, images_to_add
         elif layout == 'planechase':
             if 'Phenomenon' in card_info.types:
                 result['stylesheet'] = 'phenomenon'
-            return result
+            return result, images_to_add
         elif layout == 'vanguard':
-            return result
+            return result, images_to_add
         else:
             if FrameFeatures.SPLIT in frame_features:
                 if FrameFeatures.FUSE in frame_features:
@@ -575,7 +588,7 @@ class MSEDataFile:
                 result['stylesheet'] = 'vehicles'
             elif FrameFeatures.NYX in frame_features:
                 result['stylesheet'] = 'm15-nyx'
-            return result
+            return result, images_to_add
 
     def get(self, key):
         for iter_key, value in self.items:
@@ -907,14 +920,14 @@ if __name__ == '__main__':
         try:
             if 'Plane' in card.types or 'Phenomenon' in card.types:
                 if args.include_planes:
-                    set_file.add_card(card, db)
-                planes_set_file.add_card(card, db, layout='planechase')
+                    set_file.add_card(card, db, images=args.images)
+                planes_set_file.add_card(card, db, layout='planechase', images=args.images)
             elif 'Vanguard' in card.types:
                 if args.include_vanguards:
-                    set_file.add_card(card, db)
-                vanguards_set_file.add_card(card, db, layout='vanguard')
+                    set_file.add_card(card, db, images=args.images)
+                vanguards_set_file.add_card(card, db, layout='vanguard', images=args.images)
             else:
-                set_file.add_card(card, db)
+                set_file.add_card(card, db, images=args.images)
         except Exception as e:
             if args.verbose:
                 raise RuntimeError(f'Failed to add card {card_name}') from e
@@ -946,17 +959,23 @@ if __name__ == '__main__':
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:
         f.writestr('set', str(set_file))
+        for i, image_path in enumerate(set_file.images):
+            f.write(image_path, arcname=f'image{i + 1}')
     args.output.write(buf.getvalue())
     args.output.flush()
     if args.planes_output is not None:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'x') as f:
             f.writestr('set', str(planes_set_file))
+            for i, image_path in enumerate(planes_set_file.images):
+                f.write(image_path, arcname=f'image{i + 1}')
         args.planes_output.write(buf.getvalue())
         args.planes_output.flush()
     if args.vanguards_output is not None:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'x') as f:
             f.writestr('set', str(vanguards_set_file))
+            for i, image_path in enumerate(vanguards_set_file.images):
+                f.write(image_path, arcname=f'image{i + 1}')
         args.vanguards_output.write(buf.getvalue())
         args.vanguards_output.flush()

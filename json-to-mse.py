@@ -301,7 +301,7 @@ class MSEDataFile:
         self.items.append((key, value))
 
     def add_card(self, card_info, db, layout=None, images=None):
-        card, self.__class__.from_card(card_info, db, layout=layout, images=images, images_to_add=self.images)
+        card = self.__class__.from_card(card_info, db, layout=layout, images=images, images_to_add=self.images)
         self.add('card', card)
         with contextlib.suppress(KeyError):
             stylesheet = card['stylesheet']
@@ -340,20 +340,20 @@ class MSEDataFile:
             elif card_info.layout == 'double-faced':
                 if not alt:
                     frame_features |= FrameFeatures.DFC
-                    alt_result, alt_frame_features, alt_images = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'flip':
                 if not alt:
                     frame_features |= FrameFeatures.FLIP
-                    alt_result, alt_frame_features, alt_images = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
                     result |= alt_result
             elif card_info.layout == 'leveler':
                 frame_features |= FrameFeatures.LEVELER
             elif card_info.layout == 'split':
                 if not alt:
                     frame_features |= FrameFeatures.SPLIT
-                    alt_result, alt_frame_features, alt_images = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
@@ -541,13 +541,13 @@ class MSEDataFile:
         #TODO artist credit
         # stylesheet
         if alt:
-            return result, frame_features, images_to_add
+            return result, frame_features
         elif layout == 'planechase':
             if 'Phenomenon' in card_info.types:
                 result['stylesheet'] = 'phenomenon'
-            return result, images_to_add
+            return result
         elif layout == 'vanguard':
-            return result, images_to_add
+            return result
         else:
             if FrameFeatures.SPLIT in frame_features:
                 if FrameFeatures.FUSE in frame_features:
@@ -588,7 +588,7 @@ class MSEDataFile:
                 result['stylesheet'] = 'vehicles'
             elif FrameFeatures.NYX in frame_features:
                 result['stylesheet'] = 'm15-nyx'
-            return result, images_to_add
+            return result
 
     def get(self, key):
         for iter_key, value in self.items:

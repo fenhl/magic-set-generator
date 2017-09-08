@@ -690,7 +690,7 @@ def could_produce(card_info):
     for basic_land_type, mana_color in BASIC_LAND_TYPES.items():
         if basic_land_type in raw_data.get('subtypes', []):
             result.add(COLOR_ABBREVIATIONS[mana_color])
-    match = regex.search('add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool', raw_data.get('text', ''), regex.IGNORECASE)
+    match = regex.search('(.*add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool)+', raw_data.get('text', ''), regex.IGNORECASE)
     if match:
         for mana_type in match.captures('types'):
             if mana_type == 'C':

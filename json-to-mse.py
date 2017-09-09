@@ -423,8 +423,8 @@ class MSEDataFile:
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
-        elif set(raw_data.get('colors', [])):
-            if not any(card_type in card_info.types for card_type in ['artifact', 'land', 'phenomenon', 'plane', 'scheme', 'vanguard']) and image_is_vertical:
+        elif raw_data.get('colors', []) == []:
+            if image_is_vertical and not any(card_type in card_info.types for card_type in ['Artifact', 'Land', 'Phenomenon', 'Plane', 'Scheme', 'Vanguard']):
                 frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
         if layout == 'vanguard':

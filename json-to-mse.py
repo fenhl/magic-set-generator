@@ -225,7 +225,7 @@ class CommandLineArgs:
             self.cards |= {
                 image_path.stem
                 for image_path in input_path.iterdir()
-                if image_path.suffix == '.png
+                if image_path.suffix == '.png'
             }
         else:
             with input_path.open() as f:

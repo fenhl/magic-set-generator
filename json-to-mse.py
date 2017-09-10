@@ -513,7 +513,7 @@ class MSEDataFile:
                 for j, word in enumerate(ability.split(' ')):
                     if j > 0:
                         text += ' '
-                    for k, word_part in enumerate(ability.split('\u2014')): # em dash
+                    for k, word_part in enumerate(word.split('\u2014')): # em dash
                         if k > 0:
                             text += '\u2014'
                         if j == 0 and k == 0 and word_part == 'Miracle':

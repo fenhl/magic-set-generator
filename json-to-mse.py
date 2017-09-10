@@ -230,6 +230,7 @@ class FrameFeatures(enum.Flag):
     DFC = enum.auto()
     DRAFT_MATTERS = enum.auto()
     FLIP = enum.auto()
+    FULL_ART_LAND = enum.auto()
     FUSE = enum.auto()
     LEVELER = enum.auto()
     MIRACLE = enum.auto()
@@ -525,11 +526,18 @@ class MSEDataFile:
                 result[f'rule text {i + 2}'] = striation['text']
                 result[f'power {i + 2}'] = striation['power']
                 result[f'toughness {i + 2}'] = striation['toughness']
-        # mana symbol
+        # layouts and mana symbol watermarks for vanilla cards
         if alt_key('rule text') not in result or result[alt_key('rule text')] == '':
             if more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in raw_data.get('subtypes', [])) == 1:
                 subtype = more_itertools.one(subtype for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
                 result[alt_key('watermark')] = 'mana symbol {}'.format(COLOR_ABBREVIATIONS[BASIC_LAND_TYPES[subtype]].lower())
+            elif more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in raw_data.get('subtypes', [])) == 2:
+                color1, color2 = (BASIC_LAND_TYPES[subtype] for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
+                result[alt_key('watermark')] = 'colored xander hybrid mana {}/{}'.format(color1, color2)
+            if 'Land' in card_info.types and image_is_vertical:
+                if 'power' not in raw_data and 'toughness' not in raw_data and result[alt_key('indicator')] == 'colorless':
+                    #TODO remove the above condition once support for color indicators and P/T boxes is added to the full-art land template
+                    frame_features |= FrameFeatures.FULL_ART_LAND
         # P/T
         if 'power' in raw_data:
             result[alt_key('power')] = card_info.power
@@ -595,6 +603,8 @@ class MSEDataFile:
                 result['stylesheet'] = 'm15-nyx'
             elif FrameFeatures.TRUE_COLORLESS in frame_features:
                 result['stylesheet'] = 'm15-clear'
+            elif FrameFeatures.FULL_ART_LAND in frame_features:
+                result['stylesheet'] = 'm15-textless-land'
             return result
 
     def get(self, key):

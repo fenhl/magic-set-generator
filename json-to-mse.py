@@ -388,8 +388,8 @@ class MSEDataFile:
         if 'manaCost' in raw_data:
             result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost)
         # image
-        if images is not None and images_to_add is not None and (images / f'{card_name}.png').exists():
-            image = images / f'{card_name}.png'
+        if images is not None and images_to_add is not None and (images / f'{card_info.name}.png').exists():
+            image = images / f'{card_info.name}.png'
             result[alt_key('image')] = f'image{len(images_to_add) + 1}'
             images_to_add.append(image)
             with PIL.Image.open(image) as img:
@@ -817,7 +817,7 @@ def mtg_json(*, extras=False, verbose=False):
                 print('\r[ ok ]', file=sys.stderr)
         return CACHE['db']
 
-if __name__ == '__main__':
+def main():
     try:
         args = CommandLineArgs()
     except ValueError as e:
@@ -1006,3 +1006,6 @@ if __name__ == '__main__':
                 f.write(image_path, arcname=f'image{i + 1}')
         args.vanguards_output.write(buf.getvalue())
         args.vanguards_output.flush()
+
+if __name__ == '__main__':
+    main()

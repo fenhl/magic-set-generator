@@ -513,17 +513,20 @@ class MSEDataFile:
                 for j, word in enumerate(ability.split(' ')):
                     if j > 0:
                         text += ' '
-                    if j == 0 and word == 'Miracle':
-                        frame_features |= FrameFeatures.MIRACLE
-                    if regex.fullmatch('[Dd]raft(ed)?', word):
-                        frame_features |= FrameFeatures.DRAFT_MATTERS
-                    match = regex.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word)
-                    if match:
-                        text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
-                    elif regex.fullmatch('[0-9]+|X', word):
-                        text += f'</sym>{word}<sym>'
-                    else:
-                        text += word
+                    for k, word_part in enumerate(ability.split('\u2014')): # em dash
+                        if k > 0:
+                            text += '\u2014'
+                        if j == 0 and k == 0 and word_part == 'Miracle':
+                            frame_features |= FrameFeatures.MIRACLE
+                        if regex.fullmatch('[Dd]raft(ed)?', word_part):
+                            frame_features |= FrameFeatures.DRAFT_MATTERS
+                        match = regex.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word_part)
+                        if match:
+                            text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
+                        elif regex.fullmatch('[0-9]+|X', word_part):
+                            text += f'</sym>{word_part}<sym>'
+                        else:
+                            text += word_part
             if len(striations) > 0:
                 striations[-1]['text'] = text
             else:

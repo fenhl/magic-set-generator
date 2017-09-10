@@ -218,9 +218,19 @@ class CommandLineArgs:
         self.cards.add(line)
 
     def set_input(self, input_filename):
-        with open(input_filename) as f:
-            for line in f:
-                self.parse_input(line)
+        input_path = pathlib.Path(input_filename)
+        if input_path.is_dir():
+            if self.images is None:
+                self.images = input_path
+            self.cards |= {
+                image_path.stem
+                for image_path in input_path.iterdir()
+                if image_path.suffix == '.png
+            }
+        else:
+            with input_path.open() as f:
+                for line in f:
+                    self.parse_input(line)
 
 class FrameFeatures(enum.Flag):
     NONE = 0

@@ -979,6 +979,8 @@ def main():
                 pass # keep leveler cards left-aligned
             elif stylesheet in ('m15-split', 'm15-split-fuse'):
                 styling['center text 1'] = styling['center text 2'] = 'always'
+            elif stylesheet == 'm15-textless-land':
+                del styling['text box mana symbols'] # stylesheet has no text box
             else:
                 styling['center text'] = 'short text only'
             set_file['styling'][f'magic-{stylesheet}'] = styling

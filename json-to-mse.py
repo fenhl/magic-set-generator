@@ -594,6 +594,14 @@ class MSEDataFile:
                 else:
                     if FrameFeatures.PLANESWALKER_BACK in frame_features:
                         result['stylesheet'] = 'm15-doublefaced-sparker' #TODO borderable?
+                    elif FrameFeatures.TRUE_COLORLESS_BACK in frame_features:
+                        result['stylesheet'] = 'm15-colored-to-clear'
+                        result['extra data'] = {
+                            'magic-m15-colored-to-clear': {
+                                'corner': 'day',
+                                'corner 2': 'night'
+                            }
+                        }
                     else:
                         result['stylesheet'] = 'm15-doublefaced'
             elif FrameFeatures.PLANESWALKER in frame_features:

@@ -597,7 +597,10 @@ class MSEDataFile:
                     else:
                         result['stylesheet'] = 'm15-doublefaced'
             elif FrameFeatures.PLANESWALKER in frame_features:
-                result['stylesheet'] = 'm15-planeswalker-2abil'
+                if FrameFeatures.TRUE_COLORLESS in frame_features:
+                    result['stylesheet'] = 'm15-planeswalker-clear'
+                else:
+                    result['stylesheet'] = 'm15-planeswalker-2abil'
             elif FrameFeatures.LEVELER in frame_features:
                 result['stylesheet'] = 'm15-leveler'
             elif FrameFeatures.CONSPIRACY in frame_features:

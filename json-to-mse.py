@@ -385,7 +385,7 @@ class MSEDataFile:
         # name
         result[alt_key('name')] = card_info.name
         # mana cost
-        if 'manaCost' in raw_data:
+        if 'manaCost' in raw_data and not (alt and card_info.layout == 'flip'):
             result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost)
         # image
         if images is not None and images_to_add is not None and (images / f'{card_info.name}.png').exists():

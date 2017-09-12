@@ -38,6 +38,7 @@ COLOR_ABBREVIATIONS = {
 
 class CommandLineArgs:
     def __init__(self, args=sys.argv[1:]):
+        self.auto_card_numbers = False
         self.border_color = None
         self.cards = set()
         self.copyright = 'NOT FOR SALE'
@@ -84,7 +85,9 @@ class CommandLineArgs:
                 mode = None
             elif arg.startswith('-'):
                 if arg.startswith('--'):
-                    if arg == '--border':
+                    if arg == '--auto-card-numbers':
+                        self.auto_card_numbers = True
+                    elif arg == '--border':
                         mode = 'border'
                     elif arg.startswith('--border='):
                         self.set_border_color(arg[len('--border='):])
@@ -889,7 +892,8 @@ def main():
         'set code': args.set_code,
         'set language': 'EN',
         'mark errors': 'no',
-        'automatic reminder text': ''
+        'automatic reminder text': '',
+        'automatic card numbers': 'yes' if args.auto_card_numbers else 'no'
     }
     if args.new_wedge_order:
         set_info['wedge mana costs'] = 'yes'
@@ -915,7 +919,7 @@ def main():
         'set language': 'EN',
         'mark errors': 'no',
         'automatic reminder text': '',
-        'automatic card numbers': 'no'
+        'automatic card numbers': 'yes' if args.auto_card_numbers else 'no'
     }
     planes_set_file['styling'] = { # styling needs to be above cards
         'planechase-standard': {
@@ -939,7 +943,7 @@ def main():
         'set language': 'EN',
         'mark errors': 'no',
         'automatic reminder text': '',
-        'automatic card numbers': 'no'
+        'automatic card numbers': 'yes' if args.auto_card_numbers else 'no'
     }
     if args.border_color is not None:
         vanguards_set_info['border color'] = args.border_color

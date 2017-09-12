@@ -1003,13 +1003,19 @@ def main():
     set_file['version control'] = planes_set_file['version control'] = {'type': 'none'}
     set_file['apprentice code'] = planes_set_file['apprentice code'] = ''
     # zip and write set files
+    if args.verbose:
+        print('[....] adding images and saving', end='\r', flush=True, file=sys.stderr)
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, 'x') as f:
         f.writestr('set', str(set_file))
         for i, image_path in enumerate(set_file.images):
             f.write(image_path, arcname=f'image{i + 1}')
+    if args.verbose:
+        print('[=...]', end='\r', flush=True, file=sys.stderr)
     args.output.write(buf.getvalue())
     args.output.flush()
+    if args.verbose:
+        print('[==..]', end='\r', flush=True, file=sys.stderr)
     if args.planes_output is not None:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'x') as f:
@@ -1018,6 +1024,8 @@ def main():
                 f.write(image_path, arcname=f'image{i + 1}')
         args.planes_output.write(buf.getvalue())
         args.planes_output.flush()
+    if args.verbose:
+        print('[===.]', end='\r', flush=True, file=sys.stderr)
     if args.vanguards_output is not None:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'x') as f:
@@ -1026,6 +1034,8 @@ def main():
                 f.write(image_path, arcname=f'image{i + 1}')
         args.vanguards_output.write(buf.getvalue())
         args.vanguards_output.flush()
+    if args.verbose:
+        print('[ ok ]', file=sys.stderr)
 
 if __name__ == '__main__':
     main()

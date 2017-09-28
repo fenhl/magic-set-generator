@@ -73,10 +73,10 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
 * `--auto-card-numbers`: Display automatically-assigned collector numbers on the cards, below the text box.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
 * `--find-cards=<path>`: The path to the `find_cards` executable used for [mtg.wtf syntax](https://mtg.wtf/help/syntax). Defaults to `git\github.com\taw\magic-search-engine\master\search-engine\bin\find_cards`.
-* `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>/<card name>.png`. By default, the generated set file does not include any images.
+* `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>\<card name>.png`. By default, the generated set file does not include any images.
 * `--[no-]include-planes`: Enable or disable the inclusion of planes and phenomena as regular-sized cards in the main set file. This is on by default unless `--planes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
-* `--new-wedge-order`: In mana costs, order three-color wedges using the new order (e.g. `WBG`) instead of the new one (e.g. `BGW`). Note that because of a bug in MSE, using this option breaks shard color order.
+* `--new-wedge-order`: In mana costs, order three-color wedges using the new order (e.g. `WBG`) instead of the old one (e.g. `BGW`). Note that because of a bug in MSE, using this option breaks shard color order.
 * `--planes-output=<path>`: Save planes and phenomena to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
 * `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.

@@ -315,8 +315,8 @@ class MSEDataFile:
             value = 'false'
         self.items.append((key, value))
 
-    def add_card(self, card_info, db, layout=None, images=None):
-        card = self.__class__.from_card(card_info, db, layout=layout, images=images, images_to_add=self.images)
+    def add_card(self, card_info, db, layout=None, images=None, new_wedge_order=False):
+        card = self.__class__.from_card(card_info, db, layout=layout, images=images, images_to_add=self.images, new_wedge_order=new_wedge_order)
         self.add('card', card)
         with contextlib.suppress(KeyError):
             stylesheet = card['stylesheet']
@@ -325,7 +325,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, layout=None, images=None, images_to_add=None, *, alt=False):
+    def from_card(cls, card_info, db, layout=None, images=None, images_to_add=None, new_wedge_order=False, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -389,7 +389,7 @@ class MSEDataFile:
         result[alt_key('name')] = card_info.name
         # mana cost
         if 'manaCost' in raw_data and not (alt and card_info.layout == 'flip'):
-            result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost)
+            result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost, normalize=new_wedge_order)
         # image
         if images is not None and images_to_add is not None and (images / f'{card_info.name}.png').exists():
             image = images / f'{card_info.name}.png'
@@ -525,7 +525,7 @@ class MSEDataFile:
                             frame_features |= FrameFeatures.DRAFT_MATTERS
                         match = regex.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word_part)
                         if match:
-                            text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2))}</sym>{match.group(3)}'
+                            text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2), normalize=new_wedge_order)}</sym>{match.group(3)}'
                         elif regex.fullmatch('[0-9]+|X', word_part):
                             text += f'</sym>{word_part}<sym>'
                         else:
@@ -700,7 +700,59 @@ class Rarity(OrderedEnum):
             'Special': cls.SPECIAL
         }[rarity_str]
 
-def cost_to_mse(cost):
+def cost_to_mse(cost, *, normalize=False):
+    def canonical_order(result_list, symbols):
+        counts = [0, 0, 0, 0, 0]
+        for i in reversed(range(len(result_list))):
+            for color, symbol in enumerate(symbols):
+                if result_list[i] == symbol:
+                    counts[color] += 1
+                    del result_list[i]
+        colors_present = tuple(count > 0 for count in counts)
+        order = {
+            #colorless
+            (False, False, False, False, False): [],
+            # single colors
+            (True, False, False, False, False): [0],
+            (False, True, False, False, False): [1],
+            (False, False, True, False, False): [2],
+            (False, False, False, True, False): [3],
+            (False, False, False, False, True): [4],
+            # allied pairs
+            (True, True, False, False, False): [0, 1],
+            (False, True, True, False, False): [1, 2],
+            (False, False, True, True, False): [2, 3],
+            (False, False, False, True, True): [3, 4],
+            (True, False, False, False, True): [4, 0],
+            # enemy pairs
+            (True, False, True, False, False): [0, 2],
+            (False, True, False, True, False): [1, 3],
+            (False, False, True, False, True): [2, 4],
+            (True, False, False, True, False): [3, 0],
+            (False, True, False, False, True): [4, 1],
+            # shards
+            (True, True, False, False, True): [4, 0, 1],
+            (True, True, True, False, False): [0, 1, 2],
+            (False, True, True, True, False): [1, 2, 3],
+            (False, False, True, True, True): [2, 3, 4],
+            (True, False, False, True, True): [3, 4, 0],
+            # wedges
+            (True, False, True, False, True): [0, 2, 4],
+            (True, True, False, True, False): [1, 3, 0],
+            (False, True, True, False, True): [2, 4, 1],
+            (True, False, True, True, False): [3, 0, 2],
+            (False, True, False, True, True): [4, 1, 3],
+            # nephilim
+            (True, True, True, True, False): [0, 1, 2, 3],
+            (False, True, True, True, True): [1, 2, 3, 4],
+            (True, False, True, True, True): [2, 3, 4, 0],
+            (True, True, False, True, True): [3, 4, 0, 1],
+            (True, True, True, False, True): [4, 0, 1, 2],
+            # rainbow
+            (True, True, True, True, True): [0, 1, 2, 3, 4]
+        }[colors_present]
+        return ''.join(symbols[color] * counts[color] for color in order)
+
     def cost_part_to_mse(part):
         basics = '[WUBRG]'
         if regex.fullmatch(basics, part):
@@ -731,9 +783,57 @@ def cost_to_mse(cost):
         return ''
     if cost[0] != '{' or cost[-1] != '}':
         raise ValueError('Cost must start with { and end with }')
-    result = ''
+    result_list = []
     for part in cost[1:-1].split('}{'):
-        result += cost_part_to_mse(part)
+        result_list.append(cost_part_to_mse(part))
+    if normalize:
+        result = ''
+        # generic and colorless costs
+        for i in reversed(range(len(result_list))):
+            if result_list[i] == '{X}':
+                result += '{X}'
+                del result_list[i]
+        total = 0
+        for i in reversed(range(len(result_list))):
+            try:
+                generic = int(result_list[i][1:-1])
+            except contextlib.suppress(ValueError):
+                pass
+            else:
+                if generic == 0:
+                    result += '{0}'
+                total += generic
+                del result_list[i]
+        if total > 0:
+            result += f'{{{total}}}'
+        for i in reversed(range(len(result_list))):
+            if result_list[i] == '{S}':
+                result += '{S}'
+                del result_list[i]
+        for i in reversed(range(len(result_list))):
+            if result_list[i] == '{C}':
+                result += '{C}'
+                del result_list[i]
+        # twobrid
+        for i in reversed(range(len(result_list))):
+            if result_list[i] == '{C}':
+                result += '{C}'
+                del result_list[i]
+        result += canonical_order(result_list, ['{2/W}', '{2/U}', '{2/B}', '{2/R}', '{2/G}'])
+        # hybrid
+        for symbol in ['{W/U}', '{U/B}', '{B/R}', '{R/G}', '{G/W}', '{W/B}', '{U/R}', '{B/G}', '{R/W}', '{G/U}']:
+            for i in reversed(range(len(result_list))):
+                if result_list[i] == symbol:
+                    result += symbol
+                    del result_list[i]
+        # Phyrexian
+        result += canonical_order(result_list, ['{W/P}', '{U/P}', '{B/P}', '{R/P}', '{G/P}'])
+        # colored
+        result += canonical_order(result_list, ['{W}', '{U}', '{B}', '{R}', '{G}'])
+        # other
+        result += ''.join(result_list)
+    else:
+        result = ''.join(result_list)
     return result
 
 def could_produce(card_info):
@@ -896,8 +996,7 @@ def main():
         'automatic reminder text': '',
         'automatic card numbers': 'yes' if args.auto_card_numbers else 'no'
     }
-    if args.new_wedge_order:
-        set_info['wedge mana costs'] = 'yes'
+    set_info['mana cost sorting'] = 'unsorted'
     if args.border_color is not None:
         set_info['border color'] = args.border_color
     set_file['set info'] = set_info
@@ -966,14 +1065,14 @@ def main():
         try:
             if 'Plane' in card.types or 'Phenomenon' in card.types:
                 if args.include_planes:
-                    set_file.add_card(card, db, images=args.images)
-                planes_set_file.add_card(card, db, layout='planechase', images=args.images)
+                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order)
+                planes_set_file.add_card(card, db, layout='planechase', images=args.images, new_wedge_order=args.new_wedge_order)
             elif 'Vanguard' in card.types:
                 if args.include_vanguards:
-                    set_file.add_card(card, db, images=args.images)
-                vanguards_set_file.add_card(card, db, layout='vanguard', images=args.images)
+                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order)
+                vanguards_set_file.add_card(card, db, layout='vanguard', images=args.images, new_wedge_order=args.new_wedge_order)
             else:
-                set_file.add_card(card, db, images=args.images)
+                set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order)
         except Exception as e:
             if args.verbose:
                 raise RuntimeError(f'Failed to add card {card_name}') from e

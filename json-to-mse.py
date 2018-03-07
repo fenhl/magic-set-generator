@@ -551,9 +551,7 @@ class MSEDataFile:
                 color1, color2 = (BASIC_LAND_TYPES[subtype] for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
                 result[alt_key('watermark')] = 'colored xander hybrid mana {}/{}'.format(color1, color2)
             if 'Land' in card_info.types and image_is_vertical:
-                if 'power' not in raw_data and 'toughness' not in raw_data and result[alt_key('indicator')] == 'colorless':
-                    #TODO remove the above condition once support for color indicators and P/T boxes is added to the full-art land template
-                    frame_features |= FrameFeatures.FULL_ART_LAND
+                frame_features |= FrameFeatures.FULL_ART_LAND
         # P/T
         if 'power' in raw_data:
             result[alt_key('power')] = card_info.power

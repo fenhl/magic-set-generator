@@ -848,6 +848,7 @@ def main():
             progress = min(4, 5 * i // len(args.decklists))
             print('[{}{}] downloading decklists: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(args.decklists)), end='\r', flush=True, file=sys.stderr)
         response = requests.get(decklist_url)
+        response.raise_for_status()
         response.encoding = 'utf-8'
         card_names |= {
             line.split(' ', 1)[1].replace('’', "'")

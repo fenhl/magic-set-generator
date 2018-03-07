@@ -708,6 +708,7 @@ def cost_to_mse(cost, *, normalize=False):
                 if result_list[i] == symbol:
                     counts[color] += 1
                     del result_list[i]
+                    break
         colors_present = tuple(count > 0 for count in counts)
         order = {
             #colorless
@@ -825,7 +826,7 @@ def cost_to_mse(cost, *, normalize=False):
         # Phyrexian
         result += canonical_order(result_list, ['W/P', 'U/P', 'B/P', 'R/P', 'G/P'])
         # colored
-        result += canonical_order(result_list, ['W', '{U}', '{B}', '{R}', '{G}'])
+        result += canonical_order(result_list, ['W', 'U', 'B', 'R', 'G'])
         # other
     return result + ''.join(cost_part_to_mse(part) for part in result_list)
 

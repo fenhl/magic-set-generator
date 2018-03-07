@@ -785,7 +785,7 @@ def cost_to_mse(cost, *, normalize=False):
         raise ValueError('Cost must start with { and end with }')
     result_list = []
     for part in cost[1:-1].split('}{'):
-        result_list.append(cost_part_to_mse(part))
+        result_list.append(part)
     result = ''
     if normalize:
         # generic and colorless costs

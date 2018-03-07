@@ -797,7 +797,7 @@ def cost_to_mse(cost, *, normalize=False):
         for i in reversed(range(len(result_list))):
             try:
                 generic = int(result_list[i])
-            except contextlib.suppress(ValueError):
+            except ValueError:
                 pass
             else:
                 if generic == 0:

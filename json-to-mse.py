@@ -245,6 +245,8 @@ class FrameFeatures(enum.Flag):
     FLIP = enum.auto()
     FULL_ART_LAND = enum.auto()
     FUSE = enum.auto()
+    LAND = enum.auto()
+    LAND_BACK = enum.auto()
     LEVELER = enum.auto()
     MIRACLE = enum.auto()
     NYX = enum.auto()
@@ -258,6 +260,7 @@ class FrameFeatures(enum.Flag):
     def alt_dfc(self):
         try:
             return {
+                FrameFeatures.LAND: FrameFeatures.LAND_BACK,
                 FrameFeatures.NONE: FrameFeatures.NONE,
                 FrameFeatures.PLANESWALKER: FrameFeatures.PLANESWALKER_BACK,
                 FrameFeatures.TRUE_COLORLESS: FrameFeatures.TRUE_COLORLESS_BACK
@@ -457,6 +460,8 @@ class MSEDataFile:
             result[alt_key('subtype' if layout == 'planechase' else 'sub type')] = ' '.join(f'<word-list-{card_type}>{subtype}</word-list-race>' for subtype in card_info.subtypes)
         if 'Conspiracy' in card_info.types:
             frame_features |= FrameFeatures.CONSPIRACY
+        if 'Land' in card_info.types:
+            frame_features |= FrameFeatures.LAND
         if 'Planeswalker' in card_info.types:
             frame_features |= FrameFeatures.PLANESWALKER
         if 'Enchantment' in card_info.types and more_itertools.quantify(card_type != 'Tribal' for card_type in card_info.types) >= 2:
@@ -597,12 +602,8 @@ class MSEDataFile:
                         result['stylesheet'] = 'm15-doublefaced-sparker' #TODO borderable?
                     elif FrameFeatures.TRUE_COLORLESS_BACK in frame_features:
                         result['stylesheet'] = 'm15-colored-to-clear'
-                        result['extra data'] = {
-                            'magic-m15-colored-to-clear': {
-                                'corner': 'day',
-                                'corner 2': 'night'
-                            }
-                        }
+                    elif FrameFeatures.LAND_BACK in frame_features:
+                        result['stylesheet'] = 'm15-doublefaced-ixalands'
                     else:
                         result['stylesheet'] = 'm15-doublefaced'
             elif FrameFeatures.PLANESWALKER in frame_features:

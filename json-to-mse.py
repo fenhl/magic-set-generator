@@ -751,7 +751,7 @@ def cost_to_mse(cost, *, normalize=False):
             # rainbow
             (True, True, True, True, True): [0, 1, 2, 3, 4]
         }[colors_present]
-        return ''.join(symbols[color] * counts[color] for color in order)
+        return ''.join(cost_part_to_mse(symbols[color]) * counts[color] for color in order)
 
     def cost_part_to_mse(part):
         basics = '[WUBRG]'
@@ -786,55 +786,48 @@ def cost_to_mse(cost, *, normalize=False):
     result_list = []
     for part in cost[1:-1].split('}{'):
         result_list.append(cost_part_to_mse(part))
+    result = ''
     if normalize:
-        result = ''
         # generic and colorless costs
         for i in reversed(range(len(result_list))):
-            if result_list[i] == '{X}':
-                result += '{X}'
+            if result_list[i] == 'X':
+                result += cost_part_to_mse('X')
                 del result_list[i]
         total = 0
         for i in reversed(range(len(result_list))):
             try:
-                generic = int(result_list[i][1:-1])
+                generic = int(result_list[i])
             except contextlib.suppress(ValueError):
                 pass
             else:
                 if generic == 0:
-                    result += '{0}'
+                    result += cost_part_to_mse('0')
                 total += generic
                 del result_list[i]
         if total > 0:
-            result += f'{{{total}}}'
+            result += cost_part_to_mse(str(total))
         for i in reversed(range(len(result_list))):
-            if result_list[i] == '{S}':
-                result += '{S}'
+            if result_list[i] == 'S':
+                result += cost_part_to_mse('S')
                 del result_list[i]
         for i in reversed(range(len(result_list))):
-            if result_list[i] == '{C}':
-                result += '{C}'
+            if result_list[i] == 'C':
+                result += cost_part_to_mse('C')
                 del result_list[i]
         # twobrid
-        for i in reversed(range(len(result_list))):
-            if result_list[i] == '{C}':
-                result += '{C}'
-                del result_list[i]
-        result += canonical_order(result_list, ['{2/W}', '{2/U}', '{2/B}', '{2/R}', '{2/G}'])
+        result += canonical_order(result_list, ['2/W', '2/U', '2/B', '2/R', '2/G'])
         # hybrid
-        for symbol in ['{W/U}', '{U/B}', '{B/R}', '{R/G}', '{G/W}', '{W/B}', '{U/R}', '{B/G}', '{R/W}', '{G/U}']:
+        for symbol in ['W/U', 'U/B', 'B/R', 'R/G', 'G/W', 'W/B', 'U/R', 'B/G', 'R/W', 'G/U']:
             for i in reversed(range(len(result_list))):
                 if result_list[i] == symbol:
-                    result += symbol
+                    result += cost_part_to_mse(symbol)
                     del result_list[i]
         # Phyrexian
-        result += canonical_order(result_list, ['{W/P}', '{U/P}', '{B/P}', '{R/P}', '{G/P}'])
+        result += canonical_order(result_list, ['W/P', 'U/P', 'B/P', 'R/P', 'G/P'])
         # colored
-        result += canonical_order(result_list, ['{W}', '{U}', '{B}', '{R}', '{G}'])
+        result += canonical_order(result_list, ['W', '{U}', '{B}', '{R}', '{G}'])
         # other
-        result += ''.join(result_list)
-    else:
-        result = ''.join(result_list)
-    return result
+    return result + ''.join(cost_part_to_mse(part) for part in result_list)
 
 def could_produce(card_info):
     """Returns the types of mana that could be produced by this card, assuming an empty game state."""

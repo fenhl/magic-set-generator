@@ -860,7 +860,7 @@ def main():
     for query in args.queries:
         if args.verbose:
             print(f'[....] finding cards: {query}', end='\r', flush=True, file=sys.stderr)
-        card_names |= set(subprocess.run(['ruby', '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE).stdout.decode('utf-8').splitlines())
+        card_names |= set(subprocess.run(['ruby', '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE, check=True).stdout.decode('utf-8').splitlines())
         if args.verbose:
             print('[ ok ]', file=sys.stderr)
     if len(card_names) == 0:

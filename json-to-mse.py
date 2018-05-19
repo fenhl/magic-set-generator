@@ -849,6 +849,9 @@ def cost_to_mse(cost, *, normalize=False):
         if part in ('C', 'E', 'Q', 'S', 'T', 'X'):
             # colorless mana, energy counter, untap symbol, snow mana, tap symbol, variable mana
             return part
+        if part == 'P':
+            # any Phyrexian mana symbol, TODO remove mana circle
+            return 'H'
         if part == 'CHAOS':
             # chaos symbol (planar die)
             return 'chaos'

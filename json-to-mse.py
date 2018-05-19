@@ -596,7 +596,7 @@ class MSEDataFile:
                             frame_features |= FrameFeatures.MIRACLE
                         if regex.fullmatch('[Dd]raft(ed)?', word_part):
                             frame_features |= FrameFeatures.DRAFT_MATTERS
-                        match = regex.fullmatch('(["\']?)(\\{.+\\})([:.,]?)', word_part)
+                        match = regex.fullmatch('(["\']?)(\\{.+\\})([:.,]?["\']*)', word_part)
                         if match:
                             text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2), normalize=new_wedge_order)}</sym>{match.group(3)}'
                         elif regex.fullmatch('[0-9]+|X', word_part):

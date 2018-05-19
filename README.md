@@ -39,6 +39,7 @@ The script takes any number of command line arguments. Arguments are interpreted
 
 * Arguments starting with a `-` are interpreted as options (see below).
 * Arguments starting with `!` are special commands. The following commands are currently supported:
+    * `!all`: Generate all cards present in MTG JSON, except tokens and un-cards.
     * `!tappedout <deck-id>`: Download the given decklist from [tappedout.net](http://tappedout.net/) and generate all cards from it.
 * Arguments starting with `#` are ignored. This can be used in input files (see `-i` below) to write comments.
 * Arguments starting with `=` are parsed according to [mtg.wtf syntax](https://mtg.wtf/help/syntax) to generate all cards from the result. This requires the `find_cards` script from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` below.

@@ -28,6 +28,15 @@ BASIC_LAND_TYPES = {
     'Forest': 'G'
 }
 
+BLACK_BORDERED_UNCARDS = [
+    '1996 World Champion',
+    'Fraternal Exaltation',
+    'Proposal',
+    'Robot Chicken',
+    'Shichifukujin Dragon',
+    'Splendid Genesis'
+]
+
 COLOR_ABBREVIATIONS = {
     'W': 'White',
     'U': 'Blue',
@@ -41,6 +50,7 @@ class UncardError(ValueError):
 
 class CommandLineArgs:
     def __init__(self, args=sys.argv[1:]):
+        self.all_command = False
         self.allow_uncards = False
         self.auto_card_numbers = False
         self.border_color = None
@@ -214,7 +224,9 @@ class CommandLineArgs:
             return
         if line.startswith('!'):
             cmd, *args = shlex.split(line[1:])
-            if cmd == 'tappedout':
+            if cmd == 'all':
+                self.all_command = True
+            elif cmd == 'tappedout':
                 self.decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
             else:
                 raise ValueError(f'Unrecognized input command: {cmd}')
@@ -348,7 +360,7 @@ class MSEDataFile:
         if not allow_uncards:
             if getattr(card_info, 'border', card_info.set.border) == 'silver':
                 raise UncardError('Un-cards are not supported')
-            if card_info.name in ['1996 World Champion', 'Fraternal Exaltation', 'Proposal', 'Robot Chicken', 'Shichifukujin Dragon', 'Splendid Genesis']:
+            if card_info.name in BLACK_BORDERED_UNCARDS:
                 raise UncardError('This card is blacklisted and will not be supported')
         # collect printings
         printings = {}
@@ -993,6 +1005,14 @@ def main():
         sys.exit('[!!!!] missing card name')
     # download MTG JSON
     db = mtg_json(verbose=args.verbose)
+    if args.all_command:
+        card_names |= {
+            card_name
+            for card_name, card_info in db.cards_by_name.items()
+            if card_info.layout != 'token'
+            and getattr(card_info, 'border', card_info.set.border) != 'silver'
+            and card_name not in BLACK_BORDERED_UNCARDS
+        }
     # normalize card names (DFC, split cards, etc)
     normalized_card_names = set()
     for card_name in sorted(card_names):

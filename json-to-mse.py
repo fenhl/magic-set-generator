@@ -621,20 +621,16 @@ class MSEDataFile:
                     else:
                         result['stylesheet'] = 'm15-doublefaced'
                 # face symbols depending on whether it's a meld card TODO add options to customize: all the same, or according to CR, or according to template (skipping this code)
+                if 'extra data' not in result:
+                    result['extra data'] = {}
+                if result['stylesheet'] not in result['extra data']:
+                    result['extra data'][result['stylesheet']] = {}
                 if FrameFeatures.MELD in frame_features:
-                    result['extra data'] = {
-                        result['stylesheet']: {
-                            'corner': 'moon',
-                            'corner 2': 'eldrazi'
-                        }
-                    }
+                    result['extra data'][result['stylesheet']]['corner'] = 'moon'
+                    result['extra data'][result['stylesheet']]['corner 2'] = 'eldrazi'
                 else:
-                    result['extra data'] = {
-                        result['stylesheet']: {
-                            'corner': 'day',
-                            'corner 2': 'night'
-                        }
-                    }
+                    result['extra data'][result['stylesheet']]['corner'] = 'day'
+                    result['extra data'][result['stylesheet']]['corner 2'] = 'night'
             elif FrameFeatures.PLANESWALKER in frame_features:
                 if FrameFeatures.TRUE_COLORLESS in frame_features:
                     result['stylesheet'] = 'm15-planeswalker-clear'
@@ -660,6 +656,13 @@ class MSEDataFile:
                 result['stylesheet'] = 'm15-clear'
             elif FrameFeatures.FULL_ART_LAND in frame_features:
                 result['stylesheet'] = 'm15-textless-land'
+            # make sure the frame color around the stamp matches color of the rest of the frame
+            if alt_key('card color') in result:
+                if 'extra data' not in result:
+                    result['extra data'] = {}
+                if result['stylesheet'] not in result['extra data']:
+                    result['extra data'][result['stylesheet']] = {}
+                result['extra data'][result['stylesheet']]['stamp'] = result[alt_key('card color')]
             return result
 
     def get(self, key):

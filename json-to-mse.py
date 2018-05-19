@@ -248,6 +248,7 @@ class FrameFeatures(enum.Flag):
     LAND = enum.auto()
     LAND_BACK = enum.auto()
     LEVELER = enum.auto()
+    MELD = enum.auto()
     MIRACLE = enum.auto()
     NYX = enum.auto()
     PLANESWALKER = enum.auto()
@@ -335,9 +336,8 @@ class MSEDataFile:
             else:
                 return key_name
 
-        raw_data = card_info._get_raw_data()
         # check for legality
-        if raw_data.get('border', card_info.set.border) == 'silver':
+        if getattr(card_info, 'border', card_info.set.border) == 'silver':
             raise ValueError('Un-cards are not supported')
         if card_info.layout == 'token':
             raise ValueError('Token cards are not supported')
@@ -368,6 +368,13 @@ class MSEDataFile:
                     result |= alt_result
             elif card_info.layout == 'leveler':
                 frame_features |= FrameFeatures.LEVELER
+            elif card_info.layout == 'meld':
+                if not alt:
+                    frame_features |= FrameFeatures.DFC
+                    frame_features |= FrameFeatures.MELD
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[2]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    result |= alt_result
+                    frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'split':
                 if not alt:
                     frame_features |= FrameFeatures.SPLIT
@@ -375,7 +382,7 @@ class MSEDataFile:
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
-                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO scheme, meld, aftermath
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO scheme, aftermath, saga
         elif layout == 'planechase':
             if card_info.layout in ('plane', 'phenomenon'):
                 pass # nothing specific to these layouts
@@ -391,7 +398,7 @@ class MSEDataFile:
         # name
         result[alt_key('name')] = card_info.name
         # mana cost
-        if 'manaCost' in raw_data and not (alt and card_info.layout == 'flip'):
+        if hasattr(card_info, 'manaCost') and not (alt and card_info.layout == 'flip'):
             result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost, normalize=new_wedge_order)
         # image
         if images is not None and images_to_add is not None and (images / f'{card_info.name}.png').exists():
@@ -405,7 +412,7 @@ class MSEDataFile:
             image_is_vertical = False
         # frame color & color indicator
         frame_color = []
-        if raw_data.get('colors', []) == []:
+        if getattr(card_info, 'colors', []) == []:
             if 'Artifact' not in card_info.types:
                 frame_color.append('colorless')
         elif len(card_info.colors) > 2:
@@ -417,7 +424,7 @@ class MSEDataFile:
         if 'Land' in card_info.types:
             frame_color.append('land')
         if 'Land' in card_info.types:
-            if raw_data.get('colors', []) == []:
+            if getattr(card_info, 'colors', []) == []:
                 land_colors = [c.lower() for c in could_produce(card_info) if c != 'Colorless']
                 if len(land_colors) > 2:
                     frame_color = 'multicolor, land'
@@ -430,27 +437,27 @@ class MSEDataFile:
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
-        elif set(raw_data.get('colors', [])) != set(implicit_colors(raw_data.get('manaCost'))):
-            if raw_data.get('colors', []) == []:
+        elif set(getattr(card_info, 'colors', [])) != set(implicit_colors(getattr(card_info, 'manaCost'))):
+            if getattr(card_info, 'colors', []) == []:
                 if image_is_vertical:
                     frame_features |= FrameFeatures.DEVOID
-                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(raw_data.get('manaCost')))
+                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(getattr(card_info, 'manaCost')))
                 else:
                     result[alt_key('card color')] = ', '.join(frame_color)
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
-        elif raw_data.get('colors', []) == []:
+        elif getattr(card_info, 'colors', []) == []:
             if image_is_vertical and not any(card_type in card_info.types for card_type in ['Artifact', 'Land', 'Phenomenon', 'Plane', 'Scheme', 'Vanguard']):
                 frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
         if layout == 'vanguard':
-            result[alt_key('type')] = ' '.join((raw_data.get('supertypes', [])) + card_info.types)
-        elif 'supertypes' in raw_data:
+            result[alt_key('type')] = ' '.join((getattr(card_info, 'supertypes', [])) + card_info.types)
+        elif hasattr(card_info, 'supertypes'):
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
-        if 'subtypes' in raw_data:
+        if hasattr(card_info, 'subtypes'):
             if 'Creature' in card_info.types:
                 card_type = 'race'
             elif 'Instant' in card_info.types or 'Sorcery' in card_info.types:
@@ -466,12 +473,12 @@ class MSEDataFile:
             frame_features |= FrameFeatures.PLANESWALKER
         if 'Enchantment' in card_info.types and more_itertools.quantify(card_type != 'Tribal' for card_type in card_info.types) >= 2:
             frame_features |= FrameFeatures.NYX
-        if 'Vehicle' in raw_data.get('subtypes', []):
+        if 'Vehicle' in getattr(card_info, 'subtypes', []):
             frame_features |= FrameFeatures.VEHICLE
         # rarity
         result[alt_key('rarity')] = min(Rarity.from_str(printing.rarity) for printing in printings.values()).mse_str
         # text
-        if 'text' in raw_data:
+        if hasattr(card_info, 'text'):
             striations = []
             text = ''
             for i, ability in enumerate(card_info.text.replace('‘', "'").split('\n')):
@@ -549,26 +556,26 @@ class MSEDataFile:
                 result[f'toughness {i + 2}'] = striation['toughness']
         # layouts and mana symbol watermarks for vanilla cards
         if alt_key('rule text') not in result or result[alt_key('rule text')] == '':
-            if more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in raw_data.get('subtypes', [])) == 1:
+            if more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in getattr(card_info, 'subtypes', [])) == 1:
                 subtype = more_itertools.one(subtype for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
                 result[alt_key('watermark')] = 'mana symbol {}'.format(COLOR_ABBREVIATIONS[BASIC_LAND_TYPES[subtype]].lower())
-            elif more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in raw_data.get('subtypes', [])) == 2:
+            elif more_itertools.quantify(subtype in BASIC_LAND_TYPES for subtype in getattr(card_info, 'subtypes', [])) == 2:
                 color1, color2 = (BASIC_LAND_TYPES[subtype] for subtype in card_info.subtypes if subtype in BASIC_LAND_TYPES)
                 result[alt_key('watermark')] = 'colored xander hybrid mana {}/{}'.format(color1, color2)
             if 'Land' in card_info.types and image_is_vertical:
                 frame_features |= FrameFeatures.FULL_ART_LAND
         # P/T
-        if 'power' in raw_data:
+        if hasattr(card_info, 'power'):
             result[alt_key('power')] = card_info.power
-        if 'toughness' in raw_data:
+        if hasattr(card_info, 'toughness'):
             result[alt_key('toughness')] = card_info.toughness
         # loyalty
-        if 'loyalty' in raw_data:
+        if hasattr(card_info, 'loyalty'):
             result[alt_key('loyalty')] = card_info.loyalty
         # hand/life modifier
-        if 'hand' in raw_data:
+        if hasattr(card_info, 'hand'):
             result[alt_key('handmod' if layout == 'vanguard' else 'power')] = f'{card_info.hand:+}'
-        if 'life' in raw_data:
+        if hasattr(card_info, 'life'):
             result[alt_key('lifemod' if layout == 'vanguard' else 'toughness')] = f'{card_info.life:+}'
         #TODO artist credit
         # stylesheet
@@ -606,6 +613,21 @@ class MSEDataFile:
                         result['stylesheet'] = 'm15-doublefaced-ixalands'
                     else:
                         result['stylesheet'] = 'm15-doublefaced'
+                # face symbols depending on whether it's a meld card TODO add options to customize: all the same, or according to CR, or according to template (skipping this code)
+                if FrameFeatures.MELD in frame_features:
+                    result['extra data'] = {
+                        result['stylesheet']: {
+                            'corner': 'moon',
+                            'corner 2': 'eldrazi'
+                        }
+                    }
+                else:
+                    result['extra data'] = {
+                        result['stylesheet']: {
+                            'corner': 'day',
+                            'corner 2': 'night'
+                        }
+                    }
             elif FrameFeatures.PLANESWALKER in frame_features:
                 if FrameFeatures.TRUE_COLORLESS in frame_features:
                     result['stylesheet'] = 'm15-planeswalker-clear'
@@ -835,21 +857,20 @@ def could_produce(card_info):
     if card_info.name == 'Gemstone Caverns':
         return {'Colorless'}
     #TODO make this more accurate
-    raw_data = card_info._get_raw_data()
     result = set()
     for basic_land_type, mana_color in BASIC_LAND_TYPES.items():
-        if basic_land_type in raw_data.get('subtypes', []):
+        if basic_land_type in getattr(card_info, 'subtypes', []):
             result.add(COLOR_ABBREVIATIONS[mana_color])
-    match = regex.search('(.*?add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool)+', raw_data.get('text', ''), regex.IGNORECASE | regex.DOTALL)
+    match = regex.search('(.*?add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool)+', getattr(card_info, 'text', ''), regex.IGNORECASE | regex.DOTALL)
     if match:
         for mana_type in match.captures('types'):
             if mana_type == 'C':
                 result.add('Colorless')
             else:
                 result.add(COLOR_ABBREVIATIONS[mana_type])
-    if regex.search('add (one|three) mana of any( one)? color to your mana pool', raw_data.get('text', ''), regex.IGNORECASE):
+    if regex.search('add (one|three) mana of any( one)? color to your mana pool', getattr(card_info, 'text', ''), regex.IGNORECASE):
         result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
-    if regex.search('add one mana of that color to your mana pool', raw_data.get('text', ''), regex.IGNORECASE):
+    if regex.search('add one mana of that color to your mana pool', getattr(card_info, 'text', ''), regex.IGNORECASE):
         if card_info.name == 'Rhystic Cave':
             result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
         elif card_info.name == 'Meteor Crater':
@@ -970,8 +991,10 @@ def main():
             card = db.cards_by_name[card_name]
         except KeyError:
             sys.exit(f'[!!!!] card not found: {card_name}')
-        if 'names' in card._get_raw_data():
+        if hasattr(card, 'names'):
             normalized_card_names.add(card.names[0])
+            if card.layout == 'meld':
+                normalized_card_names.add(card.names[1]) # generate both front faces separately. TODO option to generate a 3-in-1 tempalte instead
         else:
             normalized_card_names.add(card_name)
     # create set metadata

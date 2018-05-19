@@ -371,7 +371,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, default_stylesheet='m15-extra', layout=None, images=None, images_to_add=None, new_wedge_order=False, allow_uncards=False, *, alt=False):
+    def from_card(cls, card_info, db, default_stylesheet='m15', layout=None, images=None, images_to_add=None, new_wedge_order=False, allow_uncards=False, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -1078,7 +1078,7 @@ def main():
     set_file = MSEDataFile()
     set_file['mse version'] = '0.3.8'
     set_file['game'] = 'magic'
-    set_file['stylesheet'] = 'm15-extra'
+    set_file['stylesheet'] = 'm15'
     set_info = {
         'title': 'MTG JSON card import',
         'copyright': args.copyright,

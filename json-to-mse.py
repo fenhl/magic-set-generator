@@ -1001,7 +1001,7 @@ def main():
         card_names |= set(subprocess.run(['ruby', '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE, check=True).stdout.decode('utf-8').splitlines())
         if args.verbose:
             print('[ ok ]', file=sys.stderr)
-    if len(card_names) == 0:
+    if len(card_names) == 0 and not args.all_command:
         sys.exit('[!!!!] missing card name')
     # download MTG JSON
     db = mtg_json(verbose=args.verbose)

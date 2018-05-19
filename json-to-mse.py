@@ -868,16 +868,16 @@ def could_produce(card_info):
     for basic_land_type, mana_color in BASIC_LAND_TYPES.items():
         if basic_land_type in getattr(card_info, 'subtypes', []):
             result.add(COLOR_ABBREVIATIONS[mana_color])
-    match = regex.search('(.*?add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+ to your mana pool)+', getattr(card_info, 'text', ''), regex.IGNORECASE | regex.DOTALL)
+    match = regex.search('(.*?add(,?( or)? (\{(?P<types>[CWUBRG])\})+)+)+', getattr(card_info, 'text', ''), regex.IGNORECASE | regex.DOTALL)
     if match:
         for mana_type in match.captures('types'):
             if mana_type == 'C':
                 result.add('Colorless')
             else:
                 result.add(COLOR_ABBREVIATIONS[mana_type])
-    if regex.search('add (one|three) mana of any( one)? color to your mana pool', getattr(card_info, 'text', ''), regex.IGNORECASE):
+    if regex.search('add (one|three) mana of any( one)? color', getattr(card_info, 'text', ''), regex.IGNORECASE):
         result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
-    if regex.search('add one mana of that color to your mana pool', getattr(card_info, 'text', ''), regex.IGNORECASE):
+    if regex.search('add one mana of that color', getattr(card_info, 'text', ''), regex.IGNORECASE):
         if card_info.name == 'Rhystic Cave':
             result |= {'White', 'Blue', 'Black', 'Red', 'Green'}
         elif card_info.name == 'Meteor Crater':

@@ -660,7 +660,7 @@ class MSEDataFile:
             if alt_key('card color') in result:
                 if 'extra data' not in result:
                     result['extra data'] = {}
-                if result['stylesheet'] not in result['extra data']:
+                if result.get('stylesheet', default_stylesheet) not in result['extra data']:
                     result['extra data'][result.get('stylesheet', default_stylesheet)] = {}
                 result['extra data'][result.get('stylesheet', default_stylesheet)]['stamp'] = result[alt_key('card color')]
             return result

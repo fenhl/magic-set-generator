@@ -326,7 +326,7 @@ class MSEDataFile:
         self.items.append((key, value))
 
     def add_card(self, card_info, db, **kwargs):
-        card = self.__class__.from_card(card_info, db, images_to_add=self.images, **kwargs)
+        card = self.__class__.from_card(card_info, db, default_stylesheet=self['stylesheet'], images_to_add=self.images, **kwargs)
         self.add('card', card)
         with contextlib.suppress(KeyError):
             stylesheet = card['stylesheet']
@@ -335,7 +335,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, layout=None, images=None, images_to_add=None, new_wedge_order=False, allow_uncards=False, *, alt=False):
+    def from_card(cls, card_info, db, default_stylesheet='m15', layout=None, images=None, images_to_add=None, new_wedge_order=False, allow_uncards=False, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -365,13 +365,13 @@ class MSEDataFile:
             elif card_info.layout == 'double-faced':
                 if not alt:
                     frame_features |= FrameFeatures.DFC
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'flip':
                 if not alt:
                     frame_features |= FrameFeatures.FLIP
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
             elif card_info.layout == 'leveler':
                 frame_features |= FrameFeatures.LEVELER
@@ -379,13 +379,13 @@ class MSEDataFile:
                 if not alt:
                     frame_features |= FrameFeatures.DFC
                     frame_features |= FrameFeatures.MELD
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[2]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[2]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'split':
                 if not alt:
                     frame_features |= FrameFeatures.SPLIT
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
@@ -661,14 +661,16 @@ class MSEDataFile:
                 if 'extra data' not in result:
                     result['extra data'] = {}
                 if result['stylesheet'] not in result['extra data']:
-                    result['extra data'][result['stylesheet']] = {}
-                result['extra data'][result['stylesheet']]['stamp'] = result[alt_key('card color')]
+                    result['extra data'][result.get('stylesheet', default_stylesheet)] = {}
+                result['extra data'][result.get('stylesheet', default_stylesheet)]['stamp'] = result[alt_key('card color')]
             return result
 
-    def get(self, key):
+    def get(self, key, default=None):
         for iter_key, value in self.items:
             if iter_key == key:
-                yield value
+                return value
+        else:
+            return default
 
     def to_string(self, indent=0):
         result = ''

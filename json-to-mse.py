@@ -36,8 +36,12 @@ COLOR_ABBREVIATIONS = {
     'G': 'Green'
 }
 
+class UncardError(ValueError):
+    pass
+
 class CommandLineArgs:
     def __init__(self, args=sys.argv[1:]):
+        self.allow_uncards = False
         self.auto_card_numbers = False
         self.border_color = None
         self.cards = set()
@@ -85,7 +89,9 @@ class CommandLineArgs:
                 mode = None
             elif arg.startswith('-'):
                 if arg.startswith('--'):
-                    if arg == '--auto-card-numbers':
+                    if arg == '--allow-uncards':
+                        self.allow_uncards = True
+                    elif arg == '--auto-card-numbers':
                         self.auto_card_numbers = True
                     elif arg == '--border':
                         mode = 'border'
@@ -319,8 +325,8 @@ class MSEDataFile:
             value = 'false'
         self.items.append((key, value))
 
-    def add_card(self, card_info, db, layout=None, images=None, new_wedge_order=False):
-        card = self.__class__.from_card(card_info, db, layout=layout, images=images, images_to_add=self.images, new_wedge_order=new_wedge_order)
+    def add_card(self, card_info, db, **kwargs):
+        card = self.__class__.from_card(card_info, db, images_to_add=self.images, **kwargs)
         self.add('card', card)
         with contextlib.suppress(KeyError):
             stylesheet = card['stylesheet']
@@ -329,7 +335,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, layout=None, images=None, images_to_add=None, new_wedge_order=False, *, alt=False):
+    def from_card(cls, card_info, db, layout=None, images=None, images_to_add=None, new_wedge_order=False, allow_uncards=False, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -337,12 +343,13 @@ class MSEDataFile:
                 return key_name
 
         # check for legality
-        if getattr(card_info, 'border', card_info.set.border) == 'silver':
-            raise ValueError('Un-cards are not supported')
         if card_info.layout == 'token':
             raise ValueError('Token cards are not supported')
-        if card_info.name in ['1996 World Champion', 'Fraternal Exaltation', 'Proposal', 'Robot Chicken', 'Shichifukujin Dragon', 'Splendid Genesis']:
-            raise ValueError('This card is blacklisted and will not be supported')
+        if not allow_uncards:
+            if getattr(card_info, 'border', card_info.set.border) == 'silver':
+                raise UncardError('Un-cards are not supported')
+            if card_info.name in ['1996 World Champion', 'Fraternal Exaltation', 'Proposal', 'Robot Chicken', 'Shichifukujin Dragon', 'Splendid Genesis']:
+                raise UncardError('This card is blacklisted and will not be supported')
         # collect printings
         printings = {}
         for set_code, set_info in db.sets.items():
@@ -358,13 +365,13 @@ class MSEDataFile:
             elif card_info.layout == 'double-faced':
                 if not alt:
                     frame_features |= FrameFeatures.DFC
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'flip':
                 if not alt:
                     frame_features |= FrameFeatures.FLIP
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
             elif card_info.layout == 'leveler':
                 frame_features |= FrameFeatures.LEVELER
@@ -372,13 +379,13 @@ class MSEDataFile:
                 if not alt:
                     frame_features |= FrameFeatures.DFC
                     frame_features |= FrameFeatures.MELD
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[2]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[2]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'split':
                 if not alt:
                     frame_features |= FrameFeatures.SPLIT
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
@@ -1081,14 +1088,17 @@ def main():
         try:
             if 'Plane' in card.types or 'Phenomenon' in card.types:
                 if args.include_planes:
-                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order)
-                planes_set_file.add_card(card, db, layout='planechase', images=args.images, new_wedge_order=args.new_wedge_order)
+                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+                planes_set_file.add_card(card, db, layout='planechase', images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
             elif 'Vanguard' in card.types:
                 if args.include_vanguards:
-                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order)
-                vanguards_set_file.add_card(card, db, layout='vanguard', images=args.images, new_wedge_order=args.new_wedge_order)
+                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+                vanguards_set_file.add_card(card, db, layout='vanguard', images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
             else:
-                set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order)
+                set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+        except UncardError as e:
+            print(f'[ !! ] Failed to add card {card_name}        ', file=sys.stderr)
+            print(f'[ !! ] Un-cards are not supported and will most likely render incorrectly. Re-run with --allow-uncards to generate them anyway.', file=sys.stderr)
         except Exception as e:
             if args.verbose:
                 raise RuntimeError(f'Failed to add card {card_name}') from e

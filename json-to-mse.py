@@ -437,11 +437,11 @@ class MSEDataFile:
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
-        elif set(getattr(card_info, 'colors', [])) != set(implicit_colors(getattr(card_info, 'manaCost'))):
+        elif set(getattr(card_info, 'colors', [])) != set(implicit_colors(getattr(card_info, 'manaCost', None))):
             if getattr(card_info, 'colors', []) == []:
                 if image_is_vertical:
                     frame_features |= FrameFeatures.DEVOID
-                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(getattr(card_info, 'manaCost')))
+                    result[alt_key('card color')] = ', '.join(c.lower() for c in implicit_colors(getattr(card_info, 'manaCost', None)))
                 else:
                     result[alt_key('card color')] = ', '.join(frame_color)
             else:

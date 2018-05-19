@@ -60,11 +60,13 @@ class CommandLineArgs:
         self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/search-engine/bin/find_cards')
         self.images = None
         self._include_planes = None
+        self._include_schemes = None
         self._include_vanguards = None
         self.new_wedge_order = False
         self.output = sys.stdout.buffer
         self.planes_output = None
         self.queries = set()
+        self.schemes_output = None
         self.set_code = 'PROXY'
         self.vanguards_output = None
         self.verbose = False
@@ -90,6 +92,9 @@ class CommandLineArgs:
                 mode = None
             elif mode == 'planes-output':
                 self.planes_output = open(arg, 'wb')
+                mode = None
+            elif mode == 'schemes-output':
+                self.schemes_output = open(arg, 'wb')
                 mode = None
             elif mode == 'set-code':
                 self.set_code = arg
@@ -123,6 +128,10 @@ class CommandLineArgs:
                         self.include_planes = True
                     elif arg == '--no-include-planes':
                         self.include_planes = False
+                    elif arg == '--include-schemes':
+                        self.include_schemes = True
+                    elif arg == '--no-include-schemes':
+                        self.include_schemes = False
                     elif arg == '--include-vanguards':
                         self.include_vanguards = True
                     elif arg == '--no-include-vanguards':
@@ -141,6 +150,10 @@ class CommandLineArgs:
                         mode = 'planes-output'
                     elif arg.startswith('--planes-output='):
                         self.planes_output = open(arg[len('--planes-output='):], 'wb')
+                    elif arg == '--schemes-output':
+                        mode = 'schemes-output'
+                    elif arg.startswith('--schemes-output='):
+                        self.schemes_output = open(arg[len('--schemes-output='):], 'wb')
                     elif arg == '--set-code':
                         mode = 'set-code'
                     elif arg.startswith('--set-code='):
@@ -192,6 +205,17 @@ class CommandLineArgs:
     @include_planes.setter
     def include_planes(self, value):
         self._include_planes = value
+
+    @property
+    def include_schemes(self):
+        if self._include_schemes is None:
+            return self.schemes_output is None
+        else:
+            return self._include_schemes
+
+    @include_schemes.setter
+    def include_schemes(self, value):
+        self._include_schemes = value
 
     @property
     def include_vanguards(self):
@@ -372,7 +396,7 @@ class MSEDataFile:
         frame_features = FrameFeatures.NONE
         # layout
         if layout is None:
-            if card_info.layout in ('normal', 'plane', 'phenomenon', 'vanguard'):
+            if card_info.layout in ('normal', 'plane', 'phenomenon', 'scheme', 'vanguard'):
                 pass # nothing specific to these layouts
             elif card_info.layout == 'double-faced':
                 if not alt:
@@ -401,7 +425,12 @@ class MSEDataFile:
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
-                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO scheme, aftermath, saga
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO aftermath, saga
+        elif layout == 'archenemy':
+            if card_info.layout == 'scheme':
+                pass # nothing specific to this layout
+            else:
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}')
         elif layout == 'planechase':
             if card_info.layout in ('plane', 'phenomenon'):
                 pass # nothing specific to these layouts
@@ -470,13 +499,19 @@ class MSEDataFile:
             if image_is_vertical and not any(card_type in card_info.types for card_type in ['Artifact', 'Land', 'Phenomenon', 'Plane', 'Scheme', 'Vanguard']):
                 frame_features |= FrameFeatures.TRUE_COLORLESS
         # type line
-        if layout == 'vanguard':
-            result[alt_key('type')] = ' '.join((getattr(card_info, 'supertypes', [])) + card_info.types)
+        if layout == 'archenemy':
+            type_line = ' '.join(getattr(card_info, 'supertypes', []) + card_info.types)
+            if hasattr(card_info, 'subtypes'):
+                # archenemy templates don't support subtypes, so include them with the card types
+                type_line += ' — {" ".join(card_info.subtypes)}'
+            result[alt_key('type')] = f'<word-list-type>{type_line}</word-list-type>'
+        elif layout == 'vanguard':
+            result[alt_key('type')] = ' '.join(getattr(card_info, 'supertypes', []) + card_info.types)
         elif hasattr(card_info, 'supertypes'):
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.supertypes)} {" ".join(card_info.types)}</word-list-type>'
         else:
             result[alt_key('supertype' if layout == 'planechase' else 'super type')] = f'<word-list-type>{" ".join(card_info.types)}</word-list-type>'
-        if hasattr(card_info, 'subtypes'):
+        if layout != 'archenemy' and hasattr(card_info, 'subtypes'):
             if 'Creature' in card_info.types:
                 card_type = 'race'
             elif 'Instant' in card_info.types or 'Sorcery' in card_info.types:
@@ -1079,12 +1114,32 @@ def main():
             'tap symbol': 'modern'
         }
     }
+    schemes_set_file = MSEDataFile()
+    schemes_set_file['mse version'] = '0.3.8'
+    schemes_set_file['game'] = 'archenemy'
+    schemes_set_file['stylesheet'] = 'standard' #TODO add option to use the E01 template when available
+    schemes_set_file['set info'] = {
+        'title': 'MTG JSON card import: Archenemy schemes',
+        'copyright': args.copyright,
+        'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
+        'set code': args.set_code,
+        'set language': 'EN',
+        'mark errors': 'no',
+        'automatic reminder text': '',
+        'automatic card numbers': 'yes' if args.auto_card_numbers else 'no'
+    }
+    schemes_set_file['styling'] = { # styling needs to be above cards
+        'archenemy-standard': {
+            'text box mana symbols': 'magic-mana-small.mse-symbol-font',
+            'tap symbol': 'modern'
+        }
+    }
     vanguards_set_file = MSEDataFile()
     vanguards_set_file['mse version'] = '0.3.8'
     vanguards_set_file['game'] = 'vanguard'
     vanguards_set_file['stylesheet'] = 'standard'
     vanguards_set_info = {
-        'title': 'MTG JSON card import: vanguards',
+        'title': 'MTG JSON card import: Vanguard avatars',
         'copyright': args.copyright,
         'description': '{} automatically imported from MTG JSON using json-to-mse.'.format('This card was' if len(normalized_card_names) == 1 else 'These cards were'),
         'set code': args.set_code,
@@ -1115,6 +1170,10 @@ def main():
                 if args.include_planes:
                     set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
                 planes_set_file.add_card(card, db, layout='planechase', images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+            elif 'Scheme' in card.types:
+                if args.include_schemes:
+                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+                schemes_set_file.add_card(card, db, layout='archenemy', images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
             elif 'Vanguard' in card.types:
                 if args.include_vanguards:
                     set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
@@ -1131,7 +1190,7 @@ def main():
                 print(f'[ !! ] Failed to add card {card_name}        ', file=sys.stderr)
                 failed += 1
     if failed > 0:
-        print('[ ** ] Run again with --verbose for a detailed error message', file=sys.stderr)
+        print(f'[ ** ] {failed} cards failed. Run again with --verbose for a detailed error message', file=sys.stderr)
     if args.verbose:
         print('[ ok ] adding cards to set file: {0} of {0}'.format(len(normalized_card_names)), file=sys.stderr)
     # generate stylesheet settings
@@ -1177,6 +1236,16 @@ def main():
         args.planes_output.flush()
     if args.verbose:
         print('[===.]', end='\r', flush=True, file=sys.stderr)
+    if args.schemes_output is not None:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, 'x') as f:
+            f.writestr('set', str(schemes_set_file))
+            for i, image_path in enumerate(schemes_set_file.images):
+                f.write(image_path, arcname=f'image{i + 1}')
+        args.schemes_output.write(buf.getvalue())
+        args.schemes_output.flush()
+    if args.verbose:
+        print('[====]', end='\r', flush=True, file=sys.stderr)
     if args.vanguards_output is not None:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, 'x') as f:

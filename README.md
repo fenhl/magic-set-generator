@@ -78,8 +78,10 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
 * `--find-cards=<path>`: The path to the `find_cards` executable used for [mtg.wtf syntax](https://mtg.wtf/help/syntax). Defaults to `git\github.com\taw\magic-search-engine\master\search-engine\bin\find_cards`.
 * `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>\<card name>.png`. By default, the generated set file does not include any images.
 * `--[no-]include-planes`: Enable or disable the inclusion of planes and phenomena as regular-sized cards in the main set file. This is on by default unless `--planes-output` is given.
+* `--[no-]include-schemes`: Enable or disable the inclusion of schemes as regular-sized cards in the main set file. This is on by default unless `--schemes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
 * `--new-wedge-order`: In mana costs, order all three-color wedges using the new order (e.g. `WBG`), even if Oracle still uses the old one (e.g. `BGW`). By default, Oracle order is used.
 * `--planes-output=<path>`: Save planes and phenomena to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
+* `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
 * `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
 * `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.

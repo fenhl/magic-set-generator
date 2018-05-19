@@ -8,6 +8,7 @@ Since MSE is a Windows programm, this guide assumes that you're running `json-to
 
 * You will need Python 3.6 or later. [Download here](https://www.python.org/downloads/windows/).
     * Make sure to check the “Add Python to PATH” option when installing.
+    * You can also install Python using [Chocolatey](https://chocolatey.org/). This is the recommended way to install Python if you already have Chocolatey on your system. If you do, run the following commands using `pip` or `python` instead of `pip3` or `python3`.
 * Download [this zip file](https://github.com/fenhl/json-to-mse/archive/master.zip).
 * Unzip the downloaded file, and open the resulting folder in the command line. To do so, right-click it in File Explorer while holding shift, then select “Open PowerShell window here” or “Open command prompt here”.
 * In the command line, run the following command:

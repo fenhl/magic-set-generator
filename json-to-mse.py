@@ -398,6 +398,13 @@ class MSEDataFile:
         if layout is None:
             if card_info.layout in ('normal', 'plane', 'phenomenon', 'scheme', 'vanguard'):
                 pass # nothing specific to these layouts
+            elif card_info.layout == 'aftermath':
+                if not alt:
+                    frame_features |= FrameFeatures.SPLIT
+                    frame_features |= FrameFeatures.AFTERMATH
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    result |= alt_result
+                    frame_features |= alt_frame_features
             elif card_info.layout == 'double-faced':
                 if not alt:
                     frame_features |= FrameFeatures.DFC
@@ -425,7 +432,7 @@ class MSEDataFile:
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
-                raise NotImplementedError(f'Unsupported layout: {card_info.layout}') #TODO aftermath, saga
+                raise NotImplementedError(f'Unsupported layout: {card_info.layout}')
         elif layout == 'archenemy':
             if card_info.layout == 'scheme':
                 pass # nothing specific to this layout
@@ -647,7 +654,7 @@ class MSEDataFile:
                     result['stylesheet'] = 'm15-split-fuse'
                     result['rule text 3'] = 'Fuse' #TODO reminder text based on options
                 elif FrameFeatures.AFTERMATH in frame_features:
-                    raise NotImplementedError('Aftermath not implemented') #TODO
+                    result['stylesheet'] = 'm15-aftermath'
                 else:
                     result['stylesheet'] = 'm15-split'
             elif FrameFeatures.FLIP in frame_features:
@@ -1204,6 +1211,8 @@ def main():
                 pass # keep leveler cards left-aligned
             elif stylesheet in ('m15-split', 'm15-split-fuse'):
                 styling['center text 1'] = styling['center text 2'] = 'always'
+            elif stylesheet in ('m15-aftermath'):
+                styling['center text 1'] = styling['center text 2'] = 'short text only'
             elif stylesheet == 'm15-textless-land':
                 del styling['text box mana symbols'] # stylesheet has no text box
             else:

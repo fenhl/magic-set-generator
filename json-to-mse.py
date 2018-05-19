@@ -599,7 +599,7 @@ class MSEDataFile:
                         match = regex.fullmatch('(["\']?)(\\{.+\\})([:.,]?["\']*)', word_part)
                         if match:
                             text += f'{match.group(1)}<sym>{cost_to_mse(match.group(2), normalize=new_wedge_order)}</sym>{match.group(3)}'
-                        elif regex.fullmatch('[0-9]+|X', word_part):
+                        elif regex.fullmatch('[0-9]+|[XVI]+', word_part): # MSE likes to automatically interpret numbers, including Roman numerals, as generic mana symbols
                             text += f'</sym>{word_part}<sym>'
                         else:
                             text += word_part

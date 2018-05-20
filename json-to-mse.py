@@ -49,12 +49,12 @@ COLOR_ABBREVIATIONS = {
 }
 
 IMAGE_FILE_EXTS = [
-    '.png',
     '.jpg',
     '.jpeg',
-    '.PNG',
+    '.png',
     '.JPG',
-    '.JPEG'
+    '.JPEG',
+    '.PNG'
 ]
 
 SCRYFALL_REQUEST_TIMEOUT = datetime.datetime.utcnow()

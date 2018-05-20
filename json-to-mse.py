@@ -496,7 +496,12 @@ class MSEDataFile:
         elif use_scryfall:
             scryfall_data = scryfall_request('https://api.scryfall.com/cards/named', params={'exact': card_info.name}).json()
             artist = scryfall_data['artist']
-            response = scryfall_request(scryfall_data['image_uris']['art_crop'])
+            if 'image_uris' in scryfall_data:
+                response = scryfall_request(scryfall_data['image_uris']['art_crop'])
+            elif 'card_faces' in scryfall_data:
+                response = scryfall_request(more_itertools.one(filter(lambda face: face['name'] == card_info.name, scryfall_data['card_faces']))['image_uris']['art_crop'])
+            else:
+                raise ValueError(f'Unexpexted format of Scryfall JSON data: {scryfall_data!r}')
             with PIL.Image.open(io.BytesIO(response.content)) as img:
                 exif = piexif.load(img.info.get('exif', piexif.dump({})))
                 exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
@@ -1084,6 +1089,7 @@ def scryfall_request(*args, **kwargs):
         time.sleep(sleep_secs)
     response = requests.get(*args, **kwargs)
     SCRYFALL_REQUEST_TIMEOUT = datetime.datetime.utcnow() + datetime.timedelta(milliseconds=100) # recommended rate limit according to https://scryfall.com/docs/api
+    response.raise_for_status()
     return response
 
 def main():

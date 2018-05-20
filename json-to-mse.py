@@ -71,6 +71,7 @@ class CommandLineArgs:
         self.planes_output = None
         self.queries = set()
         self.schemes_output = None
+        self.scryfall_images = True
         self.set_code = 'PROXY'
         self.vanguards_output = None
         self.verbose = False
@@ -148,6 +149,8 @@ class CommandLineArgs:
                         self.set_input(arg[len('--input='):])
                     elif arg == '--new-wedge-order':
                         self.new_wedge_order = True
+                    elif arg == '--no-scryfall-images':
+                        self.scryfall_images = False
                     elif arg == '--output':
                         mode = 'output'
                     elif arg.startswith('--output='):
@@ -1099,7 +1102,7 @@ def main():
     for query in args.queries:
         if args.verbose:
             print(f'[....] finding cards: {query}', end='\r', flush=True, file=sys.stderr)
-        card_names |= set(subprocess.run(['ruby', '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE, check=True).stdout.decode('utf-8').splitlines())
+        card_names |= set(subprocess.run(['ruby', '--encoding=UTF-8:UTF-8', str(args.find_cards), query], stdout=subprocess.PIPE, check=True).stdout.decode('utf-8').splitlines()) #TODO error handling (ruby not installed, gems not installed, find_cards missing)
         if args.verbose:
             print('[ ok ]', file=sys.stderr)
     if len(card_names) == 0 and not args.all_command:

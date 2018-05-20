@@ -47,6 +47,16 @@ COLOR_ABBREVIATIONS = {
     'R': 'Red',
     'G': 'Green'
 }
+
+IMAGE_FILE_EXTS = [
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.PNG',
+    '.JPG',
+    '.JPEG'
+]
+
 SCRYFALL_REQUEST_TIMEOUT = datetime.datetime.utcnow()
 
 class UncardError(ValueError):
@@ -282,7 +292,7 @@ class CommandLineArgs:
             self.cards |= {
                 image_path.stem
                 for image_path in input_path.iterdir()
-                if image_path.suffix == '.png'
+                if image_path.suffix in IMAGE_FILE_EXTS
             }
         else:
             with input_path.open() as f:
@@ -472,8 +482,11 @@ class MSEDataFile:
             image = None
             image_is_vertical = False
             artist = None
-        elif images is not None and (images / f'{card_info.name}.png').exists():
-            image = images / f'{card_info.name}.png'
+        elif images is not None and any((images / f'{card_info.name}{ext}').exists() for ext in IMAGE_FILE_EXTS):
+            for ext in IMAGE_FILE_EXTS:
+                image = images / f'{card_info.name}{ext}'
+                if image.exists():
+                    break
             with PIL.Image.open(image) as img:
                 image_is_vertical = img.size[1] > img.size[0]
                 exif = piexif.load(img.info.get('exif', piexif.dump({})))
@@ -489,7 +502,7 @@ class MSEDataFile:
                 exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
                 if exif['thumbnail']:
                     exif['1st'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
-                image = images / f'{card_info.name}.png'
+                image = images / f'{card_info.name}.jpg'
                 img.save(image, exif=piexif.dump(exif))
                 image_is_vertical = img.size[1] > img.size[0]
         else:

@@ -497,19 +497,29 @@ class MSEDataFile:
             scryfall_data = scryfall_request('https://api.scryfall.com/cards/named', params={'exact': card_info.name}).json()
             artist = scryfall_data['artist']
             if 'image_uris' in scryfall_data:
-                response = scryfall_request(scryfall_data['image_uris']['art_crop'])
+                img_url = scryfall_data['image_uris']['art_crop']
             elif 'card_faces' in scryfall_data:
-                response = scryfall_request(more_itertools.one(filter(lambda face: face['name'] == card_info.name, scryfall_data['card_faces']))['image_uris']['art_crop'])
+                img_url = more_itertools.one(filter(lambda face: face['name'] == card_info.name, scryfall_data['card_faces']))['image_uris']['art_crop']
             else:
                 raise ValueError(f'Unexpexted format of Scryfall JSON data: {scryfall_data!r}')
-            with PIL.Image.open(io.BytesIO(response.content)) as img:
-                exif = piexif.load(img.info.get('exif', piexif.dump({})))
-                exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
-                if exif['thumbnail']:
-                    exif['1st'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
-                image = images / f'{card_info.name}.jpg'
-                img.save(image, exif=piexif.dump(exif))
-                image_is_vertical = img.size[1] > img.size[0]
+            try:
+                response = scryfall_request(img_url)
+            except requests.HTTPError as e:
+                if e.response.status_code == 404:
+                    image = None
+                    image_is_vertical = False
+                    artist = None
+                else:
+                    raise
+            else:
+                with PIL.Image.open(io.BytesIO(response.content)) as img:
+                    exif = piexif.load(img.info.get('exif', piexif.dump({})))
+                    exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
+                    if exif['thumbnail']:
+                        exif['1st'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
+                    image = images / f'{card_info.name}.jpg'
+                    img.save(image, exif=piexif.dump(exif))
+                    image_is_vertical = img.size[1] > img.size[0]
         else:
             image = None
             image_is_vertical = False

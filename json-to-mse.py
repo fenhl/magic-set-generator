@@ -4,11 +4,13 @@ import sys
 
 import PIL.Image
 import contextlib
+import datetime
 import enum
 import io
 import more_itertools
 import mtgjson
 import pathlib
+import piexif
 import regex
 import requests
 import shlex
@@ -44,6 +46,7 @@ COLOR_ABBREVIATIONS = {
     'R': 'Red',
     'G': 'Green'
 }
+SCRYFALL_REQUEST_TIMEOUT = datetime.datetime.utcnow()
 
 class UncardError(ValueError):
     pass
@@ -371,7 +374,7 @@ class MSEDataFile:
             self.stylesheets.add(stylesheet)
 
     @classmethod
-    def from_card(cls, card_info, db, default_stylesheet='m15', layout=None, images=None, images_to_add=None, new_wedge_order=False, allow_uncards=False, *, alt=False):
+    def from_card(cls, card_info, db, default_stylesheet='m15', layout=None, images=None, images_to_add=None, new_wedge_order=False, allow_uncards=False, use_scryfall=True, *, alt=False):
         def alt_key(key_name):
             if alt:
                 return f'{key_name} {alt}'
@@ -402,19 +405,19 @@ class MSEDataFile:
                 if not alt:
                     frame_features |= FrameFeatures.SPLIT
                     frame_features |= FrameFeatures.AFTERMATH
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, use_scryfall=use_scryfall, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features
             elif card_info.layout == 'double-faced':
                 if not alt:
                     frame_features |= FrameFeatures.DFC
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, use_scryfall=use_scryfall, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'flip':
                 if not alt:
                     frame_features |= FrameFeatures.FLIP
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, use_scryfall=use_scryfall, alt=2)
                     result |= alt_result
             elif card_info.layout == 'leveler':
                 frame_features |= FrameFeatures.LEVELER
@@ -422,13 +425,13 @@ class MSEDataFile:
                 if not alt:
                     frame_features |= FrameFeatures.DFC
                     frame_features |= FrameFeatures.MELD
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[2]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[2]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, use_scryfall=use_scryfall, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features.alt_dfc()
             elif card_info.layout == 'split':
                 if not alt:
                     frame_features |= FrameFeatures.SPLIT
-                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, alt=2)
+                    alt_result, alt_frame_features = cls.from_card(db.cards_by_name[card_info.names[1]], db, default_stylesheet=default_stylesheet, layout=layout, images=images, images_to_add=images_to_add, new_wedge_order=new_wedge_order, allow_uncards=allow_uncards, use_scryfall=use_scryfall, alt=2)
                     result |= alt_result
                     frame_features |= alt_frame_features
             else:
@@ -456,15 +459,39 @@ class MSEDataFile:
         if hasattr(card_info, 'manaCost') and not (alt and card_info.layout == 'flip'):
             result[alt_key('casting cost')] = cost_to_mse(card_info.manaCost, normalize=new_wedge_order)
         # image
-        if images is not None and images_to_add is not None and (images / f'{card_info.name}.png').exists():
+        if images_to_add is None:
+            image = None
+            image_is_vertical = False
+            artist = None
+        elif images is not None and (images / f'{card_info.name}.png').exists():
             image = images / f'{card_info.name}.png'
-            result[alt_key('image')] = f'image{len(images_to_add) + 1}'
-            images_to_add.append(image)
             with PIL.Image.open(image) as img:
+                image_is_vertical = img.size[1] > img.size[0]
+                exif = piexif.load(img.info.get('exif', piexif.dump({})))
+                artist = exif['0th'].get(piexif.ImageIFD.Artist)
+                if isinstance(artist, bytes):
+                    artist = artist.decode('utf-8')
+        elif use_scryfall:
+            scryfall_data = scryfall_request('https://api.scryfall.com/cards/named', params={'exact': card_info.name}).json()
+            artist = scryfall_data['artist']
+            response = scryfall_request(scryfall_data['image_uris']['art_crop'])
+            with PIL.Image.open(io.BytesIO(response.content)) as img:
+                exif = piexif.load(img.info.get('exif', piexif.dump({})))
+                exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
+                if exif['thumbnail']:
+                    exif['1st'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
+                image = images / f'{card_info.name}.png'
+                img.save(image, exif=piexif.dump(exif))
                 image_is_vertical = img.size[1] > img.size[0]
         else:
             image = None
             image_is_vertical = False
+            artist = None
+        if image is not None:
+            result[alt_key('image')] = f'image{len(images_to_add) + 1}'
+            images_to_add.append(image)
+        if artist is not None:
+            result[alt_key('illustrator')] = artist
         # frame color & color indicator
         frame_color = []
         if getattr(card_info, 'colors', []) == []:
@@ -677,14 +704,19 @@ class MSEDataFile:
                 # face symbols depending on whether it's a meld card TODO add options to customize: all the same, or according to CR, or according to template (skipping this code)
                 if 'extra data' not in result:
                     result['extra data'] = {}
-                if result['stylesheet'] not in result['extra data']:
-                    result['extra data'][result['stylesheet']] = {}
-                if FrameFeatures.MELD in frame_features:
-                    result['extra data'][result['stylesheet']]['corner'] = 'moon'
-                    result['extra data'][result['stylesheet']]['corner 2'] = 'eldrazi'
-                else:
-                    result['extra data'][result['stylesheet']]['corner'] = 'day'
-                    result['extra data'][result['stylesheet']]['corner 2'] = 'night'
+                    stylesheet_keys = [
+                        result.get("stylesheet", default_stylesheet),
+                        f'{layout or "magic"}-{result.get("stylesheet", default_stylesheet)}'
+                    ]
+                for stylesheet_key in stylesheet_keys:
+                    if stylesheet_key not in result['extra data']:
+                        result['extra data'][stylesheet_key] = {}
+                    if FrameFeatures.MELD in frame_features:
+                        result['extra data'][stylesheet_key]['corner'] = 'moon'
+                        result['extra data'][stylesheet_key]['corner 2'] = 'eldrazi'
+                    else:
+                        result['extra data'][stylesheet_key]['corner'] = 'day'
+                        result['extra data'][stylesheet_key]['corner 2'] = 'night'
             elif FrameFeatures.PLANESWALKER in frame_features:
                 if FrameFeatures.TRUE_COLORLESS in frame_features:
                     result['stylesheet'] = 'm15-planeswalker-clear'
@@ -714,9 +746,14 @@ class MSEDataFile:
             if alt_key('card color') in result:
                 if 'extra data' not in result:
                     result['extra data'] = {}
-                if result.get('stylesheet', default_stylesheet) not in result['extra data']:
-                    result['extra data'][result.get('stylesheet', default_stylesheet)] = {}
-                result['extra data'][result.get('stylesheet', default_stylesheet)]['stamp'] = result[alt_key('card color')]
+                    stylesheet_keys = [
+                        result.get("stylesheet", default_stylesheet),
+                        f'{layout or "magic"}-{result.get("stylesheet", default_stylesheet)}'
+                    ]
+                for stylesheet_key in stylesheet_keys:
+                    if stylesheet_key not in result['extra data']:
+                        result['extra data'][stylesheet_key] = {}
+                    result['extra data'][stylesheet_key]['stamp'] = result[alt_key('card color')]
             return result
 
     def get(self, key, default=None):
@@ -1017,6 +1054,16 @@ def mtg_json(*, extras=False, verbose=False):
                 print('\r[ ok ]', file=sys.stderr)
         return CACHE['db']
 
+def scryfall_request(*args, **kwargs):
+    global SCRYFALL_REQUEST_TIMEOUT
+
+    sleep_secs = (SCRYFALL_REQUEST_TIMEOUT - datetime.datetime.utcnow()).total_seconds()
+    if sleep_secs > 0:
+        time.sleep(sleep_secs)
+    response = requests.get(*args, **kwargs)
+    SCRYFALL_REQUEST_TIMEOUT = datetime.datetime.utcnow() + datetime.timedelta(milliseconds=100) # recommended rate limit according to https://scryfall.com/docs/api
+    return response
+
 def main():
     try:
         args = CommandLineArgs()
@@ -1176,20 +1223,26 @@ def main():
             print('[{}{}] adding cards to set file: {} of {}'.format('=' * progress, '.' * (4 - progress), i, len(normalized_card_names)), end='\r', flush=True, file=sys.stderr)
         card = db.cards_by_name[card_name]
         try:
+            kwargs = {
+                'images': args.images,
+                'new_wedge_order': args.new_wedge_order,
+                'allow_uncards': args.allow_uncards,
+                'use_scryfall': args.scryfall_images
+            }
             if 'Plane' in card.types or 'Phenomenon' in card.types:
                 if args.include_planes:
-                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
-                planes_set_file.add_card(card, db, layout='planechase', images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+                    set_file.add_card(card, db, **kwargs)
+                planes_set_file.add_card(card, db, layout='planechase', **kwargs)
             elif 'Scheme' in card.types:
                 if args.include_schemes:
-                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
-                schemes_set_file.add_card(card, db, layout='archenemy', images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+                    set_file.add_card(card, db, **kwargs)
+                schemes_set_file.add_card(card, db, layout='archenemy', **kwargs)
             elif 'Vanguard' in card.types:
                 if args.include_vanguards:
-                    set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
-                vanguards_set_file.add_card(card, db, layout='vanguard', images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+                    set_file.add_card(card, db, **kwargs)
+                vanguards_set_file.add_card(card, db, layout='vanguard', **kwargs)
             else:
-                set_file.add_card(card, db, images=args.images, new_wedge_order=args.new_wedge_order, allow_uncards=args.allow_uncards)
+                set_file.add_card(card, db, **kwargs)
         except UncardError as e:
             print(f'[ !! ] Failed to add card {card_name}        ', file=sys.stderr)
             print(f'[ !! ] Un-cards are not supported and will most likely render incorrectly. Re-run with --allow-uncards to generate them anyway.', file=sys.stderr)

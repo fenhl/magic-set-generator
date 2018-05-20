@@ -61,6 +61,7 @@ class CommandLineArgs:
         self.copyright = 'NOT FOR SALE'
         self.decklists = set()
         self.find_cards = pathlib.Path('git/github.com/taw/magic-search-engine/master/search-engine/bin/find_cards')
+        self.help = False
         self.images = None
         self._include_planes = None
         self._include_schemes = None
@@ -123,6 +124,8 @@ class CommandLineArgs:
                         mode = 'find-cards'
                     elif arg.startswith('--find-cards='):
                         self.find_cards = pathlib.Path(arg[len('--find-cards='):])
+                    elif arg == '--help':
+                        self.help = True
                     elif arg == '--images':
                         mode = 'images'
                     elif arg.startswith('--images='):
@@ -179,6 +182,8 @@ class CommandLineArgs:
                             else:
                                 mode = 'border'
                             break
+                        elif short_flag == 'h':
+                            self.help = True
                         elif short_flag == 'i':
                             if len(arg) > i + 1:
                                 self.set_input(arg[i + 1:])
@@ -1069,6 +1074,10 @@ def main():
         args = CommandLineArgs()
     except ValueError as e:
         sys.exit(f'[!!!!] {e.args[0]}')
+    # help mode
+    if args.help:
+        print('[ ** ] please see https://github.com/fenhl/json-to-mse/blob/master/README.md for usage instructions')
+        sys.exit()
     # read card names
     card_names = args.cards
     if not sys.stdin.isatty():

@@ -67,6 +67,7 @@ python3 json-to-mse.py 'Dryad Arbor' -o example.mse-set
     * `s` or `silver`
     * `g` or `gold`
     * `b` or `bronze`, for clearly marking cards as proxies
+* `-h`, `--help`: Print a short message with a link to this readme file.
 * `-i`, `--input=<path>`: Read card names from the file or directory located at `<path>`. This can be specified multiple times to combine multiple input paths into one MSE set file. The following formats are understood:
     * A plain text file with one card name per line. Special lines are also supported as with directly specified arguments (see “advanced usage” above).
     * A directory containing images named `<card name>.png`. This will set `--images` to this directory if it's not already set (see below), and generate the named cards.

@@ -1033,8 +1033,9 @@ def find_card_image(images_dir, card_name):
     for ext in IMAGE_FILE_EXTS:
         for card_name_normalization in [card_name.replace(':', '').replace('"', ''), card_name]:
             image = images_dir / f'{card_name_normalization}{ext}'
-            if image.exists():
-                return image
+            with contextlib.suppress(OSError):
+                if image.exists():
+                    return image
 
 def implicit_colors(cost, short=False):
     def cost_part_colors(part):

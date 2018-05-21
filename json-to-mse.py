@@ -1021,7 +1021,7 @@ def could_produce(card_info):
 
 def denormalize_image_name(image_name, *, db=None, verbose=False):
     if db is None:
-        db = mtg_json(verbose=versboe)
+        db = mtg_json(verbose=verbose)
     if image_name in db.cards_by_name:
         return image_name
     for card_name in db.cards_by_name:

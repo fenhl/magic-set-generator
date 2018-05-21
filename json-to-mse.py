@@ -514,7 +514,7 @@ class MSEDataFile:
                     exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
                     if exif['thumbnail']:
                         exif['1st'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
-                    image = images / f'{card_info.name.replace(":", "").replace("\"", "")}.jpg'
+                    image = images / '{}.jpg'.format(card_info.name.replace(':', '').replace('"', ''))
                     img.save(image, exif=piexif.dump(exif))
                     image_is_vertical = img.size[1] > img.size[0]
         else:

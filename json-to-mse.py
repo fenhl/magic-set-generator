@@ -290,7 +290,7 @@ class CommandLineArgs:
             if self.images is None:
                 self.images = input_path
             self.cards |= {
-                image_path.stem
+                denormalize_image_name(image_path.stem, verbose=self.verbose)
                 for image_path in input_path.iterdir()
                 if image_path.suffix in IMAGE_FILE_EXTS
             }
@@ -482,11 +482,8 @@ class MSEDataFile:
             image = None
             image_is_vertical = False
             artist = None
-        elif images is not None and any((images / f'{card_info.name}{ext}').exists() for ext in IMAGE_FILE_EXTS):
-            for ext in IMAGE_FILE_EXTS:
-                image = images / f'{card_info.name}{ext}'
-                if image.exists():
-                    break
+        elif images is not None and find_card_image(images, card_info.name):
+            image = find_card_image(images, card_info.name)
             with PIL.Image.open(image) as img:
                 image_is_vertical = img.size[1] > img.size[0]
                 exif = piexif.load(img.info.get('exif', piexif.dump({})))
@@ -517,7 +514,7 @@ class MSEDataFile:
                     exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
                     if exif['thumbnail']:
                         exif['1st'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
-                    image = images / f'{card_info.name}.jpg'
+                    image = images / f'{card_info.name.replace(":", "").replace("\"", "")}.jpg'
                     img.save(image, exif=piexif.dump(exif))
                     image_is_vertical = img.size[1] > img.size[0]
         else:
@@ -1021,6 +1018,23 @@ def could_produce(card_info):
         else:
             raise NotImplementedError('could_produce for {} not implemented'.format(card_info.name))
     return result
+
+def denormalize_image_name(image_name, *, db=None, verbose=False):
+    if db is None:
+        db = mtg_json(verbose=versboe)
+    if image_name in db.cards_by_name:
+        return image_name
+    for card_name in db.cards_by_name:
+        if card_name.replace(':', '').replace('"', '') == image_name:
+            return card_name
+    raise LookupError(f'No card matching image name {image_name!r}')
+
+def find_card_image(images_dir, card_name):
+    for ext in IMAGE_FILE_EXTS:
+        for card_name_normalization in [card_name.replace(':', '').replace('"', ''), card_name]:
+            image = images_dir / f'{card_name_normalization}{ext}'
+            if image.exists():
+                return image
 
 def implicit_colors(cost, short=False):
     def cost_part_colors(part):

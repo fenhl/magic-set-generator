@@ -514,7 +514,7 @@ class MSEDataFile:
                     exif['0th'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
                     if exif['thumbnail']:
                         exif['1st'][piexif.ImageIFD.Artist] = artist.encode('utf-8')
-                    image = images / '{}.jpg'.format(card_info.name.replace(':', '').replace('"', ''))
+                    image = images / '{}.jpg'.format(normalize_image_name(card_info.name))
                     img.save(image, exif=piexif.dump(exif))
                     image_is_vertical = img.size[1] > img.size[0]
         else:
@@ -1025,13 +1025,13 @@ def denormalize_image_name(image_name, *, db=None, verbose=False):
     if image_name in db.cards_by_name:
         return image_name
     for card_name in db.cards_by_name:
-        if card_name.replace(':', '').replace('"', '') == image_name:
+        if normalize_image_name(card_name) == image_name:
             return card_name
     raise LookupError(f'No card matching image name {image_name!r}')
 
 def find_card_image(images_dir, card_name):
     for ext in IMAGE_FILE_EXTS:
-        for card_name_normalization in [card_name.replace(':', '').replace('"', ''), card_name]:
+        for card_name_normalization in [normalize_image_name(card_name), card_name]:
             image = images_dir / f'{card_name_normalization}{ext}'
             with contextlib.suppress(OSError):
                 if image.exists():
@@ -1105,6 +1105,9 @@ def mtg_json(*, extras=False, verbose=False):
             if verbose:
                 print('\r[ ok ]', file=sys.stderr)
         return CACHE['db']
+
+def normalize_image_name(card_name):
+    return card_name.replace(':', '').replace('"', '').replace('?', '')
 
 def scryfall_request(*args, **kwargs):
     global SCRYFALL_REQUEST_TIMEOUT

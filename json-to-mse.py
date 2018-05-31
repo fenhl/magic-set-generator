@@ -86,6 +86,9 @@ class CommandLineArgs:
         self.set_code = 'PROXY'
         self.vanguards_output = None
         self.verbose = False
+        self.parse_args(args)
+
+    def parse_args(self, args):
         mode = None
         for arg in args:
             if mode == 'border':
@@ -214,8 +217,20 @@ class CommandLineArgs:
                             self.verbose = True
                         else:
                             raise ValueError(f'Unrecognized flag: -{short_flag}')
+            elif arg.startswith('!'):
+                cmd, *cmd_args = shlex.split(arg[1:])
+                if cmd == 'all':
+                    self.all_command = True
+                elif cmd == 'tappedout':
+                    self.decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
+                else:
+                    raise ValueError(f'Unrecognized input command: {cmd}')
+            elif arg.startswith('#'):
+                pass # comment arg
+            elif arg.startswith('='):
+                self.queries.add(arg[1:])
             else:
-                self.parse_input(arg)
+                self.cards.add(arg)
 
     @property
     def include_planes(self):
@@ -264,26 +279,6 @@ class CommandLineArgs:
         else:
             raise ValueError(f'Unrecognized border color: {border_color}')
 
-    def parse_input(self, input_line):
-        line = input_line.strip()
-        if line == '':
-            return
-        if line.startswith('!'):
-            cmd, *args = shlex.split(line[1:])
-            if cmd == 'all':
-                self.all_command = True
-            elif cmd == 'tappedout':
-                self.decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
-            else:
-                raise ValueError(f'Unrecognized input command: {cmd}')
-            return
-        if line.startswith('#'):
-            return
-        if line.startswith('='):
-            self.queries.add(line[1:])
-            return
-        self.cards.add(line)
-
     def set_input(self, input_filename):
         input_path = pathlib.Path(input_filename)
         if input_path.is_dir():
@@ -296,8 +291,11 @@ class CommandLineArgs:
             }
         else:
             with input_path.open() as f:
-                for line in f:
-                    self.parse_input(line)
+                self.parse_args(
+                    line.strip()
+                    for line in f
+                    if line.strip() != ''
+                )
 
 class FrameFeatures(enum.Flag):
     NONE = 0

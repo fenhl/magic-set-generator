@@ -551,6 +551,8 @@ class MSEDataFile:
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
+                if not alt:
+                    result['styling data'] = {'color indicator dot': 'yes'}
         elif set(getattr(card_info, 'colors', [])) != set(implicit_colors(getattr(card_info, 'manaCost', None))):
             if getattr(card_info, 'colors', []) == []:
                 if image_is_vertical:
@@ -561,6 +563,8 @@ class MSEDataFile:
             else:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
+                if not alt:
+                    result['styling data'] = {'color indicator dot': 'yes'}
         elif getattr(card_info, 'colors', []) == []:
             if image_is_vertical and not any(card_type in card_info.types for card_type in ['Artifact', 'Land', 'Phenomenon', 'Plane', 'Scheme', 'Vanguard']):
                 frame_features |= FrameFeatures.TRUE_COLORLESS

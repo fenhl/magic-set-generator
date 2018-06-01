@@ -756,8 +756,9 @@ class MSEDataFile:
                         result['stylesheet'] = 'm15-doublefaced'
                 # face symbols depending on whether it's a meld card
                 #TODO add options to customize: all the same, or according to CR, or according to template (skipping this code)
-                #TODO fix missing symbol on sparkers front face
-                if FrameFeatures.MELD in frame_features:
+                if FrameFeatures.PLANESWALKER_BACK in frame_features and FrameFeatures.PLANESWALKER not in frame_features:
+                    pass # don't override DFC symbol for sparkers for now since it breaks the template
+                elif FrameFeatures.MELD in frame_features:
                     set_stylesheet_data('corner', 'moon')
                     set_stylesheet_data('corner 2', 'eldrazi')
                 else:

@@ -398,6 +398,22 @@ class MSEDataFile:
             else:
                 return key_name
 
+        stylesheet_keys = None
+
+        def set_stylesheet_data(key, value):
+            nonlocal stylesheet_keys
+
+            if 'extra data' not in result:
+                result['extra data'] = {}
+                stylesheet_keys = [
+                    result.get("stylesheet", default_stylesheet),
+                    f'{layout or "magic"}-{result.get("stylesheet", default_stylesheet)}'
+                ]
+            for stylesheet_key in stylesheet_keys:
+                if stylesheet_key not in result['extra data']:
+                    result['extra data'][stylesheet_key] = {}
+                result['extra data'][stylesheet_key][key] = value
+
         # check for legality
         if card_info.layout == 'token':
             raise ValueError('Token cards are not supported')
@@ -552,6 +568,7 @@ class MSEDataFile:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
                 if not alt:
+                    result['has styling'] = True
                     result['styling data'] = {'color indicator dot': 'yes'}
         elif set(getattr(card_info, 'colors', [])) != set(implicit_colors(getattr(card_info, 'manaCost', None))):
             if getattr(card_info, 'colors', []) == []:
@@ -564,6 +581,7 @@ class MSEDataFile:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
                 if not alt:
+                    result['has styling'] = True
                     result['styling data'] = {'color indicator dot': 'yes'}
         elif getattr(card_info, 'colors', []) == []:
             if image_is_vertical and not any(card_type in card_info.types for card_type in ['Artifact', 'Land', 'Phenomenon', 'Plane', 'Scheme', 'Vanguard']):
@@ -701,7 +719,6 @@ class MSEDataFile:
             result[alt_key('handmod' if layout == 'vanguard' else 'power')] = f'{card_info.hand:+}'
         if hasattr(card_info, 'life'):
             result[alt_key('lifemod' if layout == 'vanguard' else 'toughness')] = f'{card_info.life:+}'
-        #TODO artist credit
         # stylesheet
         if alt:
             return result, frame_features
@@ -737,22 +754,15 @@ class MSEDataFile:
                         result['stylesheet'] = 'm15-doublefaced-ixalands'
                     else:
                         result['stylesheet'] = 'm15-doublefaced'
-                # face symbols depending on whether it's a meld card TODO add options to customize: all the same, or according to CR, or according to template (skipping this code)
-                if 'extra data' not in result:
-                    result['extra data'] = {}
-                    stylesheet_keys = [
-                        result.get("stylesheet", default_stylesheet),
-                        f'{layout or "magic"}-{result.get("stylesheet", default_stylesheet)}'
-                    ]
-                for stylesheet_key in stylesheet_keys:
-                    if stylesheet_key not in result['extra data']:
-                        result['extra data'][stylesheet_key] = {}
-                    if FrameFeatures.MELD in frame_features:
-                        result['extra data'][stylesheet_key]['corner'] = 'moon'
-                        result['extra data'][stylesheet_key]['corner 2'] = 'eldrazi'
-                    else:
-                        result['extra data'][stylesheet_key]['corner'] = 'day'
-                        result['extra data'][stylesheet_key]['corner 2'] = 'night'
+                # face symbols depending on whether it's a meld card
+                #TODO add options to customize: all the same, or according to CR, or according to template (skipping this code)
+                #TODO fix missing symbol on sparkers front face
+                if FrameFeatures.MELD in frame_features:
+                    set_stylesheet_data('corner', 'moon')
+                    set_stylesheet_data('corner 2', 'eldrazi')
+                else:
+                    set_stylesheet_data('corner', 'day')
+                    set_stylesheet_data('corner 2', 'night')
             elif FrameFeatures.PLANESWALKER in frame_features:
                 if FrameFeatures.TRUE_COLORLESS in frame_features:
                     result['stylesheet'] = 'm15-planeswalker-clear'
@@ -780,16 +790,7 @@ class MSEDataFile:
                 result['stylesheet'] = 'm15-textless-land'
             # make sure the frame color around the stamp matches color of the rest of the frame
             if alt_key('card color') in result:
-                if 'extra data' not in result:
-                    result['extra data'] = {}
-                    stylesheet_keys = [
-                        result.get("stylesheet", default_stylesheet),
-                        f'{layout or "magic"}-{result.get("stylesheet", default_stylesheet)}'
-                    ]
-                for stylesheet_key in stylesheet_keys:
-                    if stylesheet_key not in result['extra data']:
-                        result['extra data'][stylesheet_key] = {}
-                    result['extra data'][stylesheet_key]['stamp'] = result[alt_key('card color')]
+                set_stylesheet_data('stamp', result[alt_key('card color')])
             return result
 
     def get(self, key, default=None):

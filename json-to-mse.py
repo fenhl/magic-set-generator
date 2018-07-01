@@ -1345,7 +1345,7 @@ def main():
     if args.verbose:
         print('[....] adding images and saving', end='\r', flush=True, file=sys.stderr)
     buf = io.BytesIO()
-    with zipfile.ZipFile(buf, 'x') as f:
+    with zipfile.ZipFile(buf, 'x', zipfile.ZIP_DEFLATED) as f:
         f.writestr('set', str(set_file))
         for i, image_path in enumerate(set_file.images):
             f.write(image_path, arcname=f'image{i + 1}')
@@ -1357,7 +1357,7 @@ def main():
         print('[==..]', end='\r', flush=True, file=sys.stderr)
     if args.planes_output is not None:
         buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'x') as f:
+        with zipfile.ZipFile(buf, 'x', zipfile.ZIP_DEFLATED) as f:
             f.writestr('set', str(planes_set_file))
             for i, image_path in enumerate(planes_set_file.images):
                 f.write(image_path, arcname=f'image{i + 1}')
@@ -1367,7 +1367,7 @@ def main():
         print('[===.]', end='\r', flush=True, file=sys.stderr)
     if args.schemes_output is not None:
         buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'x') as f:
+        with zipfile.ZipFile(buf, 'x', zipfile.ZIP_DEFLATED) as f:
             f.writestr('set', str(schemes_set_file))
             for i, image_path in enumerate(schemes_set_file.images):
                 f.write(image_path, arcname=f'image{i + 1}')
@@ -1377,7 +1377,7 @@ def main():
         print('[====]', end='\r', flush=True, file=sys.stderr)
     if args.vanguards_output is not None:
         buf = io.BytesIO()
-        with zipfile.ZipFile(buf, 'x') as f:
+        with zipfile.ZipFile(buf, 'x', zipfile.ZIP_DEFLATED) as f:
             f.writestr('set', str(vanguards_set_file))
             for i, image_path in enumerate(vanguards_set_file.images):
                 f.write(image_path, arcname=f'image{i + 1}')

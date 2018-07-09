@@ -91,3 +91,6 @@ ENV/
 # Rust
 /target
 **/*.rs.bk
+
+# build script artifacts
+/src/version.rs

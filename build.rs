@@ -24,6 +24,7 @@ fn get_git_hash() -> String {
 }
 
 fn main() -> Result<(), io::Error> {
+    println!("cargo:rerun-if-changed=nonexistent.foo"); // check a nonexistent file to make sure build script is always run (see https://github.com/rust-lang/cargo/issues/4213)
     let mut f = File::create("src/version.rs")?;
     writeln!(f, "const GIT_COMMIT_HASH: &str = \"{}\";", get_git_hash())?;
     Ok(())

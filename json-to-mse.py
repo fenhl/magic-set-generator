@@ -568,6 +568,7 @@ class MSEDataFile:
                 result[alt_key('card color')] = ', '.join(frame_color)
                 result[alt_key('indicator')] = ', '.join(c.lower() for c in card_info.colors)
                 if not alt:
+                    #TODO fix full-art lands (Dryad Arbor)
                     result['has styling'] = True
                     result['styling data'] = {'color indicator dot': 'yes'}
         elif set(getattr(card_info, 'colors', [])) != set(implicit_colors(getattr(card_info, 'manaCost', None))):

@@ -222,7 +222,7 @@ class CommandLineArgs:
                 if cmd == 'all':
                     self.all_command = True
                 elif cmd == 'tappedout':
-                    self.decklists.add(f'http://tappedout.net/mtg-decks/{args[0]}/?fmt=txt')
+                    self.decklists.add(f'http://tappedout.net/mtg-decks/{cmd_args[0]}/?fmt=txt')
                 else:
                     raise ValueError(f'Unrecognized input command: {cmd}')
             elif arg.startswith('#'):

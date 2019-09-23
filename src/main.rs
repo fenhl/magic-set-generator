@@ -75,7 +75,6 @@ fn main() -> Result<(), Error> {
     };
     // read card names
     let /*mut*/ card_names = args.cards.clone();
-    //TODO also read card names/commands from stdin, unless it's a tty
     //TODO also read card names from args.decklists
     //TODO also read card names from queries
     if card_names.is_empty() && !args.all_command {

@@ -2,6 +2,8 @@
 
 # Usage
 
+**Note:** `json-to-mse` is currently being rewritten. These instructions are for an earlier version of `json-to-mse`.
+
 Since MSE is a Windows programm, this guide assumes that you're running `json-to-mse` on Windows. For other platforms, adjust accordingly.
 
 ## Installation

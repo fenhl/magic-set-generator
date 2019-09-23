@@ -2,5 +2,11 @@
 name = "json-to-mse"
 version = "0.1.0"
 authors = ["Fenhl <fenhl@fenhl.net>"]
+edition = "2018"
 
 [dependencies]
+derive_more = "*"
+zip = "*"
+
+[dependencies.mtg]
+git = "https://github.com/fenhl/rust-mtg"

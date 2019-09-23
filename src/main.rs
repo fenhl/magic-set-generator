@@ -13,16 +13,22 @@ use {
         }
     },
     derive_more::From,
-    mtg::card::{
-        Db,
-        DbError
+    mtg::{
+        card::{
+            Db,
+            DbError
+        },
+        cardtype::CardType
     },
     crate::{
         args::{
             Args,
             Output
         },
-        mse::DataFile
+        mse::{
+            DataFile,
+            MseGame
+        }
     }
 };
 
@@ -31,18 +37,18 @@ mod mse;
 mod version;
 
 macro_rules! verbose_eprint {
-    ($args:expr, $fmt:tt) => {
+    ($args:expr, $($fmt:tt)+) => {
         if $args.verbose {
-            eprint!($fmt);
+            eprint!($($fmt)+);
             stderr().flush()?;
         }
     };
 }
 
 macro_rules! verbose_eprintln {
-    ($args:expr, $fmt:tt) => {
+    ($args:expr, $($fmt:tt)+) => {
         if $args.verbose {
-            eprintln!($fmt);
+            eprintln!($($fmt)+);
         }
     };
 }
@@ -50,8 +56,11 @@ macro_rules! verbose_eprintln {
 #[derive(Debug, From)]
 pub(crate) enum Error {
     Args(String),
+    CardGen(String, Box<Error>),
+    CardNotFound,
     Db(DbError),
-    Io(io::Error)
+    Io(io::Error),
+    //Uncard
 }
 
 impl From<Infallible> for Error {
@@ -80,17 +89,65 @@ fn main() -> Result<(), Error> {
     if card_names.is_empty() && !args.all_command {
         verbose_eprintln!(args, "[ !! ] no cards specified, generating empty set file");
     }
-    let _ /*db*/ = Db::download()?;
+    let db = Db::download()?;
     if args.all_command {
         //card_names = db.into_iter().map(|card| card.to_string()).collect(); //TODO uncomment
     }
     //TODO normalize card names
     // create set metadata
-    let set_file = DataFile::new(&args, card_names.len());
-    let planes_set_file = DataFile::new_planes(&args, card_names.len());
-    let schemes_set_file = DataFile::new_schemes(&args, card_names.len());
-    let vanguards_set_file = DataFile::new_vanguards(&args, card_names.len());
+    let mut set_file = DataFile::new(&args, card_names.len());
+    let mut planes_set_file = DataFile::new_planes(&args, card_names.len());
+    let mut schemes_set_file = DataFile::new_schemes(&args, card_names.len());
+    let mut vanguards_set_file = DataFile::new_vanguards(&args, card_names.len());
     //TODO add cards to set
+    let mut failed = 0;
+    for (i, card_name) in card_names.iter().enumerate() {
+        let progress = 4.min(5 * i / card_names.len());
+        verbose_eprint!(args, "[{}{}] adding cards to set file: {} of {}\r", "=".repeat(progress), ".".repeat(4 - progress), i, card_names.len());
+        match db.card_fuzzy(card_name).ok_or(Error::CardNotFound).and_then(|card|
+            if card.type_line() >= CardType::Plane || card.type_line() >= CardType::Phenomenon {
+                if args.include_planes() {
+                    set_file.add_card(&card, &db, MseGame::Magic, &args)
+                } else {
+                    Ok(())
+                }.and_then(|()| planes_set_file.add_card(&card, &db, MseGame::Planechase, &args))
+            } else if card.type_line() >= CardType::Scheme {
+                if args.include_schemes() {
+                    set_file.add_card(&card, &db, MseGame::Magic, &args)
+                } else {
+                    Ok(())
+                }.and_then(|()| schemes_set_file.add_card(&card, &db, MseGame::Archenemy, &args))
+            } else if card.type_line() >= CardType::Vanguard {
+                if args.include_vanguards() {
+                    set_file.add_card(&card, &db, MseGame::Magic, &args)
+                } else {
+                    Ok(())
+                }.and_then(|()| vanguards_set_file.add_card(&card, &db, MseGame::Vanguard, &args))
+            } else {
+                set_file.add_card(&card, &db, MseGame::Magic, &args)
+            }
+        ) {
+            Ok(()) => {}
+            /*
+            Err(Error::Uncard) => {
+                eprintln!("[ !! ] Failed to add card {}        ", card_name);
+                eprintln!("[ !! ] Un-cards are not supported and will most likely render incorrectly. Re-run with --allow-uncards to generate them anyway.");
+            }
+            */ //TODO uncomment special case
+            Err(e) => {
+                if args.verbose {
+                    return Err(Error::CardGen(card_name.into(), Box::new(e)));
+                } else {
+                    eprintln!("[ !! ] Failed to add card {}        ", card_name);
+                    failed += 1;
+                }
+            }
+        }
+    }
+    if failed > 0 {
+        eprintln!("[ ** ] {} cards failed. Run again with --verbose for a detailed error message", failed);
+    }
+    verbose_eprintln!(args, "[ ok ] adding cards to set file: {0} of {0}", card_names.len());
     //TODO generate stylesheet settings
     //TODO generate footers (or move into constructors)
     // write set zip files

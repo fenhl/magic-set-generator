@@ -8,12 +8,26 @@ use {
         iter::FromIterator,
         path::PathBuf
     },
+    mtg::card::{
+        Db,
+        Card
+    },
     zip::{
         ZipWriter,
         write::FileOptions
     },
-    crate::args::ArgsRegular
+    crate::{
+        Error,
+        args::ArgsRegular
+    }
 };
+
+pub(crate) enum MseGame {
+    Magic,
+    Archenemy,
+    Planechase,
+    Vanguard
+}
 
 enum Data {
     Flat(String),
@@ -87,6 +101,10 @@ impl DataFile {
 
     pub(crate) fn new_vanguards(args: &ArgsRegular, num_cards: usize) -> DataFile {
         DataFile::new_inner(args, num_cards, "vanguard", "MTG JSON card import: Vanguard avatars")
+    }
+
+    pub(crate) fn add_card(&mut self, _: &Card, _: &Db, _: MseGame, _: &ArgsRegular) -> Result<(), Error> {
+        Ok(()) //TODO
     }
 
     fn write_inner(&self, buf: &mut impl Write, indent: usize) -> Result<(), io::Error> {

@@ -20,7 +20,13 @@ use {
 };
 
 //TODO add remaining flags/options from readme
-const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 1] = [
+const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 7] = [
+    ("include-planes", None, include_planes_on),
+    ("include-schemes", None, include_schemes_on),
+    ("include-vanguards", None, include_vanguards_on),
+    ("no-include-planes", None, include_planes_off),
+    ("no-include-schemes", None, include_schemes_off),
+    ("no-include-vanguards", None, include_vanguards_off),
     ("verbose", Some('v'), verbose)
 ];
 
@@ -66,6 +72,9 @@ pub(crate) struct ArgsRegular {
     pub(crate) auto_card_numbers: bool,
     pub(crate) cards: BTreeSet<String>,
     pub(crate) copyright: String,
+    include_planes: Option<bool>,
+    include_schemes: Option<bool>,
+    include_vanguards: Option<bool>,
     pub(crate) output: Output,
     pub(crate) planes_output: Option<Output>,
     pub(crate) schemes_output: Option<Output>,
@@ -81,6 +90,9 @@ impl Default for ArgsRegular {
             auto_card_numbers: false,
             cards: BTreeSet::default(),
             copyright: format!("NOT FOR SALE"),
+            include_planes: None,
+            include_schemes: None,
+            include_vanguards: None,
             output: Output::Stdout,
             planes_output: None,
             schemes_output: None,
@@ -93,6 +105,7 @@ impl Default for ArgsRegular {
 
 impl ArgsRegular {
     fn handle_line(&mut self, line: String) -> Result<(), Error> {
+        let line = line.trim();
         if line.starts_with('-') {
             // no stdin support since pos args aren't paths/files
             if line.starts_with("--") {
@@ -133,9 +146,21 @@ impl ArgsRegular {
             }
         } else {
             //TODO commands, comments, queries
-            self.cards.insert(line);
+            self.cards.insert(line.into());
             Ok(())
         }
+    }
+
+    pub(crate) fn include_planes(&self) -> bool {
+        self.include_planes.unwrap_or(self.planes_output.is_none())
+    }
+
+    pub(crate) fn include_schemes(&self) -> bool {
+        self.include_schemes.unwrap_or(self.schemes_output.is_none())
+    }
+
+    pub(crate) fn include_vanguards(&self) -> bool {
+        self.include_vanguards.unwrap_or(self.vanguards_output.is_none())
     }
 }
 
@@ -243,6 +268,36 @@ impl Args {
         }
         Ok(HandleShortArgResult::NoMatch)
     }
+}
+
+fn include_planes_off(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.include_planes = Some(false);
+    Ok(())
+}
+
+fn include_planes_on(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.include_planes = Some(true);
+    Ok(())
+}
+
+fn include_schemes_off(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.include_schemes = Some(false);
+    Ok(())
+}
+
+fn include_schemes_on(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.include_schemes = Some(true);
+    Ok(())
+}
+
+fn include_vanguards_off(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.include_vanguards = Some(false);
+    Ok(())
+}
+
+fn include_vanguards_on(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.include_vanguards = Some(true);
+    Ok(())
 }
 
 fn output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {

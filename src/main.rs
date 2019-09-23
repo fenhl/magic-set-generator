@@ -1,12 +1,16 @@
 #![deny(rust_2018_idioms, unused, unused_import_braces, unused_qualifications, warnings)]
 
 use {
-    std::io::{
-        self,
-        Cursor,
-        prelude::*,
-        stderr,
-        stdout
+    std::{
+        convert::Infallible,
+        fs::File,
+        io::{
+            self,
+            Cursor,
+            prelude::*,
+            stderr,
+            stdout
+        }
     },
     derive_more::From,
     mtg::card::{
@@ -14,7 +18,10 @@ use {
         DbError
     },
     crate::{
-        args::Args,
+        args::{
+            Args,
+            Output
+        },
         mse::DataFile
     }
 };
@@ -42,9 +49,15 @@ macro_rules! verbose_eprintln {
 
 #[derive(Debug, From)]
 pub(crate) enum Error {
-    Args,
+    Args(String),
     Db(DbError),
     Io(io::Error)
+}
+
+impl From<Infallible> for Error {
+    fn from(never: Infallible) -> Error {
+        match never {}
+    }
 }
 
 fn main() -> Result<(), Error> {
@@ -83,25 +96,28 @@ fn main() -> Result<(), Error> {
     //TODO generate footers (or move into constructors)
     // write set zip files
     verbose_eprint!(args, "[....] adding images and saving\r[....]");
-    if let Some(output) = args.output {
-        set_file.write_to(output)?;
-    } else {
-        let mut buf = Cursor::<Vec<_>>::default();
-        set_file.write_to(&mut buf)?;
-        verbose_eprint!(args, "\r[=...]");
-        io::copy(&mut buf, &mut stdout())?;
+    match args.output {
+        Output::File(path) => {
+            set_file.write_to(File::create(path)?)?;
+        }
+        Output::Stdout => {
+            let mut buf = Cursor::<Vec<_>>::default();
+            set_file.write_to(&mut buf)?;
+            verbose_eprint!(args, "\r[=...]");
+            io::copy(&mut buf, &mut stdout())?;
+        }
     }
     verbose_eprint!(args, "\r[==..]");
     if let Some(planes_output) = args.planes_output {
-        planes_set_file.write_to(planes_output)?;
+        planes_output.write_set_file(planes_set_file)?;
     }
     verbose_eprint!(args, "\r[===.]");
     if let Some(schemes_output) = args.schemes_output {
-        schemes_set_file.write_to(schemes_output)?;
+        schemes_output.write_set_file(schemes_set_file)?;
     }
     verbose_eprint!(args, "\r[====]");
     if let Some(vanguards_output) = args.vanguards_output {
-        vanguards_set_file.write_to(vanguards_output)?;
+        vanguards_output.write_set_file(vanguards_set_file)?;
     }
     verbose_eprintln!(args, "\r[ ok ]");
     Ok(())

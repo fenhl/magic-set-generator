@@ -6,8 +6,10 @@ edition = "2018"
 
 [dependencies]
 derive_more = "*"
-termion = "1"
 zip = "*"
+
+[target.'cfg(not(windows))'.dependencies]
+termion = "1"
 
 [dependencies.mtg]
 git = "https://github.com/fenhl/rust-mtg"

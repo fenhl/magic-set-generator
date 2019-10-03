@@ -6,17 +6,20 @@ use {
         io::{
             self,
             Cursor,
-            stdin,
             stdout
         },
         path::PathBuf,
         str::FromStr
     },
-    termion::is_tty,
     crate::{
         Error,
         mse::DataFile
     }
+};
+#[cfg(not(windows))]
+use {
+    std::io::stdin,
+    termion::is_tty
 };
 
 //TODO add remaining flags/options from readme
@@ -104,6 +107,7 @@ impl Default for ArgsRegular {
 }
 
 impl ArgsRegular {
+    #[cfg(not(windows))]
     fn handle_line(&mut self, line: String) -> Result<(), Error> {
         let line = line.trim();
         if line.starts_with('-') {
@@ -210,13 +214,15 @@ impl Args {
                 args.cards.insert(arg);
             }
         }
-        let stdin = stdin();
-        if !is_tty(&stdin) {
-            // also read card names/commands from stdin
-            loop {
-                let mut buf = String::default();
-                if stdin.read_line(&mut buf)? == 0 { break; }
-                args.handle_line(buf)?;
+        #[cfg(not(windows))] { //TODO enable for Windows when https://gitlab.redox-os.org/redox-os/termion/issues/167 is fixed
+            let stdin = stdin();
+            if !is_tty(&stdin) {
+                // also read card names/commands from stdin
+                loop {
+                    let mut buf = String::default();
+                    if stdin.read_line(&mut buf)? == 0 { break; }
+                    args.handle_line(buf)?;
+                }
             }
         }
         Ok(Args::Regular(args))

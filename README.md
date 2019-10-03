@@ -77,7 +77,7 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * `s` or `silver`
     * `g` or `gold`
     * `b` or `bronze`, for clearly marking cards as proxies
-* `-h`, `--help`: Print a short message with a link to this readme file.
+* `-h`, `--help`: Print a short message with a link to this readme file instead of doing anything else.
 * `-i`, `--input=<path>`: Read card names from the file or directory located at `<path>`. This can be specified multiple times to combine multiple input paths into one MSE set file. The following formats are understood:
     * A plain text file with one card name per line. Special lines are also supported as with directly specified arguments (see “advanced usage” above).
     * **(NYI)** A directory containing images named `<card name>.png`. This will set `--images` to this directory if it's not already set (see below), and generate the named cards.
@@ -97,3 +97,4 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 * **(NYI)** `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
 * **(NYI)** `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
 * **(NYI)** `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
+* `--version`: Print version information instead of doing anything else.

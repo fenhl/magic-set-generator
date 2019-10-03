@@ -5,7 +5,9 @@ use {
         fs::File,
         io::{
             self,
+            BufReader,
             Cursor,
+            prelude::*,
             stdout
         },
         path::PathBuf,
@@ -33,7 +35,8 @@ const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 7
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 1] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 2] = [
+    ("input", Some('i'), input),
     ("output", Some('o'), output)
 ];
 
@@ -107,7 +110,6 @@ impl Default for ArgsRegular {
 }
 
 impl ArgsRegular {
-    #[cfg(not(windows))]
     fn handle_line(&mut self, line: String) -> Result<(), Error> {
         let line = line.trim();
         if line.starts_with('-') {
@@ -303,6 +305,14 @@ fn include_vanguards_off(args: &mut ArgsRegular) -> Result<(), Error> {
 
 fn include_vanguards_on(args: &mut ArgsRegular) -> Result<(), Error> {
     args.include_vanguards = Some(true);
+    Ok(())
+}
+
+fn input(args: &mut ArgsRegular, in_path: &str) -> Result<(), Error> {
+    BufReader::new(File::open(in_path)?)
+        .lines()
+        .map(|line| line.map_err(Error::from).and_then(|line| args.handle_line(line)))
+        .collect::<Result<_, _>>()?;
     Ok(())
 }
 

@@ -24,6 +24,11 @@ use {
     termion::is_tty
 };
 
+//TODO !tappedout command
+const COMMANDS: [(&str, usize, fn(&mut ArgsRegular, Vec<String>) -> Result<(), Error>); 1] = [
+    ("all", 0, command_all)
+];
+
 //TODO add remaining flags/options from readme
 const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 7] = [
     ("include-planes", None, include_planes_on),
@@ -150,8 +155,19 @@ impl ArgsRegular {
                 }
                 Ok(())
             }
+        } else if line.starts_with('!') {
+            let mut args = shlex::split(&line[1..]).ok_or(Error::Args(format!("failed to split !command line")))?;
+            let cmd_name = args.remove(0);
+            for &(iter_cmd, num_args, handler) in &COMMANDS {
+                if cmd_name == iter_cmd {
+                    if args.len() != num_args { return Err(Error::Args(format!("wrong number of !{} arguments: expected {}, got {}", cmd_name, num_args, args.len()))); }
+                    handler(self, args)?;
+                    return Ok(());
+                }
+            }
+            Err(Error::Args(format!("unknown command: !{}", cmd_name)))
         } else {
-            //TODO commands, comments, queries
+            //TODO comments, queries
             self.cards.insert(line.into());
             Ok(())
         }
@@ -214,8 +230,22 @@ impl Args {
                         }
                     }
                 }
+            } else if arg.starts_with('!') {
+                let cmd_name = &arg[1..];
+                let mut found = false;
+                for &(iter_cmd, num_args, handler) in &COMMANDS {
+                    if cmd_name == iter_cmd {
+                        found = true;
+                        let cmd_args = raw_args.by_ref().take(num_args).collect::<Vec<_>>();
+                        if cmd_args.len() != num_args { return Err(Error::Args(format!("wrong number of !{} arguments: expected {}, got {}", cmd_name, num_args, cmd_args.len()))); }
+                        handler(&mut args, cmd_args)?;
+                    }
+                }
+                if !found {
+                    return Err(Error::Args(format!("unknown command: !{}", cmd_name)));
+                }
             } else {
-                //TODO commands, comments, queries
+                //TODO comments, queries
                 args.cards.insert(arg);
             }
         }
@@ -279,6 +309,11 @@ impl Args {
         }
         Ok(HandleShortArgResult::NoMatch)
     }
+}
+
+fn command_all(args: &mut ArgsRegular, _: Vec<String>) -> Result<(), Error> {
+    args.all_command = true;
+    Ok(())
 }
 
 fn include_planes_off(args: &mut ArgsRegular) -> Result<(), Error> {

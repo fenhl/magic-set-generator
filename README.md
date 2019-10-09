@@ -48,9 +48,9 @@ Sections marked **(NYI)** are not yet implemented in `json-to-mse` version 2.
 The script takes any number of command line arguments. Arguments are interpreted as follows:
 
 * Arguments starting with a `-` are interpreted as options (see below).
-* **(NYI)** Arguments starting with `!` are special commands. The following commands are currently supported:
+* Arguments starting with `!` are special commands. The following commands are currently supported:
     * `!all`: Generate all cards present in MTG JSON, except tokens and un-cards.
-    * `!tappedout <deck-id>`: Download the given decklist from [tappedout.net](http://tappedout.net/) and generate all cards from it.
+    * **(NYI)** `!tappedout <deck-id>`: Download the given decklist from [tappedout.net](http://tappedout.net/) and generate all cards from it.
 * **(NYI)** Arguments starting with `#` are ignored. This can be used in input files (see `-i` below) to write comments.
 * **(NYI)** Arguments starting with `=` are parsed according to [Lore Seeker syntax](https://lore-seeker.cards/help/syntax) to generate all cards from the result. This requires an internet connection or a `find_cards` script compatible with the one from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` and `--offline` below.
 * Any other arguments are interpreted as card names. This can be used to specify cards to generate instead of, or in addition to, those read from an input file.

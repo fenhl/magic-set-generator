@@ -16,7 +16,7 @@ use {
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
 pub(crate) fn self_update() -> Result<(), Error> {
-    if current_exe()? == home_dir().ok_or(Error::MissingHomeDir)?.join(".cargo/bin/json-to-mse") {
+    if current_exe()? == home_dir().ok_or(Error::MissingHomeDir)?.join(".cargo").join("bin").join("json-to-mse") {
         Command::new("cargo")
             .arg("install-update")
             .arg("--git")

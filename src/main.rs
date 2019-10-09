@@ -83,7 +83,7 @@ fn main() -> Result<(), Error> {
         eprintln!("[ !! ] an update is available, install with `json-to-mse --update`");
     }
     // read card names
-    let /*mut*/ card_names = args.cards.clone();
+    let mut card_names = args.cards.clone();
     //TODO also read card names from args.decklists
     //TODO also read card names from queries
     if card_names.is_empty() && !args.all_command {
@@ -91,7 +91,7 @@ fn main() -> Result<(), Error> {
     }
     let db = Db::download()?;
     if args.all_command {
-        //card_names = db.into_iter().map(|card| card.to_string()).collect(); //TODO uncomment
+        card_names.extend(db.into_iter().map(|card| card.to_string()));
     }
     //TODO normalize card names
     // create set metadata

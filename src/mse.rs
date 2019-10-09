@@ -8,6 +8,7 @@ use {
         iter::FromIterator,
         path::PathBuf
     },
+    derive_more::From,
     mtg::card::{
         Db,
         Card
@@ -29,15 +30,10 @@ pub(crate) enum MseGame {
     Vanguard
 }
 
+#[derive(Debug, From)]
 enum Data {
     Flat(String),
     Subfile(DataFile)
-}
-
-impl From<String> for Data {
-    fn from(text: String) -> Data {
-        Data::Flat(text)
-    }
 }
 
 impl<'a> From<&'a str> for Data {
@@ -53,6 +49,7 @@ impl<K: Into<String>> FromIterator<(K, Data)> for Data {
     }
 }
 
+#[derive(Debug, Default)]
 pub(crate) struct DataFile {
     images: Vec<PathBuf>,
     items: Vec<(String, Data)>
@@ -103,8 +100,21 @@ impl DataFile {
         DataFile::new_inner(args, num_cards, "vanguard", "MTG JSON card import: Vanguard avatars")
     }
 
-    pub(crate) fn add_card(&mut self, _: &Card, _: &Db, _: MseGame, _: &ArgsRegular) -> Result<(), Error> {
-        Ok(()) //TODO
+    pub(crate) fn add_card(&mut self, card: &Card, _: &Db, _: MseGame, _: &ArgsRegular) -> Result<(), Error> {
+        self.push("card", DataFile::from_card(card));
+        //TODO add stylesheet?
+        Ok(())
+    }
+
+    fn from_card(card: &Card) -> DataFile {
+        let mut result = DataFile::default();
+        result.push("name", card.to_string()); //TODO alt_key
+        //TODO other fields
+        result
+    }
+
+    fn push(&mut self, key: impl ToString, value: impl Into<Data>) {
+        self.items.push((key.to_string(), value.into()));
     }
 
     fn write_inner(&self, buf: &mut impl Write, indent: usize) -> Result<(), io::Error> {

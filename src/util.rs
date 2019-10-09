@@ -51,6 +51,7 @@ pub(crate) enum Error {
     CardNotFound,
     CommandExit(&'static str),
     Db(DbError),
+    GitDir(gitdir::host::github::Error),
     Io(io::Error),
     MissingHomeDir,
     Reqwest(reqwest::Error),

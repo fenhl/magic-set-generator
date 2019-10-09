@@ -11,6 +11,7 @@ use {
             stdout
         }
     },
+    gitdir::Host as _,
     mtg::{
         card::Db,
         cardtype::CardType
@@ -79,7 +80,7 @@ fn main() -> Result<(), Error> {
         }
         Args::Regular(args) => args
     };
-    if args.verbose && version::updates_available(&client)? {
+    if args.verbose && !args.offline && version::updates_available(&client)? {
         eprintln!("[ !! ] an update is available, install with `json-to-mse --update`");
     }
     // read card names
@@ -89,7 +90,11 @@ fn main() -> Result<(), Error> {
     if card_names.is_empty() && !args.all_command {
         verbose_eprintln!(args, "[ !! ] no cards specified, generating empty set file");
     }
-    let db = Db::download()?;
+    let db = if args.offline {
+        Db::from_sets_dir(gitdir::GitHub.repo("fenhl/lore-seeker").master()?.join("data").join("sets"))?
+    } else {
+        Db::download()?
+    };
     if args.all_command {
         card_names.extend(db.into_iter().map(|card| card.to_string()));
     }

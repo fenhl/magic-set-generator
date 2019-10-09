@@ -30,13 +30,14 @@ const COMMANDS: [(&str, usize, fn(&mut ArgsRegular, Vec<String>) -> Result<(), E
 ];
 
 //TODO add remaining flags/options from readme
-const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 7] = [
+const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 8] = [
     ("include-planes", None, include_planes_on),
     ("include-schemes", None, include_schemes_on),
     ("include-vanguards", None, include_vanguards_on),
     ("no-include-planes", None, include_planes_off),
     ("no-include-schemes", None, include_schemes_off),
     ("no-include-vanguards", None, include_vanguards_off),
+    ("offline", None, offline),
     ("verbose", Some('v'), verbose)
 ];
 
@@ -86,6 +87,7 @@ pub(crate) struct ArgsRegular {
     include_planes: Option<bool>,
     include_schemes: Option<bool>,
     include_vanguards: Option<bool>,
+    pub(crate) offline: bool,
     pub(crate) output: Output,
     pub(crate) planes_output: Option<Output>,
     pub(crate) schemes_output: Option<Output>,
@@ -104,6 +106,7 @@ impl Default for ArgsRegular {
             include_planes: None,
             include_schemes: None,
             include_vanguards: None,
+            offline: false,
             output: Output::Stdout,
             planes_output: None,
             schemes_output: None,
@@ -358,6 +361,11 @@ fn input(args: &mut ArgsRegular, in_path: &str) -> Result<(), Error> {
         .lines()
         .map(|line| line.map_err(Error::from).and_then(|line| args.handle_line(line)))
         .collect::<Result<_, _>>()?;
+    Ok(())
+}
+
+fn offline(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.offline = true;
     Ok(())
 }
 

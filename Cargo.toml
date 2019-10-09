@@ -18,6 +18,9 @@ zip = "0"
 [target.'cfg(not(windows))'.dependencies]
 termion = "1"
 
+[dependencies.gitdir]
+git = "https://github.com/fenhl/rust-gitdir"
+
 [dependencies.mtg]
 git = "https://github.com/fenhl/rust-mtg"
 

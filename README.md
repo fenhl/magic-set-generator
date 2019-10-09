@@ -2,6 +2,8 @@
 
 # Usage
 
+**Note:** Since the release of MTG JSON 4, this version of json-to-mse no longer works properly unless you have access to a copy of MTG JSON 3. An alpha preview of the next version of `json-to-mse`, which will be compatible with MTG JSON 4, can be found at <https://github.com/fenhl/json-to-mse/tree/riir>.
+
 Since MSE is a Windows programm, this guide assumes that you're running `json-to-mse` on Windows. For other platforms, adjust accordingly.
 
 ## Installation

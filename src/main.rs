@@ -113,7 +113,6 @@ fn main() -> Result<(), Error> {
     }
     // create set metadata
     let mut set_file = DataFile::new(&args, cards.len());
-    let mut planes_set_file = DataFile::new_planes(&args, cards.len());
     let mut schemes_set_file = DataFile::new_schemes(&args, cards.len());
     let mut vanguards_set_file = DataFile::new_vanguards(&args, cards.len());
     //TODO add cards to set
@@ -121,13 +120,7 @@ fn main() -> Result<(), Error> {
     for (i, card) in cards.iter().enumerate() {
         let progress = 4.min(5 * i / cards.len());
         verbose_eprint!(args, "[{}{}] adding cards to set file: {} of {}\r", "=".repeat(progress), ".".repeat(4 - progress), i, cards.len());
-        let result = if card.type_line() >= CardType::Plane || card.type_line() >= CardType::Phenomenon {
-            if args.include_planes() {
-                set_file.add_card(&card, &db, MseGame::Magic, &args)
-            } else {
-                Ok(())
-            }.and_then(|()| planes_set_file.add_card(&card, &db, MseGame::Planechase, &args))
-        } else if card.type_line() >= CardType::Scheme {
+        let result = if card.type_line() >= CardType::Scheme {
             if args.include_schemes() {
                 set_file.add_card(&card, &db, MseGame::Magic, &args)
             } else {
@@ -180,14 +173,10 @@ fn main() -> Result<(), Error> {
         }
     }
     verbose_eprint!(args, "\r[==..]");
-    if let Some(planes_output) = args.planes_output {
-        planes_output.write_set_file(planes_set_file)?;
-    }
-    verbose_eprint!(args, "\r[===.]");
     if let Some(schemes_output) = args.schemes_output {
         schemes_output.write_set_file(schemes_set_file)?;
     }
-    verbose_eprint!(args, "\r[====]");
+    verbose_eprint!(args, "\r[===.]");
     if let Some(vanguards_output) = args.vanguards_output {
         vanguards_output.write_set_file(vanguards_set_file)?;
     }

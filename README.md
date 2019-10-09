@@ -92,7 +92,6 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * A directory containing [MTG JSON Individual Set](https://mtgjson.com/files/individual-set/) files.
 * **(NYI)** `--find-cards=<path>`: The path to the `find_cards` executable used for [Lore Seeker syntax](https://lore-seeker.cards/help/syntax). In `--offline` mode, this defaults to `search-engine\bin\find_cards` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, Lore Seeker website is used by default.
 * **(NYI)** `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>\<card name>.png`. Any missing images downloaded from Scryfall or Lore Seeker will be saved here.
-* `--[no-]include-planes`: Enable or disable the inclusion of planes and phenomena as regular-sized cards in the main set file. This is on by default unless `--planes-output` is given.
 * `--[no-]include-schemes`: Enable or disable the inclusion of schemes as regular-sized cards in the main set file. This is on by default unless `--schemes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
 * **(NYI)** `--no-scryfall-images`: Don't fall back to loading card images from [Scryfall](https://scryfall.com/) if the card is not present in `--images`.
@@ -101,7 +100,10 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * `json-to-mse` won't check for self-updates, even in `--verbose` mode.
     * It won't attempt to download the card database. Instead, if `--db` isn't given, it expects a local copy of [the Lore Seeker repository](https://github.com/fenhl/lore-seeker). See `--db` for details.
     * It won't attempt to use [Lore Seeker](https://lore-seeker.cards/) for syntax queries (arguments starting with `=`). Instead, `find_cards` is required if any queries are performed. See `--find-cards` for details.
-* **(NYI)** `--planes-output=<path>`: Save planes and phenomena to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
+* **(NYI)** `--plane-templates=<templates>`: Specify which templates to use for planes and, as a comma-separated list of any number of the following. The default is `plane`. If multiple templates are specified, each plane and phenomenon card will appear multiple times in the set file.
+    * `large`: The default Planechase template.
+    * `mini`: A smaller version of the Planechase template, same size as regular cards. Very small text.
+    * `basic`: The default template for regular cards.
 * **(NYI)** `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
 * **(NYI)** `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
 * `--update`: Attempt to update `json-to-mse` to the latest version instead of doing anything else.

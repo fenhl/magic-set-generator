@@ -31,11 +31,9 @@ const COMMANDS: [(&str, usize, fn(&mut ArgsRegular, Vec<String>) -> Result<(), E
 ];
 
 //TODO add remaining flags/options from readme
-const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 8] = [
-    ("include-planes", None, include_planes_on),
+const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 6] = [
     ("include-schemes", None, include_schemes_on),
     ("include-vanguards", None, include_vanguards_on),
-    ("no-include-planes", None, include_planes_off),
     ("no-include-schemes", None, include_schemes_off),
     ("no-include-vanguards", None, include_vanguards_off),
     ("offline", None, offline),
@@ -87,12 +85,10 @@ pub(crate) struct ArgsRegular {
     pub(crate) border_color: Color,
     pub(crate) cards: BTreeSet<String>,
     pub(crate) copyright: String,
-    include_planes: Option<bool>,
     include_schemes: Option<bool>,
     include_vanguards: Option<bool>,
     pub(crate) offline: bool,
     pub(crate) output: Output,
-    pub(crate) planes_output: Option<Output>,
     pub(crate) schemes_output: Option<Output>,
     pub(crate) set_code: String,
     pub(crate) vanguards_output: Option<Output>,
@@ -107,12 +103,10 @@ impl Default for ArgsRegular {
             border_color: Color { r: 222, g: 127, b: 50, a: 1.0 },
             cards: BTreeSet::default(),
             copyright: format!("NOT FOR SALE"),
-            include_planes: None,
             include_schemes: None,
             include_vanguards: None,
             offline: false,
             output: Output::Stdout,
-            planes_output: None,
             schemes_output: None,
             set_code: format!("PROXY"),
             vanguards_output: None,
@@ -183,10 +177,6 @@ impl ArgsRegular {
             self.cards.insert(line.into());
             Ok(())
         }
-    }
-
-    pub(crate) fn include_planes(&self) -> bool {
-        self.include_planes.unwrap_or(self.planes_output.is_none())
     }
 
     pub(crate) fn include_schemes(&self) -> bool {
@@ -339,16 +329,6 @@ fn border(args: &mut ArgsRegular, border_color: &str) -> Result<(), Error> {
 
 fn command_all(args: &mut ArgsRegular, _: Vec<String>) -> Result<(), Error> {
     args.all_command = true;
-    Ok(())
-}
-
-fn include_planes_off(args: &mut ArgsRegular) -> Result<(), Error> {
-    args.include_planes = Some(false);
-    Ok(())
-}
-
-fn include_planes_on(args: &mut ArgsRegular) -> Result<(), Error> {
-    args.include_planes = Some(true);
     Ok(())
 }
 

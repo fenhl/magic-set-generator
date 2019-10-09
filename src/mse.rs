@@ -29,7 +29,6 @@ use {
 pub(crate) enum MseGame {
     Magic,
     Archenemy,
-    Planechase,
     Vanguard
 }
 
@@ -90,10 +89,6 @@ impl DataFile {
         DataFile::new_inner(args, num_cards, "magic", "MTG JSON card import")
     }
 
-    pub(crate) fn new_planes(args: &ArgsRegular, num_cards: usize) -> DataFile {
-        DataFile::new_inner(args, num_cards, "planechase", "MTG JSON card import: planes and phenomena")
-    }
-
     pub(crate) fn new_schemes(args: &ArgsRegular, num_cards: usize) -> DataFile {
         DataFile::new_inner(args, num_cards, "archenemy", "MTG JSON card import: Archenemy schemes")
     }
@@ -127,7 +122,6 @@ impl DataFile {
                 Layout::Adventure { .. } => {} //TODO use adventurer template once it's released
             }
             MseGame::Archenemy => {} //TODO
-            MseGame::Planechase => {} //TODO
             MseGame::Vanguard => {} //TODO
         }
         // name

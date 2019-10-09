@@ -17,8 +17,8 @@ use {
         write::FileOptions
     },
     crate::{
-        Error,
-        args::ArgsRegular
+        args::ArgsRegular,
+        util::Error
     }
 };
 

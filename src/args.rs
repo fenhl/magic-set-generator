@@ -14,8 +14,8 @@ use {
         str::FromStr
     },
     crate::{
-        Error,
-        mse::DataFile
+        mse::DataFile,
+        util::Error
     }
 };
 #[cfg(not(windows))]

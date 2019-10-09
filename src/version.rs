@@ -1,12 +1,15 @@
 //! Contains versioning information and self-update functionality.
 
 use {
-    std::env::current_exe,
+    std::{
+        env::current_exe,
+        process::Command
+    },
     dirs::home_dir,
     itertools::Itertools as _,
     crate::{
-        Error,
-        github::Repo
+        github::Repo,
+        util::*
     }
 };
 
@@ -14,7 +17,12 @@ include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
 pub(crate) fn self_update() -> Result<(), Error> {
     if current_exe()? == home_dir().ok_or(Error::MissingHomeDir)?.join(".cargo/bin/json-to-mse") {
-        return Err(Error::SelfUpdateUnimplemented); //TODO use `cargo install-update`?
+        Command::new("cargo")
+            .arg("install-update")
+            .arg("--git")
+            .arg("json-to-mse")
+            .create_no_window()
+            .check("cargo")
     } else {
         //TODO update from GitHub releases
         return Err(Error::SelfUpdateUnimplemented);

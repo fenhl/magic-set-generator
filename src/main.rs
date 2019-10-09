@@ -2,7 +2,6 @@
 
 use {
     std::{
-        convert::Infallible,
         fs::File,
         io::{
             self,
@@ -12,12 +11,8 @@ use {
             stdout
         }
     },
-    derive_more::From,
     mtg::{
-        card::{
-            Db,
-            DbError
-        },
+        card::Db,
         cardtype::CardType
     },
     crate::{
@@ -28,13 +23,15 @@ use {
         mse::{
             DataFile,
             MseGame
-        }
+        },
+        util::Error
     }
 };
 
 mod args;
 mod github;
 mod mse;
+mod util;
 mod version;
 
 macro_rules! verbose_eprint {
@@ -52,26 +49,6 @@ macro_rules! verbose_eprintln {
             eprintln!($($fmt)+);
         }
     };
-}
-
-#[derive(Debug, From)]
-pub(crate) enum Error {
-    Args(String),
-    CardGen(String, Box<Error>),
-    CardNotFound,
-    Db(DbError),
-    Io(io::Error),
-    MissingHomeDir,
-    Reqwest(reqwest::Error),
-    SelfUpdateUnimplemented,
-    TagNotFound,
-    //Uncard
-}
-
-impl From<Infallible> for Error {
-    fn from(never: Infallible) -> Error {
-        match never {}
-    }
 }
 
 fn main() -> Result<(), Error> {

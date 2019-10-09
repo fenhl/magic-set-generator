@@ -49,13 +49,13 @@ The script takes any number of command line arguments. Arguments are interpreted
 
 * Arguments starting with a `-` are interpreted as options (see below).
 * Arguments starting with `!` are special commands. The following commands are currently supported:
-    * `!all`: Generate all cards present in MTG JSON, except tokens and un-cards.
+    * `!all`: Generate all cards present in the database (see `--db` below), except tokens and un-cards.
     * **(NYI)** `!tappedout <deck-id>`: Download the given decklist from [tappedout.net](http://tappedout.net/) and generate all cards from it.
 * Arguments starting with `#` are ignored. This can be used in input files (see `-i` below) to write comments.
 * **(NYI)** Arguments starting with `=` are parsed according to [Lore Seeker syntax](https://lore-seeker.cards/help/syntax) to generate all cards from the result. This requires an internet connection or a `find_cards` script compatible with the one from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` and `--offline` below.
 * Any other arguments are interpreted as card names. This can be used to specify cards to generate instead of, or in addition to, those read from an input file.
 
-If your shell supports input/output redirection, you can also pipe card names into the script (again, one name per line, and currently not supported on Windows), and pipe the output into a `.zip` file. For example,
+If your shell supports input/output redirection, you can also pipe arguments into the script (again, one argument per line, and currently not supported on Windows), and pipe the output into a `.zip` file. For example,
 
 ```
 echo 'Dryad Arbor' | json-to-mse > example.mse-set
@@ -80,10 +80,10 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * a 3- or 6-digit [hex triplet](https://en.wikipedia.org/wiki/Web_colors#Hex_triplet)
 * `-h`, `--help`: Print a short message with a link to this readme file instead of doing anything else.
 * `-i`, `--input=<path>`: Read card names from the file or directory located at `<path>`. This can be specified multiple times to combine multiple input paths into one MSE set file. The following formats are understood:
-    * A plain text file with one card name per line. Special lines are also supported as with directly specified arguments (see “advanced usage” above).
+    * A plain text file with one card name per line. Special lines are also supported as with directly specified arguments (see “advanced usage” above). `!` commands and their arguments should be on the same line, with arguments shell-quoted if necessary.
     * **(NYI)** A directory containing images named `<card name>.png`. This will set `--images` to this directory if it's not already set (see below), and generate the named cards.
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
-* `-v`, `--verbose`: Report progress while generating the set file, and give more detailed error messages if anything goes wrong.
+* `-v`, `--verbose`: Check for self-updates (unless `--offline` is given), report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * **(NYI)** `--allow-uncards`: This script has no official support for silver-bordered “un-cards” and other shenanigans like [1996 World Champion](https://lore-seeker.cards/card/pcel/1). As a result, most un-cards will be redered incorrectly, so the script will refuse to generate them unless this option is used. Reports of issues encountered while using this option will be closed as invalid.
 * **(NYI)** `--auto-card-numbers`: Display automatically-assigned collector numbers on the cards, below the text box.
 * **(NYI)** `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
@@ -96,7 +96,11 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 * `--[no-]include-schemes`: Enable or disable the inclusion of schemes as regular-sized cards in the main set file. This is on by default unless `--schemes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
 * **(NYI)** `--no-scryfall-images`: Don't fall back to loading card images from [Scryfall](https://scryfall.com/) if the card is not present in `--images`.
-* `--offline`: Don't check for self-updates, don't attempt to download the card database (see also `--db`), and don't attempt to use [Lore Seeker](https://lore-seeker.cards/) for syntax queries (see also `--find-cards`).
+* `--offline`: This option has the following effects:
+    * It enables `--no-scryfall-images`.
+    * `json-to-mse` won't check for self-updates, even in `--verbose` mode.
+    * It won't attempt to download the card database. Instead, if `--db` isn't given, it expects a local copy of [the Lore Seeker repository](https://github.com/fenhl/lore-seeker). See `--db` for details.
+    * It won't attempt to use [Lore Seeker](https://lore-seeker.cards/) for syntax queries (arguments starting with `=`). Instead, `find_cards` is required if any queries are performed. See `--find-cards` for details.
 * **(NYI)** `--planes-output=<path>`: Save planes and phenomena to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * **(NYI)** `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
 * **(NYI)** `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.

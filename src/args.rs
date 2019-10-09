@@ -173,6 +173,7 @@ impl ArgsRegular {
 pub(crate) enum Args {
     Regular(ArgsRegular),
     Help,
+    Update,
     Version
 }
 
@@ -194,6 +195,8 @@ impl Args {
                         // handled
                     } else if arg == "--help" {
                         return Ok(Args::Help);
+                    } else if arg == "--update" {
+                        return Ok(Args::Update);
                     } else if arg == "--version" {
                         return Ok(Args::Version);
                     } else {

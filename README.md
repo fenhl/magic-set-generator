@@ -96,5 +96,6 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 * **(NYI)** `--planes-output=<path>`: Save planes and phenomena to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * **(NYI)** `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
 * **(NYI)** `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
+* `--update`: Attempt to update `json-to-mse` to the latest version instead of doing anything else.
 * **(NYI)** `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * `--version`: Print version information instead of doing anything else.

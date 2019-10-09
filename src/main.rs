@@ -33,6 +33,7 @@ use {
 };
 
 mod args;
+mod github;
 mod mse;
 mod version;
 
@@ -60,6 +61,10 @@ pub(crate) enum Error {
     CardNotFound,
     Db(DbError),
     Io(io::Error),
+    MissingHomeDir,
+    Reqwest(reqwest::Error),
+    SelfUpdateUnimplemented,
+    TagNotFound,
     //Uncard
 }
 
@@ -70,10 +75,25 @@ impl From<Infallible> for Error {
 }
 
 fn main() -> Result<(), Error> {
-    // pargs arguments
+    let client = reqwest::Client::builder()
+        .default_headers({
+            let mut headers = reqwest::header::HeaderMap::new();
+            headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static(concat!("json-to-mse/", env!("CARGO_PKG_VERSION"))));
+            headers
+        })
+        .build()?;
+    // parse arguments
     let args = match Args::new()? {
         Args::Help => {
             println!("please see https://github.com/fenhl/json-to-mse/blob/{}/README.md for usage instructions", &version::GIT_COMMIT_HASH[..7]);
+            return Ok(());
+        }
+        Args::Update => {
+            if version::updates_available(&client)? {
+                version::self_update()?;
+            } else {
+                println!("json-to-mse is up to date.");
+            }
             return Ok(());
         }
         Args::Version => {
@@ -82,6 +102,9 @@ fn main() -> Result<(), Error> {
         }
         Args::Regular(args) => args
     };
+    if args.verbose && version::updates_available(&client)? {
+        eprintln!("[ !! ] an update is available, install with `json-to-mse --update`");
+    }
     // read card names
     let /*mut*/ card_names = args.cards.clone();
     //TODO also read card names from args.decklists

@@ -48,7 +48,7 @@ impl CommandOutputExt for Command {
 pub(crate) enum Error {
     Args(String),
     CardGen(String, Box<Error>),
-    CardNotFound,
+    CardNotFound(String),
     ColorParse(css_color_parser::ColorParseError),
     CommandExit(&'static str),
     Db(DbError),

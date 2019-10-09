@@ -2,6 +2,7 @@
 
 use {
     std::{
+        collections::BTreeSet,
         fs::File,
         io::{
             self,
@@ -13,7 +14,10 @@ use {
     },
     gitdir::Host as _,
     mtg::{
-        card::Db,
+        card::{
+            Db,
+            Layout
+        },
         cardtype::CardType
     },
     crate::{
@@ -83,55 +87,62 @@ fn main() -> Result<(), Error> {
     if args.verbose && !args.offline && version::updates_available(&client)? {
         eprintln!("[ !! ] an update is available, install with `json-to-mse --update`");
     }
-    // read card names
-    let mut card_names = args.cards.clone();
-    //TODO also read card names from args.decklists
-    //TODO also read card names from queries
-    if card_names.is_empty() && !args.all_command {
-        verbose_eprintln!(args, "[ !! ] no cards specified, generating empty set file");
-    }
     let db = if args.offline {
         Db::from_sets_dir(gitdir::GitHub.repo("fenhl/lore-seeker").master()?.join("data").join("sets"))?
     } else {
         Db::download()?
     };
-    if args.all_command {
-        card_names.extend(db.into_iter().map(|card| card.to_string()));
+    // normalize card names
+    let cards = if args.all_command {
+        db.into_iter().collect()
+    } else {
+        args.cards.iter()
+            //TODO also read card names from args.decklists
+            //TODO also read card names from queries
+            .map(|card_name| db.card(card_name).ok_or_else(|| Error::CardNotFound(card_name.clone())))
+            .collect::<Result<BTreeSet<_>, _>>()?
+    }.into_iter()
+        .flat_map(|card| if let Layout::Meld { top, bottom, .. } = card.layout() {
+            vec![top, bottom]
+        } else {
+            vec![card.primary()]
+        })
+        .collect::<BTreeSet<_>>();
+    if cards.is_empty() {
+        verbose_eprintln!(args, "[ !! ] no cards specified, generating empty set file");
     }
-    //TODO normalize card names
     // create set metadata
-    let mut set_file = DataFile::new(&args, card_names.len());
-    let mut planes_set_file = DataFile::new_planes(&args, card_names.len());
-    let mut schemes_set_file = DataFile::new_schemes(&args, card_names.len());
-    let mut vanguards_set_file = DataFile::new_vanguards(&args, card_names.len());
+    let mut set_file = DataFile::new(&args, cards.len());
+    let mut planes_set_file = DataFile::new_planes(&args, cards.len());
+    let mut schemes_set_file = DataFile::new_schemes(&args, cards.len());
+    let mut vanguards_set_file = DataFile::new_vanguards(&args, cards.len());
     //TODO add cards to set
     let mut failed = 0;
-    for (i, card_name) in card_names.iter().enumerate() {
-        let progress = 4.min(5 * i / card_names.len());
-        verbose_eprint!(args, "[{}{}] adding cards to set file: {} of {}\r", "=".repeat(progress), ".".repeat(4 - progress), i, card_names.len());
-        match db.card_fuzzy(card_name).ok_or(Error::CardNotFound).and_then(|card|
-            if card.type_line() >= CardType::Plane || card.type_line() >= CardType::Phenomenon {
-                if args.include_planes() {
-                    set_file.add_card(&card, &db, MseGame::Magic, &args)
-                } else {
-                    Ok(())
-                }.and_then(|()| planes_set_file.add_card(&card, &db, MseGame::Planechase, &args))
-            } else if card.type_line() >= CardType::Scheme {
-                if args.include_schemes() {
-                    set_file.add_card(&card, &db, MseGame::Magic, &args)
-                } else {
-                    Ok(())
-                }.and_then(|()| schemes_set_file.add_card(&card, &db, MseGame::Archenemy, &args))
-            } else if card.type_line() >= CardType::Vanguard {
-                if args.include_vanguards() {
-                    set_file.add_card(&card, &db, MseGame::Magic, &args)
-                } else {
-                    Ok(())
-                }.and_then(|()| vanguards_set_file.add_card(&card, &db, MseGame::Vanguard, &args))
-            } else {
+    for (i, card) in cards.iter().enumerate() {
+        let progress = 4.min(5 * i / cards.len());
+        verbose_eprint!(args, "[{}{}] adding cards to set file: {} of {}\r", "=".repeat(progress), ".".repeat(4 - progress), i, cards.len());
+        let result = if card.type_line() >= CardType::Plane || card.type_line() >= CardType::Phenomenon {
+            if args.include_planes() {
                 set_file.add_card(&card, &db, MseGame::Magic, &args)
-            }
-        ) {
+            } else {
+                Ok(())
+            }.and_then(|()| planes_set_file.add_card(&card, &db, MseGame::Planechase, &args))
+        } else if card.type_line() >= CardType::Scheme {
+            if args.include_schemes() {
+                set_file.add_card(&card, &db, MseGame::Magic, &args)
+            } else {
+                Ok(())
+            }.and_then(|()| schemes_set_file.add_card(&card, &db, MseGame::Archenemy, &args))
+        } else if card.type_line() >= CardType::Vanguard {
+            if args.include_vanguards() {
+                set_file.add_card(&card, &db, MseGame::Magic, &args)
+            } else {
+                Ok(())
+            }.and_then(|()| vanguards_set_file.add_card(&card, &db, MseGame::Vanguard, &args))
+        } else {
+            set_file.add_card(&card, &db, MseGame::Magic, &args)
+        };
+        match result {
             Ok(()) => {}
             /*
             Err(Error::Uncard) => {
@@ -141,9 +152,9 @@ fn main() -> Result<(), Error> {
             */ //TODO uncomment special case
             Err(e) => {
                 if args.verbose {
-                    return Err(Error::CardGen(card_name.into(), Box::new(e)));
+                    return Err(Error::CardGen(card.to_string(), Box::new(e)));
                 } else {
-                    eprintln!("[ !! ] Failed to add card {}                    ", card_name);
+                    eprintln!("[ !! ] Failed to add card {}                    ", card);
                     failed += 1;
                 }
             }
@@ -152,7 +163,7 @@ fn main() -> Result<(), Error> {
     if failed > 0 {
         eprintln!("[ ** ] {} cards failed. Run again with --verbose for a detailed error message", failed);
     }
-    verbose_eprintln!(args, "[ ok ] adding cards to set file: {0} of {0}", card_names.len());
+    verbose_eprintln!(args, "[ ok ] adding cards to set file: {0} of {0}", cards.len());
     //TODO generate stylesheet settings
     //TODO generate footers (or move into constructors)
     // write set zip files

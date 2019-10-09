@@ -6,13 +6,15 @@ use {
             prelude::*
         },
         iter::FromIterator,
+        ops::AddAssign,
         path::PathBuf
     },
     css_color_parser::Color,
     derive_more::From,
     mtg::card::{
         Db,
-        Card
+        Card,
+        Layout
     },
     zip::{
         ZipWriter,
@@ -100,14 +102,35 @@ impl DataFile {
         DataFile::new_inner(args, num_cards, "vanguard", "MTG JSON card import: Vanguard avatars")
     }
 
-    pub(crate) fn add_card(&mut self, card: &Card, _: &Db, _: MseGame, _: &ArgsRegular) -> Result<(), Error> {
-        self.push("card", DataFile::from_card(card));
+    pub(crate) fn add_card(&mut self, card: &Card, _: &Db, mse_game: MseGame, _: &ArgsRegular) -> Result<(), Error> {
+        self.push("card", DataFile::from_card(card, mse_game));
         //TODO add stylesheet?
         Ok(())
     }
 
-    fn from_card(card: &Card) -> DataFile {
+    fn from_card(card: &Card, mse_game: MseGame) -> DataFile {
         let mut result = DataFile::default();
+        // layout
+        match mse_game {
+            MseGame::Magic => match card.layout() {
+                Layout::Normal => {} // nothing specific to normal layout
+                Layout::Split { .. } => unimplemented!(), //TODO split, fuse, aftermath
+                Layout::Flip { flipped, .. } => if !card.is_alt() {
+                    result += DataFile::from_card(&flipped, mse_game);
+                },
+                Layout::DoubleFaced { back, .. } => if !card.is_alt() {
+                    result += DataFile::from_card(&back, mse_game);
+                },
+                Layout::Meld { back, .. } => if !card.is_alt() {
+                    result += DataFile::from_card(&back, mse_game);
+                },
+                Layout::Adventure { .. } => {} //TODO use adventurer template once it's released
+            }
+            MseGame::Archenemy => {} //TODO
+            MseGame::Planechase => {} //TODO
+            MseGame::Vanguard => {} //TODO
+        }
+        // name
         result.push("name", card.to_string()); //TODO alt_key
         //TODO other fields
         result
@@ -158,5 +181,12 @@ impl<K: Into<String>> FromIterator<(K, Data)> for DataFile {
             images: Vec::default(),
             items: items.into_iter().map(|(k, v)| (k.into(), v)).collect()
         }
+    }
+}
+
+impl AddAssign for DataFile {
+    fn add_assign(&mut self, DataFile { images, items }: DataFile) {
+        self.images.extend(images);
+        self.items.extend(items);
     }
 }

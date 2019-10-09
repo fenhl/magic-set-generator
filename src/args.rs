@@ -13,6 +13,7 @@ use {
         path::PathBuf,
         str::FromStr
     },
+    css_color_parser::Color,
     crate::{
         mse::DataFile,
         util::Error
@@ -41,7 +42,8 @@ const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 8
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 2] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 3] = [
+    ("border", Some('b'), border),
     ("input", Some('i'), input),
     ("output", Some('o'), output)
 ];
@@ -82,6 +84,7 @@ impl Output {
 pub(crate) struct ArgsRegular {
     pub(crate) all_command: bool,
     pub(crate) auto_card_numbers: bool,
+    pub(crate) border_color: Color,
     pub(crate) cards: BTreeSet<String>,
     pub(crate) copyright: String,
     include_planes: Option<bool>,
@@ -101,6 +104,7 @@ impl Default for ArgsRegular {
         ArgsRegular {
             all_command: false,
             auto_card_numbers: false,
+            border_color: Color { r: 222, g: 127, b: 50, a: 1.0 },
             cards: BTreeSet::default(),
             copyright: format!("NOT FOR SALE"),
             include_planes: None,
@@ -319,6 +323,18 @@ impl Args {
         }
         Ok(HandleShortArgResult::NoMatch)
     }
+}
+
+fn border(args: &mut ArgsRegular, border_color: &str) -> Result<(), Error> {
+    args.border_color = match border_color {
+        "b" | "black" => Color { r: 0, g: 0, b: 0, a: 1.0 },
+        "w" | "white" => Color { r: 255, g: 255, b: 255, a: 1.0 },
+        "s" | "silver" => Color { r: 128, g: 128, b: 128, a: 1.0 },
+        "g" | "gold" => Color { r: 200, g: 180, b: 0, a: 1.0 },
+        "bronze" => Color { r: 222, g: 127, b: 50, a: 1.0 },
+        col => col.parse()?
+    };
+    Ok(())
 }
 
 fn command_all(args: &mut ArgsRegular, _: Vec<String>) -> Result<(), Error> {

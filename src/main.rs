@@ -135,7 +135,7 @@ fn main() -> Result<(), Error> {
             Ok(()) => {}
             /*
             Err(Error::Uncard) => {
-                eprintln!("[ !! ] Failed to add card {}        ", card_name);
+                eprintln!("[ !! ] Failed to add card {}                    ", card_name);
                 eprintln!("[ !! ] Un-cards are not supported and will most likely render incorrectly. Re-run with --allow-uncards to generate them anyway.");
             }
             */ //TODO uncomment special case
@@ -143,7 +143,7 @@ fn main() -> Result<(), Error> {
                 if args.verbose {
                     return Err(Error::CardGen(card_name.into(), Box::new(e)));
                 } else {
-                    eprintln!("[ !! ] Failed to add card {}        ", card_name);
+                    eprintln!("[ !! ] Failed to add card {}                    ", card_name);
                     failed += 1;
                 }
             }

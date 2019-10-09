@@ -49,6 +49,7 @@ pub(crate) enum Error {
     Args(String),
     CardGen(String, Box<Error>),
     CardNotFound,
+    ColorParse(css_color_parser::ColorParseError),
     CommandExit(&'static str),
     Db(DbError),
     GitDir(gitdir::host::github::Error),

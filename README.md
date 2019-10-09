@@ -71,12 +71,13 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 
 `json-to-mse` accepts the following command line options:
 
-* **(NYI)** `-b`, `--border=<color>`: Set the card border color. Supported colors are:
-    * `black`, the default
+* `-b`, `--border=<color>`: Set the card border color. Supported colors are:
+    * `b` or `black`
     * `w` or `white`
     * `s` or `silver`
     * `g` or `gold`
-    * `b` or `bronze`, for clearly marking cards as proxies
+    * `bronze`, the default, for clearly marking cards as proxies
+    * a 3- or 6-digit [hex triplet](https://en.wikipedia.org/wiki/Web_colors#Hex_triplet)
 * `-h`, `--help`: Print a short message with a link to this readme file instead of doing anything else.
 * `-i`, `--input=<path>`: Read card names from the file or directory located at `<path>`. This can be specified multiple times to combine multiple input paths into one MSE set file. The following formats are understood:
     * A plain text file with one card name per line. Special lines are also supported as with directly specified arguments (see “advanced usage” above).

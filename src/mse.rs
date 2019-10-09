@@ -8,6 +8,7 @@ use {
         iter::FromIterator,
         path::PathBuf
     },
+    css_color_parser::Color,
     derive_more::From,
     mtg::card::{
         Db,
@@ -57,7 +58,7 @@ pub(crate) struct DataFile {
 
 impl DataFile {
     fn new_inner(args: &ArgsRegular, num_cards: usize, game: &str, title: &str) -> DataFile {
-        let set_info = DataFile::from_iter(vec![
+        let mut set_info = DataFile::from_iter(vec![
             ("title", Data::from(title)),
             ("copyright", Data::from(&args.copyright[..])),
             ("description", Data::from(format!("{} automatically imported from MTG JSON using json-to-mse.", if num_cards == 1 { "This card was" } else { "These cards were" }))),
@@ -68,11 +69,10 @@ impl DataFile {
             ("automatic card numbers", Data::from(if args.auto_card_numbers { "yes" } else { "no" })),
             ("mana cost sorting", Data::from("unsorted"))
         ]);
-        /*
-        if let Some(border_color) = args.border_color {
-            set_info["border color"] = border_color;
+        if args.border_color != (Color { r: 0, g: 0, b: 0, a: 1.0 }) {
+            let Color { r, g, b, .. } = args.border_color;
+            set_info.push("border color", format!("rgb({}, {}, {})", r, g, b));
         }
-        */ //TODO
         DataFile::from_iter(vec![
             ("mse version", Data::from("0.3.8")),
             ("game", Data::from(game)),

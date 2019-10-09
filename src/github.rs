@@ -1,8 +1,15 @@
-use /*{*/
-    serde_derive::Deserialize//,
+use {
+    std::fmt,
+    reqwest::StatusCode,
+    serde_derive::Deserialize,
     //serde_json::json,
     //url::Url
-/*}*/;
+};
+
+#[derive(Deserialize)]
+pub(crate) struct Branch {
+    pub(crate) commit: Commit
+}
 
 #[derive(Deserialize)]
 pub(crate) struct Release {
@@ -47,13 +54,23 @@ impl Repo {
         }
     }
 
-    pub(crate) fn latest_release(&self, client: &reqwest::Client) -> Result<Release, reqwest::Error> {
+    pub(crate) fn branch(&self, client: &reqwest::Client, name: impl fmt::Display) -> Result<Branch, reqwest::Error> {
         Ok(
-            client.get(&format!("https://api.github.com/repos/{}/{}/releases/latest", self.user, self.name))
+            client.get(&format!("https://api.github.com/repos/{}/{}/branches/{}", self.user, self.name, name))
                 .send()?
                 .error_for_status()?
-                .json::<Release>()?
+                .json()?
         )
+    }
+
+    pub(crate) fn latest_release(&self, client: &reqwest::Client) -> Result<Option<Release>, reqwest::Error> {
+        let response = client.get(&format!("https://api.github.com/repos/{}/{}/releases/latest", self.user, self.name))
+            .send()?;
+        if response.status() == StatusCode::NOT_FOUND { return Ok(None); } // no releases yet
+        Ok(Some(
+            response.error_for_status()?
+                .json::<Release>()?
+        ))
     }
 
     /*

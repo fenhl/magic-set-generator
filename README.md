@@ -18,7 +18,7 @@
     ```
 4. Some features may require MSE templates not packaged with MSE. You can get them from one of the following sources:
     * Cajun's Megafile (recommended):
-        1. If you don't have MSE yet, download the Advenced Magic Set Editor files from <http://magicseteditor.boards.net/page/downloads>.
+        1. If you don't have MSE yet, download the Advanced Magic Set Editor files from <http://magicseteditor.boards.net/page/downloads>.
         2. Download the Megafile from <http://magicseteditor.boards.net/thread/77/cajun-templates-updates-sorting-update>.
         3. Merge the Megafile contents into your MSE `data` folder.
     * The Custom Magic template pack. To install, join [the Custom Magic Discord server](https://discord.gg/FbMK9UE) and follow the instructions in the message pinned in #resources. (Download the Full MTG pack, not the Basic M15 pack or the M15 pack.)

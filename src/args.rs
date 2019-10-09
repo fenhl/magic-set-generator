@@ -117,9 +117,12 @@ impl Default for ArgsRegular {
 impl ArgsRegular {
     fn handle_line(&mut self, line: String) -> Result<(), Error> {
         let line = line.trim();
-        if line.starts_with('-') {
+        if line.is_empty() {
+            Ok(())
+        } else if line.starts_with('-') {
             // no stdin support since pos args aren't paths/files
             if line.starts_with("--") {
+                // no “end of options” support since card names can't start with -
                 for (long, _, handler) in &FLAGS {
                     if line == format!("--{}", long) {
                         handler(self)?;
@@ -166,8 +169,10 @@ impl ArgsRegular {
                 }
             }
             Err(Error::Args(format!("unknown command: !{}", cmd_name)))
+        } else if line.starts_with('#') {
+            Ok(()) // comment line
         } else {
-            //TODO comments, queries
+            //TODO queries
             self.cards.insert(line.into());
             Ok(())
         }
@@ -244,8 +249,10 @@ impl Args {
                 if !found {
                     return Err(Error::Args(format!("unknown command: !{}", cmd_name)));
                 }
+            } else if arg.starts_with('#') {
+                // comment arg
             } else {
-                //TODO comments, queries
+                //TODO queries
                 args.cards.insert(arg);
             }
         }

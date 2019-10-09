@@ -7,6 +7,8 @@ use {
     derive_more::From,
     mtg::card::DbError
 };
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt as _;
 
 pub(crate) trait CommandExt {
     fn create_no_window(&mut self) -> &mut Command;

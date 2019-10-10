@@ -25,6 +25,7 @@ git = "https://github.com/fenhl/rust-gitdir"
 
 [dependencies.mtg]
 git = "https://github.com/fenhl/rust-mtg"
+features = ["custom"]
 
 [dependencies.url]
 version = "2"

@@ -40,10 +40,12 @@ const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 6
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 3] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 5] = [
     ("border", Some('b'), border),
     ("input", Some('i'), input),
-    ("output", Some('o'), output)
+    ("output", Some('o'), output),
+    ("schemes-output", None, schemes_output),
+    ("vanguards-output", None, vanguards_output)
 ];
 
 pub(crate) enum Output {
@@ -136,7 +138,7 @@ impl ArgsRegular {
                         return Ok(());
                     }
                 }
-                Err(Error::Args(format!("unknown option in stdin: {}", line)))
+                Err(Error::Args(format!("unknown option in stdin or input file: {}", line)))
             } else {
                 'short_flags: for (i, short_flag) in line.chars().enumerate().skip(1) {
                     for &(_, short, handler) in &FLAGS {
@@ -367,6 +369,16 @@ fn offline(args: &mut ArgsRegular) -> Result<(), Error> {
 
 fn output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {
     args.output = out_path.parse()?;
+    Ok(())
+}
+
+fn schemes_output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {
+    args.schemes_output = Some(out_path.parse()?);
+    Ok(())
+}
+
+fn vanguards_output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {
+    args.vanguards_output = Some(out_path.parse()?);
     Ok(())
 }
 

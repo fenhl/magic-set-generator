@@ -19,8 +19,7 @@ use {
         util::Error
     }
 };
-#[cfg(not(windows))]
-use {
+#[cfg(not(windows))] use {
     std::io::stdin,
     termion::is_tty
 };

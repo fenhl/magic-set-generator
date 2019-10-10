@@ -12,16 +12,20 @@ use {
         util::*
     }
 };
+#[cfg(windows)] use std::fs;
 
 include!(concat!(env!("OUT_DIR"), "/version.rs"));
 
 pub(crate) fn self_update() -> Result<(), Error> {
     let cargo_bin = home_dir().ok_or(Error::MissingHomeDir)?.join(".cargo").join("bin");
-    #[cfg(windows)]
-    let cargo_installed_path = cargo_bin.join("json-to-mse.exe");
-    #[cfg(not(windows))]
-    let cargo_installed_path = cargo_bin.join("json-to-mse");
+    #[cfg(windows)] {
+        let cargo_installed_path = cargo_bin.join("json-to-mse.exe");
+        let tmp_path = cargo_bin.join("json-to-mse.exe.old");
+        if tmp_path.exists() { fs::remove_file(tmp_path)?; }
+    }
+    #[cfg(not(windows))] let cargo_installed_path = cargo_bin.join("json-to-mse");
     if current_exe()? == cargo_installed_path {
+        #[cfg(windows)] fs::rename(&cargo_installed_path, tmp_path)?;
         Command::new("cargo")
             .arg("install-update")
             .arg("--git")

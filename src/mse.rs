@@ -18,7 +18,11 @@ use {
             KeywordAbility,
             Layout
         },
-        cardtype::CardType
+        cardtype::CardType,
+        cost::{
+            ManaCost,
+            ManaSymbol
+        }
     },
     zip::{
         ZipWriter,
@@ -145,6 +149,10 @@ impl DataFile {
         }
         // name
         push_alt!("name", card.to_string());
+        // mana cost
+        if let Some(mana_cost) = card.mana_cost() {
+            push_alt!("casting cost", cost_to_mse(mana_cost));
+        }
         //TODO other fields
         // stylesheet
         if !alt {
@@ -236,4 +244,38 @@ impl AddAssign for DataFile {
         self.images.extend(images);
         self.items.extend(items);
     }
+}
+
+fn cost_to_mse(cost: ManaCost) -> String {
+    cost.symbols().into_iter().map(|symbol| match symbol {
+        ManaSymbol::Variable => format!("X"),
+        ManaSymbol::Generic(n) => n.to_string(),
+        ManaSymbol::Snow => format!("S"),
+        ManaSymbol::Colorless => format!("C"),
+        ManaSymbol::TwobridWhite => format!("2/W"),
+        ManaSymbol::TwobridBlue => format!("2/U"),
+        ManaSymbol::TwobridBlack => format!("2/B"),
+        ManaSymbol::TwobridRed => format!("2/R"),
+        ManaSymbol::TwobridGreen => format!("2/G"),
+        ManaSymbol::HybridWhiteBlue => format!("W/U"),
+        ManaSymbol::HybridBlueBlack => format!("U/B"),
+        ManaSymbol::HybridBlackRed => format!("B/R"),
+        ManaSymbol::HybridRedGreen => format!("R/G"),
+        ManaSymbol::HybridGreenWhite => format!("G/W"),
+        ManaSymbol::HybridWhiteBlack => format!("W/B"),
+        ManaSymbol::HybridBlueRed => format!("U/R"),
+        ManaSymbol::HybridBlackGreen => format!("B/G"),
+        ManaSymbol::HybridRedWhite => format!("R/W"),
+        ManaSymbol::HybridGreenBlue => format!("G/U"),
+        ManaSymbol::PhyrexianWhite => format!("H/W"),
+        ManaSymbol::PhyrexianBlue => format!("H/U"),
+        ManaSymbol::PhyrexianBlack => format!("H/B"),
+        ManaSymbol::PhyrexianRed => format!("H/R"),
+        ManaSymbol::PhyrexianGreen => format!("H/G"),
+        ManaSymbol::White => format!("W"),
+        ManaSymbol::Blue => format!("U"),
+        ManaSymbol::Black => format!("B"),
+        ManaSymbol::Red => format!("R"),
+        ManaSymbol::Green => format!("G")
+    }).collect()
 }

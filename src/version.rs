@@ -26,7 +26,7 @@ pub(crate) fn self_update() -> Result<(), Error> {
             .arg("install-update")
             .arg("--git")
             .arg("json-to-mse")
-            .create_no_window()
+            //.create_no_window() // also suppresses output in PowerShell
             .check("cargo")
     } else {
         //TODO update from GitHub releases

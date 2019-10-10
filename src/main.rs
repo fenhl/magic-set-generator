@@ -84,15 +84,28 @@ fn main() -> Result<(), Error> {
         }
         Args::Regular(args) => args
     };
-    if args.verbose && !args.offline && version::updates_available(&client)? {
-        eprintln!("[ !! ] an update is available, install with `json-to-mse --update`");
+    if args.verbose && !args.offline {
+        eprint!("[....] checking for updates");
+        stderr().flush()?;
+        if version::updates_available(&client)? {
+            eprintln!("\r[ !! ] an update is available, install with `json-to-mse --update`");
+        } else {
+            eprintln!("\r[ ok ] json-to-mse is up to date");
+        }
     }
-    let db = if args.offline {
-        Db::from_sets_dir(gitdir::GitHub.repo("fenhl/lore-seeker").master()?.join("data").join("sets"))?
+    let db = if let Some(ref db_path) = args.database {
+        if db_path.is_dir() {
+            Db::from_sets_dir(db_path, args.verbose)?
+        } else {
+            Db::from_mtg_json(serde_json::from_reader(File::open(db_path)?)?, args.verbose)?
+        }
+    } else if args.offline {
+        Db::from_sets_dir(gitdir::GitHub.repo("fenhl/lore-seeker").master()?.join("data").join("sets"), args.verbose)?
     } else {
-        Db::download()?
+        Db::download(args.verbose)?
     };
     // normalize card names
+    verbose_eprint!(args, "[....] normalizing card names");
     let cards = if args.all_command {
         db.into_iter().collect()
     } else {
@@ -108,6 +121,7 @@ fn main() -> Result<(), Error> {
             vec![card.primary()]
         })
         .collect::<BTreeSet<_>>();
+    verbose_eprintln!(args, "\r[ ok ]");
     if cards.is_empty() {
         verbose_eprintln!(args, "[ !! ] no cards specified, generating empty set file");
     }

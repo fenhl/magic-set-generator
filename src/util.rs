@@ -51,6 +51,7 @@ pub(crate) enum Error {
     Db(DbError),
     GitDir(gitdir::host::github::Error),
     Io(io::Error),
+    Json(serde_json::Error),
     MissingHomeDir,
     Reqwest(reqwest::Error),
     SelfUpdateUnimplemented,

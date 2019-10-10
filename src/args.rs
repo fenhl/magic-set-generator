@@ -14,6 +14,7 @@ use {
         str::FromStr
     },
     css_color_parser::Color,
+    smart_default::SmartDefault,
     crate::{
         mse::DataFile,
         util::Error
@@ -39,16 +40,19 @@ const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 6
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 5] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 6] = [
     ("border", Some('b'), border),
+    ("db", None, database),
     ("input", Some('i'), input),
     ("output", Some('o'), output),
     ("schemes-output", None, schemes_output),
     ("vanguards-output", None, vanguards_output)
 ];
 
+#[derive(SmartDefault)]
 pub(crate) enum Output {
     File(PathBuf),
+    #[default]
     Stdout
 }
 
@@ -80,40 +84,25 @@ impl Output {
     }
 }
 
+#[derive(SmartDefault)]
 pub(crate) struct ArgsRegular {
     pub(crate) all_command: bool,
     pub(crate) auto_card_numbers: bool,
+    #[default(Color { r: 222, g: 127, b: 50, a: 1.0 })]
     pub(crate) border_color: Color,
     pub(crate) cards: BTreeSet<String>,
+    #[default = "NOT FOR SALE"]
     pub(crate) copyright: String,
+    pub(crate) database: Option<PathBuf>,
     include_schemes: Option<bool>,
     include_vanguards: Option<bool>,
     pub(crate) offline: bool,
     pub(crate) output: Output,
     pub(crate) schemes_output: Option<Output>,
+    #[default = "PROXY"]
     pub(crate) set_code: String,
     pub(crate) vanguards_output: Option<Output>,
     pub(crate) verbose: bool
-}
-
-impl Default for ArgsRegular {
-    fn default() -> ArgsRegular {
-        ArgsRegular {
-            all_command: false,
-            auto_card_numbers: false,
-            border_color: Color { r: 222, g: 127, b: 50, a: 1.0 },
-            cards: BTreeSet::default(),
-            copyright: format!("NOT FOR SALE"),
-            include_schemes: None,
-            include_vanguards: None,
-            offline: false,
-            output: Output::Stdout,
-            schemes_output: None,
-            set_code: format!("PROXY"),
-            vanguards_output: None,
-            verbose: false
-        }
-    }
 }
 
 impl ArgsRegular {
@@ -330,6 +319,11 @@ fn border(args: &mut ArgsRegular, border_color: &str) -> Result<(), Error> {
 
 fn command_all(args: &mut ArgsRegular, _: Vec<String>) -> Result<(), Error> {
     args.all_command = true;
+    Ok(())
+}
+
+fn database(args: &mut ArgsRegular, db_path: &str) -> Result<(), Error> {
+    args.database = Some(db_path.into());
     Ok(())
 }
 

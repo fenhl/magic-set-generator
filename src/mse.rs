@@ -11,10 +11,13 @@ use {
     },
     css_color_parser::Color,
     derive_more::From,
-    mtg::card::{
-        Db,
-        Card,
-        Layout
+    mtg::{
+        card::{
+            Db,
+            Card,
+            Layout
+        },
+        cardtype::CardType
     },
     zip::{
         ZipWriter,
@@ -26,6 +29,7 @@ use {
     }
 };
 
+#[derive(Debug, Clone, Copy)]
 pub(crate) enum MseGame {
     Magic,
     Archenemy,
@@ -104,19 +108,33 @@ impl DataFile {
     }
 
     fn from_card(card: &Card, mse_game: MseGame) -> DataFile {
+        let alt = card.is_alt();
         let mut result = DataFile::default();
+
+        macro_rules! push_alt {
+            ($key:literal, $val:expr) => {
+                if alt {
+                    result.push(concat!($key, " 2"), $val);
+                } else {
+                    result.push($key, $val);
+                }
+            };
+        }
+
         // layout
         match mse_game {
             MseGame::Magic => match card.layout() {
                 Layout::Normal => {} // nothing specific to normal layout
-                Layout::Split { .. } => unimplemented!(), //TODO split, fuse, aftermath
-                Layout::Flip { flipped, .. } => if !card.is_alt() {
+                Layout::Split { right, .. } => if !alt {
+                    result += DataFile::from_card(&right, mse_game);
+                },
+                Layout::Flip { flipped, .. } => if !alt {
                     result += DataFile::from_card(&flipped, mse_game);
                 },
-                Layout::DoubleFaced { back, .. } => if !card.is_alt() {
+                Layout::DoubleFaced { back, .. } => if !alt {
                     result += DataFile::from_card(&back, mse_game);
                 },
-                Layout::Meld { back, .. } => if !card.is_alt() {
+                Layout::Meld { back, .. } => if !alt {
                     result += DataFile::from_card(&back, mse_game);
                 },
                 Layout::Adventure { .. } => {} //TODO use adventurer template once it's released
@@ -125,8 +143,38 @@ impl DataFile {
             MseGame::Vanguard => {} //TODO
         }
         // name
-        result.push("name", card.to_string()); //TODO alt_key
+        push_alt!("name", card.to_string());
         //TODO other fields
+        // stylesheet
+        if !alt {
+            let stylesheet = match mse_game {
+                MseGame::Magic => match card.layout() {
+                    Layout::Normal => {
+                        if card.type_line() >= CardType::Plane || card.type_line() >= CardType::Phenomenon {
+                            Some("m15-mainframe-planes")
+                        } else if card.type_line() >= CardType::Planeswalker {
+                            Some("m15-mainframe-planeswalker")
+                        } else if card.is_leveler() {
+                            Some("m15-leveler")
+                        } else if card.type_line() >= CardType::Conspiracy {
+                            Some("m15-ttk-conspiracy")
+                        } else {
+                            None
+                        }
+                    }
+                    Layout::Split { .. } => Some("m15-split-fusable"), //TODO aftermath
+                    Layout::Flip { .. } => Some("m15-flip"),
+                    Layout::DoubleFaced { .. } => Some("m15-mainframe-dfc"),
+                    Layout::Meld { .. } => Some("m15-mainframe-dfc"),
+                    Layout::Adventure { .. } => None //TODO
+                },
+                MseGame::Archenemy => None,
+                MseGame::Vanguard => None
+            };
+            if let Some(stylesheet) = stylesheet {
+                result.push("stylesheet", stylesheet);
+            }
+        }
         result
     }
 

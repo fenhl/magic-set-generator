@@ -16,7 +16,8 @@ use {
             Db,
             Card,
             KeywordAbility,
-            Layout
+            Layout,
+            Rarity
         },
         cardtype::CardType,
         cost::{
@@ -153,7 +154,23 @@ impl DataFile {
         if let Some(mana_cost) = card.mana_cost() {
             push_alt!("casting cost", cost_to_mse(mana_cost));
         }
-        //TODO other fields
+        //TODO image
+        //TODO frame color & color indicator
+        //TODO type line
+        // rarity
+        push_alt!("rarity", match card.rarity() {
+            Rarity::Land => "basic land",
+            Rarity::Common => "common",
+            Rarity::Uncommon => "uncommon",
+            Rarity::Rare => "rare",
+            Rarity::Mythic => "mythic rare",
+            Rarity::Special => "special"
+        });
+        //TODO text
+        //TODO layouts and mana symbol watermarks for vanilla cards
+        //TODO P/T
+        //TODO loyalty/stability
+        //TODO hand/life modifier
         // stylesheet
         if !alt {
             let stylesheet = match mse_game {
@@ -187,6 +204,7 @@ impl DataFile {
             if let Some(stylesheet) = stylesheet {
                 result.push("stylesheet", stylesheet);
             }
+            //TODO stylesheet options
         }
         result
     }

@@ -15,6 +15,7 @@ use {
         card::{
             Db,
             Card,
+            KeywordAbility,
             Layout
         },
         cardtype::CardType
@@ -162,7 +163,11 @@ impl DataFile {
                             None
                         }
                     }
-                    Layout::Split { .. } => Some("m15-split-fusable"), //TODO aftermath
+                    Layout::Split { right, .. } => if right.abilities().into_iter().any(|abil| abil == KeywordAbility::Aftermath) {
+                        Some("m15-aftermath")
+                    } else {
+                        Some("m15-split-fusable")
+                    },
                     Layout::Flip { .. } => Some("m15-flip"),
                     Layout::DoubleFaced { .. } => Some("m15-mainframe-dfc"),
                     Layout::Meld { .. } => Some("m15-mainframe-dfc"),

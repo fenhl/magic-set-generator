@@ -32,6 +32,7 @@ use {
             ManaSymbol
         }
     },
+    regex::Regex,
     zip::{
         ZipWriter,
         write::FileOptions
@@ -213,11 +214,18 @@ impl DataFile {
         }
         // text
         //let mut has_miracle = false; //TODO
+        //let mut is_draft_matters = false; //TODO
         let abilities = card.abilities();
         if !abilities.is_empty() {
             for ability in &abilities {
                 match ability {
-                    Ability::Other(_) => {} //TODO special handling for loyalty abilities and {CHAOS} abilities, detect draft-matters
+                    Ability::Other(text) => { //TODO special handling for loyalty abilities, detect draft-matters
+                        if text.starts_with("Whenever you roll {CHAOS},") {
+                            result.push("rule text 2", text); //TODO symbol handling
+                        } else if Regex::new("\\W[Dd]raft(ed)?\\W").expect("failed to compile draft-matters regex").is_match(text) {
+                            //is_draft_matters = true; //TODO
+                        }
+                    }
                     Ability::Keyword(KeywordAbility::Fuse) => {
                         result.push("rule text 3", "<kw-0><nospellcheck>Fuse</nospellcheck></kw-0>");
                     }
@@ -365,21 +373,25 @@ fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
             }
         }
         match ability {
-            Ability::Other(text) => { lines.push(text); } //TODO special handling for loyalty abilities, {CHAOS} abilities, and ability words, detect draft-matters
+            Ability::Other(text) => { //TODO special handling for loyalty abilities and ability words
+                if !text.starts_with("Whenever you roll {CHAOS},") {
+                    lines.push(text); //TODO symbol handling
+                }
+            }
             Ability::Keyword(KeywordAbility::Fuse) => {} // added to rule text 3 by layout handling
             Ability::Keyword(keyword) => { //TODO special handling for fuse, detect miracle
                 if let Some(ref mut keywords) = current_keywords {
-                    keywords.push_str(&format!(", {}", keyword));
+                    keywords.push_str(&format!(", {}", keyword)); //TODO symbol handling
                 } else {
-                    current_keywords = Some(keyword.to_string().to_uppercase_first());
+                    current_keywords = Some(keyword.to_string().to_uppercase_first()); //TODO symbol handling
                 }
             }
             Ability::Modal { choose, modes } => {
-                lines.push(format!("{}<soft-line>", choose));
+                lines.push(format!("{}<soft-line>", choose)); //TODO symbol handling
                 for mode in modes.into_iter().with_position() {
                     lines.push(match mode {
-                        Position::Last(mode) | Position::Only(mode) => format!("</soft-line>• {}", mode),
-                        Position::First(mode) | Position::Middle(mode) => format!("</soft-line>• {}<soft-line>", mode)
+                        Position::Last(mode) | Position::Only(mode) => format!("</soft-line>• {}", mode), //TODO symbol handling
+                        Position::First(mode) | Position::Middle(mode) => format!("</soft-line>• {}<soft-line>", mode) //TODO symbol handling
                     });
                 }
             }

@@ -10,7 +10,6 @@ use {
         path::PathBuf
     },
     css_color_parser::Color,
-    derive_more::From,
     mtg::{
         card::{
             Ability,
@@ -36,25 +35,30 @@ use {
     }
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum MseGame {
     Magic,
     Archenemy,
     Vanguard
 }
 
-#[derive(Debug, From)]
+#[derive(Debug)]
 enum Data {
     Flat(String),
     Subfile(DataFile)
 }
 
-impl<'a> From<&'a str> for Data {
-    fn from(text: &'a str) -> Data {
+impl<T: ToString> From<T> for Data {
+    fn from(text: T) -> Data {
         Data::Flat(text.to_string())
     }
 }
 
+impl From<DataFile> for Data {
+    fn from(data_file: DataFile) -> Data {
+        Data::Subfile(data_file)
+    }
+}
 
 impl<K: Into<String>> FromIterator<(K, Data)> for Data {
     fn from_iter<I: IntoIterator<Item = (K, Data)>>(items: I) -> Data {
@@ -159,14 +163,16 @@ impl DataFile {
         //TODO frame color & color indicator
         //TODO type line
         // rarity
-        push_alt!("rarity", match card.rarity() {
-            Rarity::Land => "basic land",
-            Rarity::Common => "common",
-            Rarity::Uncommon => "uncommon",
-            Rarity::Rare => "rare",
-            Rarity::Mythic => "mythic rare",
-            Rarity::Special => "special"
-        });
+        if mse_game != MseGame::Vanguard {
+            push_alt!("rarity", match card.rarity() {
+                Rarity::Land => "basic land",
+                Rarity::Common => "common",
+                Rarity::Uncommon => "uncommon",
+                Rarity::Rare => "rare",
+                Rarity::Mythic => "mythic rare",
+                Rarity::Special => "special"
+            });
+        }
         // text
         let abilities = card.abilities();
         if !abilities.is_empty() {
@@ -174,9 +180,33 @@ impl DataFile {
             push_alt!("rule text", lines.join("\n"));
         }
         //TODO layouts and mana symbol watermarks for vanilla cards
-        //TODO P/T
-        //TODO loyalty/stability
-        //TODO hand/life modifier
+        // P/T, loyalty/stability, hand/life modifier
+        match mse_game {
+            MseGame::Magic => {
+                if card.type_line() >= CardType::Planeswalker {
+                    if let Some(loyalty) = card.loyalty() {
+                        push_alt!("loyalty", loyalty);
+                    }
+                } else {
+                    if let Some((power, toughness)) = card.pt() {
+                        push_alt!("power", power);
+                        push_alt!("toughness", toughness);
+                    } else if let Some(stability) = card.stability() {
+                        push_alt!("power", stability);
+                    } else if let Some((hand, life)) = card.vanguard_modifiers() {
+                        push_alt!("power", hand);
+                        push_alt!("toughness", life);
+                    }
+                }
+            }
+            MseGame::Archenemy => {}
+            MseGame::Vanguard => {
+                if let Some((hand, life)) = card.vanguard_modifiers() {
+                    push_alt!("handmod", hand);
+                    push_alt!("lifemod", life);
+                }
+            }
+        }
         // stylesheet
         if !alt {
             let stylesheet = match mse_game {

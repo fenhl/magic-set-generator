@@ -10,6 +10,7 @@ use {
         path::PathBuf
     },
     css_color_parser::Color,
+    itertools::Itertools as _,
     mtg::{
         card::{
             Ability,
@@ -19,7 +20,10 @@ use {
             Layout,
             Rarity
         },
-        cardtype::CardType,
+        cardtype::{
+            CardType,
+            Subtype
+        },
         cost::{
             ManaCost,
             ManaSymbol
@@ -31,7 +35,10 @@ use {
     },
     crate::{
         args::ArgsRegular,
-        util::Error
+        util::{
+            Error,
+            StrExt as _
+        }
     }
 };
 
@@ -130,6 +137,13 @@ impl DataFile {
                     result.push($key, $val);
                 }
             };
+            ($key:expr, $val:expr) => {
+                if alt {
+                    result.push(format!("{} 2", $key), $val);
+                } else {
+                    result.push($key, $val);
+                }
+            };
         }
 
         // layout
@@ -161,7 +175,30 @@ impl DataFile {
         }
         //TODO image
         //TODO frame color & color indicator
-        //TODO type line
+        // type line
+        if mse_game == MseGame::Archenemy {
+            // Archenemy templates don't have a separate subtypes field, so include them with the card types
+            push_alt!("type", card.type_line());
+        } else {
+            let (supertypes, card_types, subtypes) = card.type_line().parts();
+            push_alt!(if mse_game == MseGame::Vanguard { "type" } else { "super type" }, supertypes.into_iter()
+                .map(|supertype| format!("<word-list-type>{}</word-list-type>", supertype))
+                .chain(card_types.into_iter().map(|card_type| format!("<word-list-type>{}</word-list-type>", card_type)))
+                .join(" ")
+            );
+            push_alt!("sub type", subtypes.into_iter().map(|subtype| {
+                let card_type = match subtype {
+                    Subtype::Artifact(_) => "artifact",
+                    Subtype::Enchantment(_) => "enchantment",
+                    Subtype::Land(_) => "land",
+                    Subtype::Planeswalker(_) => "planeswalker",
+                    Subtype::Spell(_) => "spell",
+                    Subtype::Creature(_) => "race",
+                    Subtype::Planar(_) => "plane"
+                };
+                format!("<word-list-{}>{}</word-list-{}>", card_type, subtype, card_type)
+            }).join(" "));
+        }
         // rarity
         if mse_game != MseGame::Vanguard {
             push_alt!("rarity", match card.rarity() {
@@ -302,10 +339,24 @@ impl AddAssign for DataFile {
 
 fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
     let mut lines = Vec::default();
+    let mut current_keywords = None::<String>;
     for ability in abilities {
         match ability {
+            Ability::Keyword(_) => {}
+            _ => if let Some(keywords) = current_keywords {
+                lines.push(keywords);
+                current_keywords = None;
+            }
+        }
+        match ability {
             Ability::Other(text) => { lines.push(text); } //TODO special handling for loyalty abilities, {CHAOS} abilities, and ability words, detect draft-matters
-            Ability::Keyword(keyword) => { lines.push(keyword.to_string()); } //TODO join multiple keywords, special handling for fuse, detect miracle
+            Ability::Keyword(keyword) => { //TODO special handling for fuse, detect miracle
+                if let Some(ref mut keywords) = current_keywords {
+                    keywords.push_str(&format!(", {}", keyword));
+                } else {
+                    current_keywords = Some(keyword.to_string().to_uppercase_first());
+                }
+            }
             Ability::Modal { choose, modes } => {
                 lines.push(choose);
                 for mode in modes {
@@ -313,7 +364,7 @@ fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
                 }
             }
             Ability::Chapter { .. } => { lines.push(ability.to_string()); } //TODO chapter symbol handling on Sagas and on other layouts
-            Ability::Level { min, max, power, toughness, abilities } => {
+            Ability::Level { min, max, power, toughness, abilities } => { //TODO level keyword handling on leveler layout
                 let level_keyword = if let Some(max) = max {
                     format!("{{LEVEL {}-{}}}", min, max)
                 } else {
@@ -326,8 +377,11 @@ fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
                     lines.extend(ability_lines(abilities));
                     lines.push(format!("{}/{}", power, toughness));
                 }
-            } //TODO level keyword handling on leveler layout
+            }
         }
+    }
+    if let Some(keywords) = current_keywords {
+        lines.push(keywords);
     }
     lines
 }

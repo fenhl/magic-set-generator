@@ -13,6 +13,7 @@ use {
     derive_more::From,
     mtg::{
         card::{
+            Ability,
             Db,
             Card,
             KeywordAbility,
@@ -166,7 +167,12 @@ impl DataFile {
             Rarity::Mythic => "mythic rare",
             Rarity::Special => "special"
         });
-        //TODO text
+        // text
+        let abilities = card.abilities();
+        if !abilities.is_empty() {
+            let lines = ability_lines(abilities);
+            push_alt!("rule text", lines.join("\n"));
+        }
         //TODO layouts and mana symbol watermarks for vanilla cards
         //TODO P/T
         //TODO loyalty/stability
@@ -262,6 +268,38 @@ impl AddAssign for DataFile {
         self.images.extend(images);
         self.items.extend(items);
     }
+}
+
+fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
+    let mut lines = Vec::default();
+    for ability in abilities {
+        match ability {
+            Ability::Other(text) => { lines.push(text); } //TODO special handling for loyalty abilities, {CHAOS} abilities, and ability words, detect draft-matters
+            Ability::Keyword(keyword) => { lines.push(keyword.to_string()); } //TODO join multiple keywords, special handling for fuse, detect miracle
+            Ability::Modal { choose, modes } => {
+                lines.push(choose);
+                for mode in modes {
+                    lines.push(format!("• {}", mode));
+                }
+            }
+            Ability::Chapter { .. } => { lines.push(ability.to_string()); } //TODO chapter symbol handling on Sagas and on other layouts
+            Ability::Level { min, max, power, toughness, abilities } => {
+                let level_keyword = if let Some(max) = max {
+                    format!("{{LEVEL {}-{}}}", min, max)
+                } else {
+                    format!("{{LEVEL {}+}}", min)
+                };
+                if abilities.is_empty() {
+                    lines.push(format!("{} {}/{}", level_keyword, power, toughness));
+                } else {
+                    lines.push(level_keyword);
+                    lines.extend(ability_lines(abilities));
+                    lines.push(format!("{}/{}", power, toughness));
+                }
+            } //TODO level keyword handling on leveler layout
+        }
+    }
+    lines
 }
 
 fn cost_to_mse(cost: ManaCost) -> String {

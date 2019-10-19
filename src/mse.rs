@@ -10,7 +10,10 @@ use {
         path::PathBuf
     },
     css_color_parser::Color,
-    itertools::Itertools as _,
+    itertools::{
+        Itertools as _,
+        Position
+    },
     mtg::{
         card::{
             Ability,
@@ -147,8 +150,8 @@ impl DataFile {
         }
 
         // layout
-        match mse_game {
-            MseGame::Magic => match card.layout() {
+        if mse_game == MseGame::Magic {
+            match card.layout() {
                 Layout::Normal => {} // nothing specific to normal layout
                 Layout::Split { right, .. } => if !alt {
                     result += DataFile::from_card(&right, mse_game);
@@ -164,8 +167,6 @@ impl DataFile {
                 },
                 Layout::Adventure { .. } => {} //TODO use adventurer template once it's released
             }
-            MseGame::Archenemy => {} //TODO
-            MseGame::Vanguard => {} //TODO
         }
         // name
         push_alt!("name", card.to_string());
@@ -211,8 +212,23 @@ impl DataFile {
             });
         }
         // text
+        //let mut has_miracle = false; //TODO
         let abilities = card.abilities();
         if !abilities.is_empty() {
+            for ability in &abilities {
+                match ability {
+                    Ability::Other(_) => {} //TODO special handling for loyalty abilities and {CHAOS} abilities, detect draft-matters
+                    Ability::Keyword(KeywordAbility::Fuse) => {
+                        result.push("rule text 3", "<kw-0><nospellcheck>Fuse</nospellcheck></kw-0>");
+                    }
+                    Ability::Keyword(KeywordAbility::Miracle(_)) => {
+                        //has_miracle = true; //TODO
+                    }
+                    Ability::Chapter { .. } => {} //TODO chapter symbol handling on Sagas
+                    Ability::Level { .. } => {} //TODO level keyword handling on leveler layout
+                    _ => {}
+                }
+            }
             let lines = ability_lines(abilities);
             push_alt!("rule text", lines.join("\n"));
         }
@@ -350,6 +366,7 @@ fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
         }
         match ability {
             Ability::Other(text) => { lines.push(text); } //TODO special handling for loyalty abilities, {CHAOS} abilities, and ability words, detect draft-matters
+            Ability::Keyword(KeywordAbility::Fuse) => {} // added to rule text 3 by layout handling
             Ability::Keyword(keyword) => { //TODO special handling for fuse, detect miracle
                 if let Some(ref mut keywords) = current_keywords {
                     keywords.push_str(&format!(", {}", keyword));
@@ -358,9 +375,12 @@ fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
                 }
             }
             Ability::Modal { choose, modes } => {
-                lines.push(choose);
-                for mode in modes {
-                    lines.push(format!("• {}", mode));
+                lines.push(format!("{}<soft-line>", choose));
+                for mode in modes.into_iter().with_position() {
+                    lines.push(match mode {
+                        Position::Last(mode) | Position::Only(mode) => format!("</soft-line>• {}", mode),
+                        Position::First(mode) | Position::Middle(mode) => format!("</soft-line>• {}<soft-line>", mode)
+                    });
                 }
             }
             Ability::Chapter { .. } => { lines.push(ability.to_string()); } //TODO chapter symbol handling on Sagas and on other layouts

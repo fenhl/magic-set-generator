@@ -72,12 +72,10 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 How card artwork is handled is determined as follows:
 
 1. If `--no-images` is set, all artwork is left blank. Skip all following steps.
-2. If `--images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used.
-3. If `--scryfall-images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used.
-4. If `--lore-seeker-images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used.
-5. If neither `--no-scryfall-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
-6. **(NYI)** If neither `--no-lore-seeker-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
-7. If none of the previous steps were successful, the artwork for that card is left blank.
+2. If `--images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used. (If the card name contains the symbols `:`, `"`, and/or `?`, these should be omitted from the file name.) After `--images`, `--scryfall-images` and `--lore-seeker-images` are checked.
+3. If neither `--no-scryfall-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+4. **(NYI)** If neither `--no-lore-seeker-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+5. If none of the previous steps were successful, the artwork for that card is left blank.
 
 ## Command-line options
 

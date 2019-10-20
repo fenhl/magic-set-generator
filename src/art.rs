@@ -139,7 +139,7 @@ impl ArtHandler {
         for img_dir in &[&self.config.images, &self.config.scryfall_images, &self.config.lore_seeker_images] {
             if let Some(path) = img_dir {
                 for file_ext in &["png", "PNG", "jpg", "JPG", "jpeg", "JPEG"] {
-                    let image_path = path.join(format!("{}.{}", card, file_ext));
+                    let image_path = path.join(format!("{}.{}", normalized_image_name(card), file_ext));
                     if image_path.exists() {
                         return Some((self.add_image(Image::Path(image_path)), None)); //TODO artist from exif
                     }
@@ -172,4 +172,13 @@ impl ArtHandler {
         //TODO download from Lore Seeker
         None
     }
+}
+
+fn normalized_image_name(card: &Card) -> String {
+    let mut card_name = card.to_string();
+    card_name.retain(|c| match c {
+        ':' | '"' | '?' => false,
+        _ => true
+    });
+    card_name
 }

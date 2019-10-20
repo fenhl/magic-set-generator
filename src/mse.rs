@@ -177,8 +177,8 @@ impl DataFile {
             push_alt!("casting cost", cost_to_mse(mana_cost));
         }
         // image
-        if let Some((image_name, artist)) = art_handler.register_image_for(card) {
-            push_alt!("image", image_name);
+        if let Some((image_id, artist)) = art_handler.register_image_for(card) {
+            push_alt!("image", format!("image{}", image_id));
             if let Some(artist) = artist {
                 push_alt!("illustrator", artist);
             }

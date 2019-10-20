@@ -32,7 +32,8 @@ const COMMANDS: [(&str, usize, fn(&mut ArgsRegular, Vec<String>) -> Result<(), E
 ];
 
 //TODO add remaining flags/options from readme
-const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 10] = [
+const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 11] = [
+    ("auto-card-numbers", None, auto_card_numbers),
     ("holofoil-stamps", None, holofoil_stamps),
     ("include-schemes", None, include_schemes_on),
     ("include-vanguards", None, include_vanguards_on),
@@ -45,8 +46,9 @@ const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 1
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 10] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 11] = [
     ("border", Some('b'), border),
+    ("copyright", None, copyright),
     ("db", None, database),
     ("images", None, images),
     ("input", Some('i'), input),
@@ -329,6 +331,11 @@ impl Args {
     }
 }
 
+fn auto_card_numbers(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.auto_card_numbers = true;
+    Ok(())
+}
+
 fn border(args: &mut ArgsRegular, border_color: &str) -> Result<(), Error> {
     args.border_color = match border_color {
         "b" | "black" => Color { r: 0, g: 0, b: 0, a: 1.0 },
@@ -343,6 +350,11 @@ fn border(args: &mut ArgsRegular, border_color: &str) -> Result<(), Error> {
 
 fn command_all(args: &mut ArgsRegular, _: Vec<String>) -> Result<(), Error> {
     args.all_command = true;
+    Ok(())
+}
+
+fn copyright(args: &mut ArgsRegular, copyright_text: &str) -> Result<(), Error> {
+    args.copyright = copyright_text.into();
     Ok(())
 }
 

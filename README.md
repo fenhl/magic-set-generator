@@ -95,8 +95,8 @@ How card artwork is handled is determined as follows:
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Check for self-updates (unless `--offline` is given), report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * **(NYI)** `--allow-uncards`: This script has no official support for silver-bordered “un-cards” and other shenanigans like [1996 World Champion](https://lore-seeker.cards/card/pcel/1). As a result, most un-cards will be redered incorrectly, so the script will refuse to generate them unless this option is used. Reports of issues encountered while using this option will be closed as invalid.
-* **(NYI)** `--auto-card-numbers`: Display automatically-assigned collector numbers on the cards, below the text box.
-* **(NYI)** `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
+* `--auto-card-numbers`: Display automatically-assigned collector numbers on the cards, below the text box.
+* `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
 * `--db=<path>`: The path from which to load the card database. In `--offline` mode, this defaults to `data\sets` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, the database is downloaded from [mtgjson.com](https://mtgjson.com/) by default. The following formats are understood:
     * A file in the [MTG JSON AllSets](https://mtgjson.com/files/all-sets/) format.
     * A directory containing [MTG JSON Individual Set](https://mtgjson.com/files/individual-set/) files.

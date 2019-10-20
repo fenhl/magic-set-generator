@@ -228,7 +228,7 @@ impl DataFile {
                 match ability {
                     Ability::Other(text) => { //TODO special handling for loyalty abilities, detect draft-matters
                         if text.starts_with("Whenever you roll {CHAOS},") {
-                            result.push("rule text 2", text); //TODO symbol handling
+                            result.push("rule text 2", with_mse_symbols(text));
                         } else if Regex::new("\\W[Dd]raft(ed)?\\W").expect("failed to compile draft-matters regex").is_match(text) {
                             //is_draft_matters = true; //TODO
                         }
@@ -380,23 +380,23 @@ fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
         match ability {
             Ability::Other(text) => { //TODO special handling for loyalty abilities and ability words
                 if !text.starts_with("Whenever you roll {CHAOS},") {
-                    lines.push(text); //TODO symbol handling
+                    lines.push(with_mse_symbols(text));
                 }
             }
             Ability::Keyword(KeywordAbility::Fuse) => {} // added to rule text 3 by layout handling
             Ability::Keyword(keyword) => { //TODO special handling for fuse, detect miracle
                 if let Some(ref mut keywords) = current_keywords {
-                    keywords.push_str(&format!(", {}", keyword)); //TODO symbol handling
+                    keywords.push_str(&format!(", {}", with_mse_symbols(keyword)));
                 } else {
-                    current_keywords = Some(keyword.to_string().to_uppercase_first()); //TODO symbol handling
+                    current_keywords = Some(with_mse_symbols(keyword.to_string().to_uppercase_first()));
                 }
             }
             Ability::Modal { choose, modes } => {
-                lines.push(format!("{}<soft-line>", choose)); //TODO symbol handling
+                lines.push(format!("{}<soft-line>", with_mse_symbols(choose)));
                 for mode in modes.into_iter().with_position() {
                     lines.push(match mode {
-                        Position::Last(mode) | Position::Only(mode) => format!("</soft-line>• {}", mode), //TODO symbol handling
-                        Position::First(mode) | Position::Middle(mode) => format!("</soft-line>• {}<soft-line>", mode) //TODO symbol handling
+                        Position::Last(mode) | Position::Only(mode) => format!("</soft-line>• {}", with_mse_symbols(mode)),
+                        Position::First(mode) | Position::Middle(mode) => format!("</soft-line>• {}<soft-line>", with_mse_symbols(mode))
                     });
                 }
             }
@@ -455,4 +455,34 @@ fn cost_to_mse(cost: ManaCost) -> String {
         ManaSymbol::Red => format!("R"),
         ManaSymbol::Green => format!("G")
     }).collect()
+}
+
+fn symbols_to_mse(text: &str) -> String {
+    match text {
+        "{CHAOS}" => format!("chaos"),
+        "{P}" => format!("phi"),
+        "{Q}" => format!("Q"),
+        "{T}" => format!("T"),
+        _ => if let Ok(mana_cost) = text.parse() {
+            cost_to_mse(mana_cost)
+        } else if Regex::new("^(\\{E\\})+$").expect("failed to compile energy regex").is_match(text) {
+            "E".repeat(text.len() / 3)
+        } else {
+            panic!()
+        }
+    }
+}
+
+fn with_mse_symbols(text: impl ToString) -> String {
+    let symbols_regex = Regex::new("^([\"']?)(\\{.+\\})([:.,]?[\"']*)$").expect("failed to compile symbols regex");
+    let number_regex = Regex::new("^[0-9]+|[XVI]+$").expect("failed to compile number regex");
+    text.to_string().split(' ').map(|word| word.split('—').map(|word_part| {
+        if let Some(captures) = symbols_regex.captures(word_part) {
+            format!("{}<sym>{}</sym>{}", &captures[1], symbols_to_mse(&captures[2]), &captures[3])
+        } else if number_regex.is_match(word_part) {
+            format!("</sym>{}<sym>", word_part)
+        } else {
+            word_part.into()
+        }
+    }).join("—")).join(" ")
 }

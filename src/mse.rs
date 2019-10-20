@@ -225,11 +225,18 @@ impl DataFile {
         //let mut is_draft_matters = false; //TODO
         let abilities = card.abilities();
         if !abilities.is_empty() {
-            let split_text = card.type_line() >= CardType::Planeswalker || card.type_line() >= EnchantmentType::Saga || card.type_line() >= EnchantmentType::Discovery;
+            let mut separated_text_boxes =
+                if card.is_leveler()
+                || card.type_line() >= CardType::Planeswalker
+                || card.type_line() >= EnchantmentType::Saga
+                || card.type_line() >= EnchantmentType::Discovery
+            { Some(Vec::default()) } else { None };
             for ability in &abilities {
                 match ability {
-                    Ability::Other(text) => { //TODO special handling for loyalty abilities, detect draft-matters
-                        if text.starts_with("Whenever you roll {CHAOS},") {
+                    Ability::Other(text) => { //TODO special handling for loyalty abilities
+                        if let Some(ref mut separated_text_boxes) = separated_text_boxes {
+                            separated_text_boxes.push(with_mse_symbols(text));
+                        } else if text.starts_with("Whenever you roll {CHAOS},") {
                             result.push("rule text 2", with_mse_symbols(text));
                         } else if Regex::new("\\W[Dd]raft(ed)?\\W").expect("failed to compile draft-matters regex").is_match(text) {
                             //is_draft_matters = true; //TODO
@@ -241,14 +248,38 @@ impl DataFile {
                     Ability::Keyword(KeywordAbility::Miracle(_)) => {
                         //has_miracle = true; //TODO
                     }
-                    Ability::Chapter { .. } => {} //TODO chapter symbol handling on Sagas
-                    Ability::Level { .. } => {} //TODO level keyword handling on leveler layout
-                    _ => {}
+                    Ability::Chapter { text, .. } => if let Some(ref mut separated_text_boxes) = separated_text_boxes {
+                        //TODO arrange chapter symbols, enable/disable Discovery mode?
+                        separated_text_boxes.push(with_mse_symbols(text));
+                    },
+                    Ability::Level { min, max, power, toughness, abilities } => if let Some(ref mut separated_text_boxes) = separated_text_boxes {
+                        result.push(format!("level {}", separated_text_boxes.len() + 1), if let Some(max) = max {
+                            format!("{}-{}", min, max)
+                        } else {
+                            format!("{}+", min)
+                        });
+                        result.push(format!("power {}", separated_text_boxes.len() + 2), power);
+                        result.push(format!("toughness {}", separated_text_boxes.len() + 2), toughness);
+                        separated_text_boxes.push(ability_lines(abilities).join("\n"));
+                    }
+                    ability => if let Some(ref mut separated_text_boxes) = separated_text_boxes {
+                        separated_text_boxes.push(ability_lines(&[ability.clone()]).join("\n"));
+                    }
                 }
             }
-            if !split_text {
-                let lines = ability_lines(abilities);
-                push_alt!("rule text", lines.join("\n"));
+            if let Some(separated_text_boxes) = separated_text_boxes {
+                for (i, text_box) in separated_text_boxes.into_iter().enumerate() {
+                    result.push(
+                        if i == 0 && card.is_leveler() {
+                            format!("rule text")
+                        } else {
+                            format!("level {} text", i + 1)
+                        },
+                        text_box
+                    );
+                }
+            } else {
+                push_alt!("rule text", ability_lines(&abilities).join("\n"));
             }
         }
         //TODO layouts and mana symbol watermarks for vanilla cards
@@ -372,7 +403,7 @@ impl AddAssign for DataFile {
     }
 }
 
-fn ability_lines(abilities: Vec<Ability>) -> Vec<String> {
+fn ability_lines(abilities: &[Ability]) -> Vec<String> {
     let mut lines = Vec::default();
     let mut current_keywords = None::<String>;
     for ability in abilities {

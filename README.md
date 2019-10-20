@@ -90,13 +90,14 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 * `--db=<path>`: The path from which to load the card database. In `--offline` mode, this defaults to `data\sets` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, the database is downloaded from [mtgjson.com](https://mtgjson.com/) by default. The following formats are understood:
     * A file in the [MTG JSON AllSets](https://mtgjson.com/files/all-sets/) format.
     * A directory containing [MTG JSON Individual Set](https://mtgjson.com/files/individual-set/) files.
-* **(NYI)** `--find-cards=<path>`: The path to the `find_cards` executable used for [Lore Seeker syntax](https://lore-seeker.cards/help/syntax). In `--offline` mode, this defaults to `search-engine\bin\find_cards` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, Lore Seeker website is used by default.
-* **(NYI)** `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>\<card name>.png`. Any missing images downloaded from Scryfall or Lore Seeker will be saved here.
+* **(NYI)** `--find-cards=<path>`: The path to the `find_cards` executable used for [Lore Seeker syntax](https://lore-seeker.cards/help/syntax). In `--offline` mode, this defaults to `search-engine\bin\find_cards` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, [the Lore Seeker website](https://lore-seeker.cards/) is used by default.
+* **(NYI)** `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>\<card name>.png`. Any missing images downloaded from [Scryfall](https://scryfall.com/) or [Lore Seeker](https://lore-seeker.cards/) will be saved here.
 * `--[no-]include-schemes`: Enable or disable the inclusion of schemes as regular-sized cards in the main set file. This is on by default unless `--schemes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
-* **(NYI)** `--no-scryfall-images`: Don't fall back to loading card images from [Scryfall](https://scryfall.com/) if the card is not present in `--images`.
+* **(NYI)** `--no-lore-seeker-images`: Don't fall back to loading card artwork from [Lore Seeker](https://lore-seeker.cards/) if the card is neither available in `--images` nor on Scryfall. Leave the image blank instead.
+* **(NYI)** `--no-scryfall-images`: Don't fall back to loading card artwork from [Scryfall](https://scryfall.com/) if the card is not present in `--images`. Load from [Lore Seeker](https://lore-seeker.cards/) instead.
 * `--offline`: This option has the following effects:
-    * It enables `--no-scryfall-images`.
+    * It enables `--no-lore-seeker-images` and `--no-scryfall-images`.
     * `json-to-mse` won't check for self-updates, even in `--verbose` mode.
     * It won't attempt to download the card database. Instead, if `--db` isn't given, it expects a local copy of [the Lore Seeker repository](https://github.com/fenhl/lore-seeker). See `--db` for details.
     * It won't attempt to use [Lore Seeker](https://lore-seeker.cards/) for syntax queries (arguments starting with `=`). Instead, `find_cards` is required if any queries are performed. See `--find-cards` for details.
@@ -105,7 +106,7 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * `mini`: A smaller version of the Planechase template, same size as regular cards. Very small text.
     * `basic`: The default template for regular cards.
 * `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
-* **(NYI)** `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
+* `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
 * `--update`: Attempt to update `json-to-mse` to the latest version instead of doing anything else.
 * `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * `--version`: Print version information instead of doing anything else.

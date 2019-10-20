@@ -40,12 +40,13 @@ const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 6
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 6] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 7] = [
     ("border", Some('b'), border),
     ("db", None, database),
     ("input", Some('i'), input),
     ("output", Some('o'), output),
     ("schemes-output", None, schemes_output),
+    ("set-code", None, set_code),
     ("vanguards-output", None, vanguards_output)
 ];
 
@@ -367,6 +368,11 @@ fn output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {
 
 fn schemes_output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {
     args.schemes_output = Some(out_path.parse()?);
+    Ok(())
+}
+
+fn set_code(args: &mut ArgsRegular, set_code: &str) -> Result<(), Error> {
+    args.set_code = set_code.into();
     Ok(())
 }
 

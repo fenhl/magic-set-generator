@@ -139,18 +139,18 @@ fn main() -> Result<(), Error> {
         verbose_eprint!(args, "[{}{}] adding cards to set file: {} of {}\r", "=".repeat(progress), ".".repeat(4 - progress), i, cards.len());
         let result = if card.type_line() >= CardType::Scheme {
             if args.include_schemes() {
-                set_file.add_card(&card, MseGame::Magic, &mut art_handler)
+                set_file.add_card(&card, MseGame::Magic, &args, &mut art_handler)
             } else {
                 Ok(())
-            }.and_then(|()| schemes_set_file.add_card(&card, MseGame::Archenemy, &mut art_handler))
+            }.and_then(|()| schemes_set_file.add_card(&card, MseGame::Archenemy, &args, &mut art_handler))
         } else if card.type_line() >= CardType::Vanguard {
             if args.include_vanguards() {
-                set_file.add_card(&card, MseGame::Magic, &mut art_handler)
+                set_file.add_card(&card, MseGame::Magic, &args, &mut art_handler)
             } else {
                 Ok(())
-            }.and_then(|()| vanguards_set_file.add_card(&card, MseGame::Vanguard, &mut art_handler))
+            }.and_then(|()| vanguards_set_file.add_card(&card, MseGame::Vanguard, &args, &mut art_handler))
         } else {
-            set_file.add_card(&card, MseGame::Magic, &mut art_handler)
+            set_file.add_card(&card, MseGame::Magic, &args, &mut art_handler)
         };
         match result {
             Ok(()) => {}

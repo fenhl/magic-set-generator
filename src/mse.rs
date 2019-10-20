@@ -104,11 +104,7 @@ impl DataFile {
             ("stylesheet", Data::from(if game == "magic" { "m15-altered" } else { "standard" })),
             ("set info", Data::Subfile(set_info)),
             ("styling", Data::from_iter(vec![ // styling needs to be above cards
-                ("magic-m15-altered", Data::from_iter(vec![
-                    ("other options", Data::from("brown legendary vehicle pt, ancestral generic mana")),
-                    ("use holofoil stamps", Data::from(if args.holofoil_stamps { "yes" } else { "no" })),
-                    ("center text", Data::from("short text only"))
-                ]))
+                ("magic-m15-altered", set_styling_data(args, "m15-altered").into())
             ]))
         ])
     }
@@ -125,13 +121,13 @@ impl DataFile {
         DataFile::new_inner(args, num_cards, "vanguard", "MTG JSON card import: Vanguard avatars")
     }
 
-    pub(crate) fn add_card(&mut self, card: &Card, mse_game: MseGame, art_handler: &mut ArtHandler) -> Result<(), Error> {
-        self.push("card", DataFile::from_card(card, mse_game, art_handler));
+    pub(crate) fn add_card(&mut self, card: &Card, mse_game: MseGame, args: &ArgsRegular, art_handler: &mut ArtHandler) -> Result<(), Error> {
+        self.push("card", DataFile::from_card(card, mse_game, args, art_handler));
         //TODO add stylesheet?
         Ok(())
     }
 
-    fn from_card(card: &Card, mse_game: MseGame, art_handler: &mut ArtHandler) -> DataFile {
+    fn from_card(card: &Card, mse_game: MseGame, args: &ArgsRegular, art_handler: &mut ArtHandler) -> DataFile {
         let alt = card.is_alt();
         let mut result = DataFile::default();
 
@@ -156,19 +152,13 @@ impl DataFile {
         if mse_game == MseGame::Magic {
             match card.layout() {
                 Layout::Normal => {} // nothing specific to normal layout
-                Layout::Split { right, .. } => if !alt {
-                    result += DataFile::from_card(&right, mse_game, art_handler);
-                },
-                Layout::Flip { flipped, .. } => if !alt {
-                    result += DataFile::from_card(&flipped, mse_game, art_handler);
-                },
-                Layout::DoubleFaced { back, .. } => if !alt {
-                    result += DataFile::from_card(&back, mse_game, art_handler);
-                },
-                Layout::Meld { back, .. } => if !alt {
-                    result += DataFile::from_card(&back, mse_game, art_handler);
-                },
-                Layout::Adventure { .. } => {} //TODO use adventurer template once it's released
+                Layout::Split { right: alt_part, .. } |
+                Layout::Flip { flipped: alt_part, .. } |
+                Layout::DoubleFaced { back: alt_part, .. } |
+                Layout::Meld { back: alt_part, .. } |
+                Layout::Adventure { adventure: alt_part, .. } => if !alt {
+                    result += DataFile::from_card(&alt_part, mse_game, args, art_handler);
+                }
             }
         }
         // name
@@ -316,38 +306,57 @@ impl DataFile {
                 MseGame::Magic => match card.layout() {
                     Layout::Normal => {
                         if card.type_line() >= CardType::Plane || card.type_line() >= CardType::Phenomenon {
-                            Some("m15-mainframe-planes")
+                            "m15-mainframe-planes"
                         } else if card.type_line() >= EnchantmentType::Saga || card.type_line() >= EnchantmentType::Discovery {
-                            Some("m15-saga")
+                            "m15-saga"
                         } else if card.type_line() >= CardType::Planeswalker {
-                            Some("m15-mainframe-planeswalker")
+                            "m15-mainframe-planeswalker"
                         } else if card.is_leveler() {
-                            Some("m15-leveler")
+                            "m15-leveler"
                         } else if card.type_line() >= CardType::Conspiracy {
-                            Some("m15-ttk-conspiracy")
+                            "m15-ttk-conspiracy"
                         } else {
-                            None
+                            "m15-altered"
                         }
                     }
                     Layout::Split { right, .. } => if right.abilities().into_iter().any(|abil| abil == KeywordAbility::Aftermath) {
-                        Some("m15-aftermath")
+                        "m15-aftermath"
                     } else {
-                        Some("m15-split-fusable")
+                        "m15-split-fusable"
                     },
-                    Layout::Flip { .. } => Some("m15-flip"),
-                    Layout::DoubleFaced { .. } => Some("m15-mainframe-dfc"),
-                    Layout::Meld { .. } => Some("m15-mainframe-dfc"),
-                    Layout::Adventure { .. } => None //TODO
+                    Layout::Flip { .. } => "m15-flip",
+                    Layout::DoubleFaced { .. } => "m15-mainframe-dfc",
+                    Layout::Meld { .. } => "m15-mainframe-dfc",
+                    Layout::Adventure { .. } => "m15-flip" //TODO use adventure frame
                 },
-                MseGame::Archenemy => None,
-                MseGame::Vanguard => None
+                MseGame::Archenemy => "standard",
+                MseGame::Vanguard => "standard"
             };
-            if let Some(stylesheet) = stylesheet {
+            if stylesheet != if mse_game == MseGame::Magic { "m15-altered" } else { "standard" } {
                 result.push("stylesheet", stylesheet);
             }
-            //TODO stylesheet options
+            // stylesheet options
+            match stylesheet {
+                "m15-altered" => {
+                    if card.type_line() >= CardType::Enchantment && card.type_line().types().iter().filter(|&&card_type| card_type != CardType::Tribal).count() >= 2 {
+                        let mut styling_data = set_styling_data(args, "m15-altered");
+                        if styling_data.contains("frames") {
+                            unimplemented!();
+                        } else {
+                            styling_data.push("frames", "nyx");
+                        }
+                        result.push("styling data", styling_data);
+                    }
+                }
+                _ => {}
+            }
         }
         result
+    }
+
+    fn contains(&self, key: impl ToString) -> bool {
+        let key = key.to_string();
+        self.items.iter().any(|(k, _)| k == &key)
     }
 
     fn push(&mut self, key: impl ToString, value: impl Into<Data>) {
@@ -493,6 +502,17 @@ fn cost_to_mse(cost: ManaCost) -> String {
         ManaSymbol::Red => format!("R"),
         ManaSymbol::Green => format!("G")
     }).collect()
+}
+
+fn set_styling_data(args: &ArgsRegular, stylesheet: &str) -> DataFile {
+    match stylesheet {
+        "m15-altered" => DataFile::from_iter(vec![
+            ("other options", Data::from("brown legendary vehicle pt, ancestral generic mana")),
+            ("use holofoil stamps", Data::from(if args.holofoil_stamps { "yes" } else { "no" })),
+            ("center text", Data::from("short text only"))
+        ]),
+        _ => DataFile::default()
+    }
 }
 
 fn symbols_to_mse(text: &str) -> String {

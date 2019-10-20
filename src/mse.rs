@@ -428,6 +428,7 @@ fn cost_to_mse(cost: ManaCost) -> String {
         ManaSymbol::Variable => format!("X"),
         ManaSymbol::Generic(n) => n.to_string(),
         ManaSymbol::Snow => format!("S"),
+        ManaSymbol::Runic => format!("V"),
         ManaSymbol::Colorless => format!("C"),
         ManaSymbol::TwobridWhite => format!("2/W"),
         ManaSymbol::TwobridBlue => format!("2/U"),
@@ -468,7 +469,7 @@ fn symbols_to_mse(text: &str) -> String {
         } else if Regex::new("^(\\{E\\})+$").expect("failed to compile energy regex").is_match(text) {
             "E".repeat(text.len() / 3)
         } else {
-            panic!()
+            panic!("unrecognized symbol: {}", text);
         }
     }
 }

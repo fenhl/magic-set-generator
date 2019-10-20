@@ -669,7 +669,7 @@ dependencies = [
 [[package]]
 name = "mtg"
 version = "0.1.0"
-source = "git+https://github.com/fenhl/rust-mtg#0fd2b9d0aeec37cbdbbf5f4dd913b21e41f896e1"
+source = "git+https://github.com/fenhl/rust-mtg#2342c0fb75af9828d6dc0e2d96bdcb88e1a115e8"
 dependencies = [
  "caseless 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "derive_more 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",

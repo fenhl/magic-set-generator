@@ -22,6 +22,7 @@ use {
         },
         cardtype::{
             CardType,
+            EnchantmentType,
             Subtype
         },
         cost::{
@@ -224,6 +225,7 @@ impl DataFile {
         //let mut is_draft_matters = false; //TODO
         let abilities = card.abilities();
         if !abilities.is_empty() {
+            let split_text = card.type_line() >= CardType::Planeswalker || card.type_line() >= EnchantmentType::Saga || card.type_line() >= EnchantmentType::Discovery;
             for ability in &abilities {
                 match ability {
                     Ability::Other(text) => { //TODO special handling for loyalty abilities, detect draft-matters
@@ -244,8 +246,10 @@ impl DataFile {
                     _ => {}
                 }
             }
-            let lines = ability_lines(abilities);
-            push_alt!("rule text", lines.join("\n"));
+            if !split_text {
+                let lines = ability_lines(abilities);
+                push_alt!("rule text", lines.join("\n"));
+            }
         }
         //TODO layouts and mana symbol watermarks for vanilla cards
         // P/T, loyalty/stability, hand/life modifier
@@ -282,6 +286,8 @@ impl DataFile {
                     Layout::Normal => {
                         if card.type_line() >= CardType::Plane || card.type_line() >= CardType::Phenomenon {
                             Some("m15-mainframe-planes")
+                        } else if card.type_line() >= EnchantmentType::Saga || card.type_line() >= EnchantmentType::Discovery {
+                            Some("m15-saga")
                         } else if card.type_line() >= CardType::Planeswalker {
                             Some("m15-mainframe-planeswalker")
                         } else if card.is_leveler() {
@@ -461,6 +467,7 @@ fn cost_to_mse(cost: ManaCost) -> String {
 fn symbols_to_mse(text: &str) -> String {
     match text {
         "{CHAOS}" => format!("chaos"),
+        "{DISCOVER}" => format!("D"), // The {DISCOVER} symbol doesn't exist in the text box symbol font, use this instead to avoid panicking
         "{P}" => format!("phi"),
         "{Q}" => format!("Q"),
         "{T}" => format!("T"),

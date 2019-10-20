@@ -71,7 +71,8 @@ pub(crate) enum Error {
     Reqwest(reqwest::Error),
     SelfUpdateUnimplemented,
     TagNotFound,
-    //Uncard
+    //Uncard,
+    Zip(zip::result::ZipError)
 }
 
 impl From<Infallible> for Error {

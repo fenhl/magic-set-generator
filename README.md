@@ -67,6 +67,18 @@ is equivalent to
 json-to-mse 'Dryad Arbor' -o example.mse-set
 ```
 
+## Image handling
+
+How card artwork is handled is determined as follows:
+
+1. If `--no-images` is set, all artwork is left blank. Skip all following steps.
+2. If `--images` is set to a directory containing a file named `<card name>.png`, that image will be used.
+3. If `--scryfall-images` is set to a directory containing a file named `<card name>.png`, that image will be used.
+4. If `--lore-seeker-images` is set to a directory containing a file named `<card name>.png`, that image will be used.
+5. If neither `--no-scryfall-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+6. **(NYI)** If neither `--no-lore-seeker-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+7. If none of the previous steps were successful, the artwork for that card is left blank.
+
 ## Command-line options
 
 `json-to-mse` accepts the following command line options:
@@ -92,11 +104,10 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * A directory containing [MTG JSON Individual Set](https://mtgjson.com/files/individual-set/) files.
 * **(NYI)** `--find-cards=<path>`: The path to the `find_cards` executable used for [Lore Seeker syntax](https://lore-seeker.cards/help/syntax). In `--offline` mode, this defaults to `search-engine\bin\find_cards` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, [the Lore Seeker website](https://lore-seeker.cards/) is used by default.
 * `--holofoil-stamps`: Enable holofoil stamps on the bottom of text boxes of rare and mythic cards.
-* **(NYI)** `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>\<card name>.png`. Any missing images downloaded from [Scryfall](https://scryfall.com/) or [Lore Seeker](https://lore-seeker.cards/) will be saved here.
+* `--[no-]images[=<path>]`: See [Image handling](#image-handling).
 * `--[no-]include-schemes`: Enable or disable the inclusion of schemes as regular-sized cards in the main set file. This is on by default unless `--schemes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
-* **(NYI)** `--no-lore-seeker-images`: Don't fall back to loading card artwork from [Lore Seeker](https://lore-seeker.cards/) if the card is neither available in `--images` nor on Scryfall. Leave the image blank instead.
-* **(NYI)** `--no-scryfall-images`: Don't fall back to loading card artwork from [Scryfall](https://scryfall.com/) if the card is not present in `--images`. Load from [Lore Seeker](https://lore-seeker.cards/) instead.
+* `--[no-]lore-seeker-images[=<path>]`: See [Image handling](#image-handling).
 * `--offline`: This option has the following effects:
     * It enables `--no-lore-seeker-images` and `--no-scryfall-images`.
     * `json-to-mse` won't check for self-updates, even in `--verbose` mode.
@@ -107,6 +118,7 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * `mini`: A smaller version of the Planechase template, same size as regular cards. Very small text.
     * `basic`: The default template for regular cards.
 * `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
+* `--[no-]scryfall-images[=<path>]`: See [Image handling](#image-handling).
 * `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
 * `--update`: Attempt to update `json-to-mse` to the latest version instead of doing anything else.
 * `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.

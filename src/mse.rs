@@ -1,13 +1,11 @@
 use {
     std::{
-        fs::File,
         io::{
             self,
             prelude::*
         },
         iter::FromIterator,
-        ops::AddAssign,
-        path::PathBuf
+        ops::AddAssign
     },
     css_color_parser::Color,
     itertools::{
@@ -17,7 +15,6 @@ use {
     mtg::{
         card::{
             Ability,
-            Db,
             Card,
             KeywordAbility,
             Layout,
@@ -39,6 +36,7 @@ use {
     },
     crate::{
         args::ArgsRegular,
+        art::ArtHandler,
         util::{
             Error,
             StrExt as _
@@ -79,7 +77,6 @@ impl<K: Into<String>> FromIterator<(K, Data)> for Data {
 
 #[derive(Debug, Default)]
 pub(crate) struct DataFile {
-    images: Vec<PathBuf>,
     items: Vec<(String, Data)>
 }
 
@@ -127,13 +124,13 @@ impl DataFile {
         DataFile::new_inner(args, num_cards, "vanguard", "MTG JSON card import: Vanguard avatars")
     }
 
-    pub(crate) fn add_card(&mut self, card: &Card, _: &Db, mse_game: MseGame, _: &ArgsRegular) -> Result<(), Error> {
-        self.push("card", DataFile::from_card(card, mse_game));
+    pub(crate) fn add_card(&mut self, card: &Card, mse_game: MseGame, art_handler: &mut ArtHandler) -> Result<(), Error> {
+        self.push("card", DataFile::from_card(card, mse_game, art_handler));
         //TODO add stylesheet?
         Ok(())
     }
 
-    fn from_card(card: &Card, mse_game: MseGame) -> DataFile {
+    fn from_card(card: &Card, mse_game: MseGame, art_handler: &mut ArtHandler) -> DataFile {
         let alt = card.is_alt();
         let mut result = DataFile::default();
 
@@ -154,21 +151,21 @@ impl DataFile {
             };
         }
 
-        // layout
+        // layout & other card parts
         if mse_game == MseGame::Magic {
             match card.layout() {
                 Layout::Normal => {} // nothing specific to normal layout
                 Layout::Split { right, .. } => if !alt {
-                    result += DataFile::from_card(&right, mse_game);
+                    result += DataFile::from_card(&right, mse_game, art_handler);
                 },
                 Layout::Flip { flipped, .. } => if !alt {
-                    result += DataFile::from_card(&flipped, mse_game);
+                    result += DataFile::from_card(&flipped, mse_game, art_handler);
                 },
                 Layout::DoubleFaced { back, .. } => if !alt {
-                    result += DataFile::from_card(&back, mse_game);
+                    result += DataFile::from_card(&back, mse_game, art_handler);
                 },
                 Layout::Meld { back, .. } => if !alt {
-                    result += DataFile::from_card(&back, mse_game);
+                    result += DataFile::from_card(&back, mse_game, art_handler);
                 },
                 Layout::Adventure { .. } => {} //TODO use adventurer template once it's released
             }
@@ -179,7 +176,13 @@ impl DataFile {
         if let Some(mana_cost) = card.mana_cost() {
             push_alt!("casting cost", cost_to_mse(mana_cost));
         }
-        //TODO image
+        // image
+        if let Some((image_name, artist)) = art_handler.register_image_for(card) {
+            push_alt!("image", image_name);
+            if let Some(artist) = artist {
+                push_alt!("illustrator", artist);
+            }
+        }
         //TODO frame color & color indicator
         // type line
         if mse_game == MseGame::Archenemy {
@@ -337,13 +340,13 @@ impl DataFile {
         Ok(())
     }
 
-    pub(crate) fn write_to(self, buf: impl Write + Seek) -> io::Result<()> {
+    pub(crate) fn write_to(self, buf: impl Write + Seek, art_handler: &mut ArtHandler) -> Result<(), Error> {
         let mut zip = ZipWriter::new(buf);
         zip.start_file("set", FileOptions::default())?;
         self.write_inner(&mut zip, 0)?;
-        for (i, image_path) in self.images.into_iter().enumerate() {
+        for (i, image) in art_handler.open_images().enumerate() {
             zip.start_file(format!("image{}", i + 1), FileOptions::default())?;
-            io::copy(&mut File::open(&image_path)?, &mut zip)?;
+            io::copy(&mut image?, &mut zip)?;
         }
         Ok(())
     }
@@ -352,15 +355,13 @@ impl DataFile {
 impl<K: Into<String>> FromIterator<(K, Data)> for DataFile {
     fn from_iter<I: IntoIterator<Item = (K, Data)>>(items: I) -> DataFile {
         DataFile {
-            images: Vec::default(),
             items: items.into_iter().map(|(k, v)| (k.into(), v)).collect()
         }
     }
 }
 
 impl AddAssign for DataFile {
-    fn add_assign(&mut self, DataFile { images, items }: DataFile) {
-        self.images.extend(images);
+    fn add_assign(&mut self, DataFile { items }: DataFile) {
         self.items.extend(items);
     }
 }

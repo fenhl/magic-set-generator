@@ -1,7 +1,7 @@
 use {
     std::fmt,
     reqwest::StatusCode,
-    serde_derive::Deserialize,
+    serde::Deserialize,
     //serde_json::json,
     //url::Url
 };

@@ -25,6 +25,7 @@ use {
             Args,
             Output
         },
+        art::ArtHandler,
         mse::{
             DataFile,
             MseGame
@@ -34,6 +35,7 @@ use {
 };
 
 mod args;
+mod art;
 mod github;
 mod mse;
 mod util;
@@ -130,24 +132,25 @@ fn main() -> Result<(), Error> {
     let mut schemes_set_file = DataFile::new_schemes(&args, cards.len());
     let mut vanguards_set_file = DataFile::new_vanguards(&args, cards.len());
     //TODO add cards to set
+    let mut art_handler = ArtHandler::new(&args, client.clone());
     let mut failed = 0;
     for (i, card) in cards.iter().enumerate() {
         let progress = 4.min(5 * i / cards.len());
         verbose_eprint!(args, "[{}{}] adding cards to set file: {} of {}\r", "=".repeat(progress), ".".repeat(4 - progress), i, cards.len());
         let result = if card.type_line() >= CardType::Scheme {
             if args.include_schemes() {
-                set_file.add_card(&card, &db, MseGame::Magic, &args)
+                set_file.add_card(&card, MseGame::Magic, &mut art_handler)
             } else {
                 Ok(())
-            }.and_then(|()| schemes_set_file.add_card(&card, &db, MseGame::Archenemy, &args))
+            }.and_then(|()| schemes_set_file.add_card(&card, MseGame::Archenemy, &mut art_handler))
         } else if card.type_line() >= CardType::Vanguard {
             if args.include_vanguards() {
-                set_file.add_card(&card, &db, MseGame::Magic, &args)
+                set_file.add_card(&card, MseGame::Magic, &mut art_handler)
             } else {
                 Ok(())
-            }.and_then(|()| vanguards_set_file.add_card(&card, &db, MseGame::Vanguard, &args))
+            }.and_then(|()| vanguards_set_file.add_card(&card, MseGame::Vanguard, &mut art_handler))
         } else {
-            set_file.add_card(&card, &db, MseGame::Magic, &args)
+            set_file.add_card(&card, MseGame::Magic, &mut art_handler)
         };
         match result {
             Ok(()) => {}
@@ -177,22 +180,22 @@ fn main() -> Result<(), Error> {
     verbose_eprint!(args, "[....] adding images and saving\r[....]");
     match args.output {
         Output::File(path) => {
-            set_file.write_to(File::create(path)?)?;
+            set_file.write_to(File::create(path)?, &mut art_handler)?;
         }
         Output::Stdout => {
             let mut buf = Cursor::<Vec<_>>::default();
-            set_file.write_to(&mut buf)?;
+            set_file.write_to(&mut buf, &mut art_handler)?;
             verbose_eprint!(args, "\r[=...]");
             io::copy(&mut buf, &mut stdout())?;
         }
     }
     verbose_eprint!(args, "\r[==..]");
     if let Some(schemes_output) = args.schemes_output {
-        schemes_output.write_set_file(schemes_set_file)?;
+        schemes_output.write_set_file(schemes_set_file, &mut art_handler)?;
     }
     verbose_eprint!(args, "\r[===.]");
     if let Some(vanguards_output) = args.vanguards_output {
-        vanguards_output.write_set_file(vanguards_set_file)?;
+        vanguards_output.write_set_file(vanguards_set_file, &mut art_handler)?;
     }
     verbose_eprintln!(args, "\r[ ok ]");
     Ok(())

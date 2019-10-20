@@ -16,6 +16,7 @@ use {
     css_color_parser::Color,
     smart_default::SmartDefault,
     crate::{
+        art::ArtHandler,
         mse::DataFile,
         util::Error
     }
@@ -31,22 +32,28 @@ const COMMANDS: [(&str, usize, fn(&mut ArgsRegular, Vec<String>) -> Result<(), E
 ];
 
 //TODO add remaining flags/options from readme
-const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 7] = [
+const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 10] = [
     ("holofoil-stamps", None, holofoil_stamps),
     ("include-schemes", None, include_schemes_on),
     ("include-vanguards", None, include_vanguards_on),
+    ("no-images", None, no_images),
     ("no-include-schemes", None, include_schemes_off),
     ("no-include-vanguards", None, include_vanguards_off),
+    ("no-lore-seeker-images", None, no_lore_seeker_images),
+    ("no-scryfall-images", None, no_scryfall_images),
     ("offline", None, offline),
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 7] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 10] = [
     ("border", Some('b'), border),
     ("db", None, database),
+    ("images", None, images),
     ("input", Some('i'), input),
+    ("lore-seeker-images", None, lore_seeker_images),
     ("output", Some('o'), output),
     ("schemes-output", None, schemes_output),
+    ("scryfall-images", None, scryfall_images),
     ("set-code", None, set_code),
     ("vanguards-output", None, vanguards_output)
 ];
@@ -71,14 +78,14 @@ impl FromStr for Output {
 }
 
 impl Output {
-    pub(crate) fn write_set_file(self, set_file: DataFile) -> Result<(), Error> {
+    pub(crate) fn write_set_file(self, set_file: DataFile, art_handler: &mut ArtHandler) -> Result<(), Error> {
         match self {
             Output::File(path) => {
-                set_file.write_to(File::create(path)?)?;
+                set_file.write_to(File::create(path)?, art_handler)?;
             }
             Output::Stdout => {
                 let mut buf = Cursor::<Vec<_>>::default();
-                set_file.write_to(&mut buf)?;
+                set_file.write_to(&mut buf, art_handler)?;
                 io::copy(&mut buf, &mut stdout())?;
             }
         }
@@ -97,11 +104,17 @@ pub(crate) struct ArgsRegular {
     pub(crate) copyright: String,
     pub(crate) database: Option<PathBuf>,
     pub(crate) holofoil_stamps: bool,
+    pub(crate) images: Option<PathBuf>,
     include_schemes: Option<bool>,
     include_vanguards: Option<bool>,
+    pub(crate) lore_seeker_images: Option<PathBuf>,
+    pub(crate) no_images: bool,
+    no_lore_seeker_images: bool,
+    no_scryfall_images: bool,
     pub(crate) offline: bool,
     pub(crate) output: Output,
     pub(crate) schemes_output: Option<Output>,
+    pub(crate) scryfall_images: Option<PathBuf>,
     #[default = "PROXY"]
     pub(crate) set_code: String,
     pub(crate) vanguards_output: Option<Output>,
@@ -178,6 +191,14 @@ impl ArgsRegular {
 
     pub(crate) fn include_vanguards(&self) -> bool {
         self.include_vanguards.unwrap_or(self.vanguards_output.is_none())
+    }
+
+    pub(crate) fn no_lore_seeker_images(&self) -> bool {
+        self.offline || self.no_lore_seeker_images
+    }
+
+    pub(crate) fn no_scryfall_images(&self) -> bool {
+        self.offline || self.no_scryfall_images
     }
 }
 
@@ -335,6 +356,11 @@ fn holofoil_stamps(args: &mut ArgsRegular) -> Result<(), Error> {
     Ok(())
 }
 
+fn images(args: &mut ArgsRegular, img_dir: &str) -> Result<(), Error> {
+    args.images = Some(img_dir.into());
+    Ok(())
+}
+
 fn include_schemes_off(args: &mut ArgsRegular) -> Result<(), Error> {
     args.include_schemes = Some(false);
     Ok(())
@@ -363,6 +389,26 @@ fn input(args: &mut ArgsRegular, in_path: &str) -> Result<(), Error> {
     Ok(())
 }
 
+fn lore_seeker_images(args: &mut ArgsRegular, img_dir: &str) -> Result<(), Error> {
+    args.lore_seeker_images = Some(img_dir.into());
+    Ok(())
+}
+
+fn no_images(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.no_images = true;
+    Ok(())
+}
+
+fn no_lore_seeker_images(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.no_lore_seeker_images = true;
+    Ok(())
+}
+
+fn no_scryfall_images(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.no_scryfall_images = true;
+    Ok(())
+}
+
 fn offline(args: &mut ArgsRegular) -> Result<(), Error> {
     args.offline = true;
     Ok(())
@@ -375,6 +421,11 @@ fn output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {
 
 fn schemes_output(args: &mut ArgsRegular, out_path: &str) -> Result<(), Error> {
     args.schemes_output = Some(out_path.parse()?);
+    Ok(())
+}
+
+fn scryfall_images(args: &mut ArgsRegular, img_dir: &str) -> Result<(), Error> {
+    args.scryfall_images = Some(img_dir.into());
     Ok(())
 }
 

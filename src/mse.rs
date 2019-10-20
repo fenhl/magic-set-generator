@@ -106,7 +106,11 @@ impl DataFile {
             ("stylesheet", Data::from(if game == "magic" { "m15-altered" } else { "standard" })),
             ("set info", Data::Subfile(set_info)),
             ("styling", Data::from_iter(vec![ // styling needs to be above cards
-                ("magic-m15-altered", Data::from_iter(Vec::<(String, Data)>::default())) //TODO
+                ("magic-m15-altered", Data::from_iter(vec![
+                    ("other options", Data::from("brown legendary vehicle pt, ancestral generic mana")),
+                    ("use holofoil stamps", Data::from(if args.holofoil_stamps { "yes" } else { "no" })),
+                    ("center text", Data::from("short text only"))
+                ]))
             ]))
         ])
     }

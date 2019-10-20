@@ -31,7 +31,8 @@ const COMMANDS: [(&str, usize, fn(&mut ArgsRegular, Vec<String>) -> Result<(), E
 ];
 
 //TODO add remaining flags/options from readme
-const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 6] = [
+const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 7] = [
+    ("holofoil-stamps", None, holofoil_stamps),
     ("include-schemes", None, include_schemes_on),
     ("include-vanguards", None, include_vanguards_on),
     ("no-include-schemes", None, include_schemes_off),
@@ -95,6 +96,7 @@ pub(crate) struct ArgsRegular {
     #[default = "NOT FOR SALE"]
     pub(crate) copyright: String,
     pub(crate) database: Option<PathBuf>,
+    pub(crate) holofoil_stamps: bool,
     include_schemes: Option<bool>,
     include_vanguards: Option<bool>,
     pub(crate) offline: bool,
@@ -325,6 +327,11 @@ fn command_all(args: &mut ArgsRegular, _: Vec<String>) -> Result<(), Error> {
 
 fn database(args: &mut ArgsRegular, db_path: &str) -> Result<(), Error> {
     args.database = Some(db_path.into());
+    Ok(())
+}
+
+fn holofoil_stamps(args: &mut ArgsRegular) -> Result<(), Error> {
+    args.holofoil_stamps = true;
     Ok(())
 }
 

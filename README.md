@@ -91,6 +91,7 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
     * A file in the [MTG JSON AllSets](https://mtgjson.com/files/all-sets/) format.
     * A directory containing [MTG JSON Individual Set](https://mtgjson.com/files/individual-set/) files.
 * **(NYI)** `--find-cards=<path>`: The path to the `find_cards` executable used for [Lore Seeker syntax](https://lore-seeker.cards/help/syntax). In `--offline` mode, this defaults to `search-engine\bin\find_cards` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, [the Lore Seeker website](https://lore-seeker.cards/) is used by default.
+* `--holofoil-stamps`: Enable holofoil stamps on the bottom of text boxes of rare and mythic cards.
 * **(NYI)** `--images=<path>`: The path to a directory containing card art to use. Files should be named `<path>\<card name>.png`. Any missing images downloaded from [Scryfall](https://scryfall.com/) or [Lore Seeker](https://lore-seeker.cards/) will be saved here.
 * `--[no-]include-schemes`: Enable or disable the inclusion of schemes as regular-sized cards in the main set file. This is on by default unless `--schemes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.

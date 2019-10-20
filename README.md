@@ -72,9 +72,9 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 How card artwork is handled is determined as follows:
 
 1. If `--no-images` is set, all artwork is left blank. Skip all following steps.
-2. If `--images` is set to a directory containing a file named `<card name>.png`, that image will be used.
-3. If `--scryfall-images` is set to a directory containing a file named `<card name>.png`, that image will be used.
-4. If `--lore-seeker-images` is set to a directory containing a file named `<card name>.png`, that image will be used.
+2. If `--images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used.
+3. If `--scryfall-images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used.
+4. If `--lore-seeker-images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used.
 5. If neither `--no-scryfall-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
 6. **(NYI)** If neither `--no-lore-seeker-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
 7. If none of the previous steps were successful, the artwork for that card is left blank.
@@ -93,7 +93,7 @@ How card artwork is handled is determined as follows:
 * `-h`, `--help`: Print a short message with a link to this readme file instead of doing anything else.
 * `-i`, `--input=<path>`: Read card names from the file or directory located at `<path>`. This can be specified multiple times to combine multiple input paths into one MSE set file. The following formats are understood:
     * A plain text file with one card name per line. Special lines are also supported as with directly specified arguments (see “advanced usage” above). `!` commands and their arguments should be on the same line, with arguments shell-quoted if necessary.
-    * **(NYI)** A directory containing images named `<card name>.png`. This will set `--images` to this directory if it's not already set (see below), and generate the named cards.
+    * **(NYI)** A directory containing images named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`. This will set `--images` to this directory if it's not already set (see below), and generate the named cards.
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
 * `-v`, `--verbose`: Check for self-updates (unless `--offline` is given), report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * **(NYI)** `--allow-uncards`: This script has no official support for silver-bordered “un-cards” and other shenanigans like [1996 World Champion](https://lore-seeker.cards/card/pcel/1). As a result, most un-cards will be redered incorrectly, so the script will refuse to generate them unless this option is used. Reports of issues encountered while using this option will be closed as invalid.

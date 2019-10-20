@@ -136,22 +136,14 @@ impl ArtHandler {
 
     pub(crate) fn register_image_for(&mut self, card: &Card) -> Option<(usize, Option<String>)> {
         if self.config.no_images { return None; }
-        if let Some(ref path) = self.config.images {
-            let image_path = path.join(format!("{}.png", card));
-            if image_path.exists() {
-                return Some((self.add_image(Image::Path(image_path)), None)); //TODO artist from exif
-            }
-        }
-        if let Some(ref path) = self.config.scryfall_images {
-            let image_path = path.join(format!("{}.png", card));
-            if image_path.exists() {
-                return Some((self.add_image(Image::Path(image_path)), None)); //TODO artist from exif
-            }
-        }
-        if let Some(ref path) = self.config.lore_seeker_images {
-            let image_path = path.join(format!("{}.png", card));
-            if image_path.exists() {
-                return Some((self.add_image(Image::Path(image_path)), None)); //TODO artist from exif
+        for img_dir in &[&self.config.images, &self.config.scryfall_images, &self.config.lore_seeker_images] {
+            if let Some(path) = img_dir {
+                for file_ext in &["png", "PNG", "jpg", "JPG", "jpeg", "JPEG"] {
+                    let image_path = path.join(format!("{}.{}", card, file_ext));
+                    if image_path.exists() {
+                        return Some((self.add_image(Image::Path(image_path)), None)); //TODO artist from exif
+                    }
+                }
             }
         }
         if !self.config.no_scryfall_images {

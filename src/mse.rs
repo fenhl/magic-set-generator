@@ -5,7 +5,11 @@ use {
             prelude::*
         },
         iter::FromIterator,
-        ops::AddAssign
+        ops::{
+            AddAssign,
+            Index,
+            IndexMut
+        }
     },
     css_color_parser::Color,
     itertools::{
@@ -53,7 +57,7 @@ pub(crate) enum MseGame {
 }
 
 #[derive(Debug)]
-enum Data {
+pub(crate) enum Data {
     Flat(String),
     Subfile(DataFile)
 }
@@ -339,13 +343,7 @@ impl DataFile {
             match stylesheet {
                 "m15-altered" => {
                     if card.type_line() >= CardType::Enchantment && card.type_line().types().iter().filter(|&&card_type| card_type != CardType::Tribal).count() >= 2 {
-                        let mut styling_data = set_styling_data(args, "m15-altered");
-                        if styling_data.contains("frames") {
-                            unimplemented!();
-                        } else {
-                            styling_data.push("frames", "nyx");
-                        }
-                        result.push("styling data", styling_data);
+                        result.push_styling(args, stylesheet, "frames", "nyx");
                     }
                 }
                 _ => {}
@@ -361,6 +359,17 @@ impl DataFile {
 
     fn push(&mut self, key: impl ToString, value: impl Into<Data>) {
         self.items.push((key.to_string(), value.into()));
+    }
+
+    fn push_styling(&mut self, args: &ArgsRegular, stylesheet: &str, key: impl ToString, value: impl Into<Data>) {
+        if !self.contains("styling data") {
+            self.push("has styling", "true");
+            self.push("styling data", set_styling_data(args, stylesheet));
+        }
+        match &mut self["styling data"] {
+            Data::Flat(text) => { panic!("found flat styling data: {:?}", text); }
+            Data::Subfile(f) => { f.push(key, value); }
+        }
     }
 
     fn write_inner(&self, buf: &mut impl Write, indent: usize) -> Result<(), io::Error> {
@@ -409,6 +418,32 @@ impl<K: Into<String>> FromIterator<(K, Data)> for DataFile {
 impl AddAssign for DataFile {
     fn add_assign(&mut self, DataFile { items }: DataFile) {
         self.items.extend(items);
+    }
+}
+
+impl<K: ToString> Index<K> for DataFile {
+    type Output = Data;
+
+    fn index(&self, index: K) -> &Data {
+        let key = index.to_string();
+        for (k, v) in &self.items {
+            if *k == key {
+                return v;
+            }
+        }
+        panic!("data file has no entry with key {}", key);
+    }
+}
+
+impl<K: ToString> IndexMut<K> for DataFile {
+    fn index_mut(&mut self, index: K) -> &mut Data {
+        let key = index.to_string();
+        for (k, v) in &mut self.items {
+            if *k == key {
+                return v;
+            }
+        }
+        panic!("data file has no entry with key {}", key);
     }
 }
 

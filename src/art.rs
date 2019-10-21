@@ -181,7 +181,7 @@ impl ArtHandler {
                         None
                     };
                     if let Some(art_crop) = art_crop {
-                        return Some((self.add_image(Image::ScryfallUrl(art_crop, card.to_string())), Some(artist)));
+                        return Some((self.add_image(Image::ScryfallUrl(art_crop, normalized_image_name(card))), Some(artist)));
                     } //TODO else print error if in verbose mode
                 } //TODO else print error if in verbose mode
             }
@@ -194,7 +194,7 @@ impl ArtHandler {
                             return Some((self.add_image(Image::LoreSeekerUrl {
                                 set_code: set_code.into(),
                                 collector_number: collector_number.into(),
-                                card_name: card.to_string()
+                                card_name: normalized_image_name(card)
                             }), None)); //TODO get artist from Lore Seeker
                             //TODO download from Lore Seeker
                         } //TODO else print error if in verbose mode

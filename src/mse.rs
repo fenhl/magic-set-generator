@@ -378,7 +378,7 @@ impl DataFile {
                     }
                 }
                 Data::Subfile(file) => {
-                    write!(buf, "{}\r\n", key)?;
+                    write!(buf, "{}:\r\n", key)?;
                     file.write_inner(buf, indent + 1)?;
                 }
             }

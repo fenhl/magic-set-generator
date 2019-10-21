@@ -23,6 +23,10 @@ termion = "1"
 [dependencies.gitdir]
 git = "https://github.com/fenhl/rust-gitdir"
 
+[dependencies.lore-seeker]
+git = "https://github.com/fenhl/lore-seeker-discord"
+default-features = false
+
 [dependencies.mtg]
 git = "https://github.com/fenhl/rust-mtg"
 features = ["custom"]

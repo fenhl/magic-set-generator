@@ -43,7 +43,12 @@ struct ScryfallImageUris {
 
 enum Image {
     Path(PathBuf),
-    ScryfallUrl(Url, String)
+    ScryfallUrl(Url, String),
+    LoreSeekerUrl {
+        set_code: String,
+        collector_number: String,
+        card_name: String
+    }
 }
 
 impl Image {
@@ -65,6 +70,18 @@ impl Image {
                     let img_path = img_dir.join(format!("{}.png", card_name));
                     io::copy(&mut resp, &mut File::create(&img_path)?)?;
                     //TODO save artist credit in exif data
+                    File::open(img_path).map(|f| Box::new(f) as Box<dyn Read>).map_err(Error::from)
+                } else {
+                    Ok(Box::new(resp))
+                }
+            }
+            Image::LoreSeekerUrl { set_code, collector_number, card_name } => {
+                let mut resp = lore_seeker::get(format!("/art/{}/{}.jpg", set_code, collector_number))
+                    .or_else(|_| lore_seeker::get(format!("/art/{}/{}.png", set_code, collector_number)))?;
+                if let Some(ref img_dir) = config.lore_seeker_images.as_ref().or(config.images.as_ref()) {
+                    let img_path = img_dir.join(format!("{}.jpg", card_name));
+                    io::copy(&mut resp, &mut File::create(&img_path)?)?;
+                    //TODO save artist credit in exif data, if not already present
                     File::open(img_path).map(|f| Box::new(f) as Box<dyn Read>).map_err(Error::from)
                 } else {
                     Ok(Box::new(resp))
@@ -169,7 +186,22 @@ impl ArtHandler {
                 } //TODO else print error if in verbose mode
             }
         }
-        //TODO download from Lore Seeker
+        if !self.config.no_lore_seeker_images {
+            if let Ok((_, results)) = lore_seeker::resolve_query(&format!("!{}", card)) {
+                if let Some(((_, url),)) = results.into_iter().collect_tuple() {
+                    if let Some(segments) = url.path_segments() {
+                        if let Some(("card", set_code, collector_number)) = segments.collect_tuple() {
+                            return Some((self.add_image(Image::LoreSeekerUrl {
+                                set_code: set_code.into(),
+                                collector_number: collector_number.into(),
+                                card_name: card.to_string()
+                            }), None)); //TODO get artist from Lore Seeker
+                            //TODO download from Lore Seeker
+                        } //TODO else print error if in verbose mode
+                    } //TODO else print error if in verbose mode
+                } //TODO else print error if in verbose mode
+            } //TODO else print error if in verbose mode
+        }
         None
     }
 }

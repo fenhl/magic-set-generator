@@ -243,13 +243,13 @@ impl DataFile {
                         separated_text_boxes.push(with_mse_symbols(text));
                     },
                     Ability::Level { min, max, power, toughness, abilities } => if let Some(ref mut separated_text_boxes) = separated_text_boxes {
-                        result.push(format!("level {}", separated_text_boxes.len() + 1), if let Some(max) = max {
+                        result.push(format!("level {}", separated_text_boxes.len()), if let Some(max) = max {
                             format!("{}-{}", min, max)
                         } else {
                             format!("{}+", min)
                         });
-                        result.push(format!("power {}", separated_text_boxes.len() + 2), power);
-                        result.push(format!("toughness {}", separated_text_boxes.len() + 2), toughness);
+                        result.push(format!("power {}", separated_text_boxes.len() + 1), power);
+                        result.push(format!("toughness {}", separated_text_boxes.len() + 1), toughness);
                         separated_text_boxes.push(ability_lines(abilities).join("\n"));
                     }
                     ability => if let Some(ref mut separated_text_boxes) = separated_text_boxes {

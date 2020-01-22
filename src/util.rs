@@ -58,10 +58,14 @@ impl StrExt for str {
 
 #[derive(Debug, From)]
 pub(crate) enum Error {
+    #[from(ignore)]
     Args(String),
+    #[from(ignore)]
     CardGen(String, Box<Error>),
+    #[from(ignore)]
     CardNotFound(String),
     ColorParse(css_color_parser::ColorParseError),
+    #[from(ignore)]
     CommandExit(&'static str),
     Db(DbError),
     GitDir(gitdir::host::github::Error),

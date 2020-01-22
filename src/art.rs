@@ -196,9 +196,12 @@ impl ArtHandler {
         Some(image_arc)
     }
 
-    pub(crate) fn open_images(&mut self) -> impl Iterator<Item = Result<Box<dyn Read>, Error>> + '_ {
+    pub(crate) fn open_images(&mut self) -> impl Iterator<Item = Result<(usize, Box<dyn Read>), Error>> + '_ {
         let config = self.config.clone();
-        self.set_images.values().map(move |img| img.lock().open(&config))
+        self.set_images.values().map(move |img| {
+            let mut img = img.lock();
+            img.open(&config).map(|f| (img.id, f))
+        })
     }
 
     pub(crate) fn register_image_for(&mut self, card: &Card) -> Option<Arc<Mutex<Image>>> {

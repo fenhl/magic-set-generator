@@ -472,9 +472,10 @@ impl DataFile {
         let mut zip = ZipWriter::new(buf);
         zip.start_file("set", FileOptions::default())?;
         self.write_inner(&mut zip, 0)?;
-        for (i, image) in art_handler.open_images().enumerate() {
-            zip.start_file(format!("image{}", i + 1), FileOptions::default())?;
-            io::copy(&mut image?, &mut zip)?;
+        for result in art_handler.open_images() {
+            let (i, mut image) = result?;
+            zip.start_file(format!("image{}", i), FileOptions::default())?;
+            io::copy(&mut image, &mut zip)?;
         }
         Ok(())
     }

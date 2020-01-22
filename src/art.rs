@@ -18,6 +18,10 @@ use {
     itertools::Itertools as _,
     mtg::card::Card,
     parking_lot::Mutex,
+    reqwest::blocking::{
+        Client,
+        Response
+    },
     serde::Deserialize,
     url::Url,
     crate::{
@@ -136,7 +140,7 @@ impl Image {
 
 #[derive(Debug, Clone)]
 struct ArtHandlerConfig {
-    client: reqwest::Client,
+    client: Client,
     scryfall_rate_limit: RefCell<Option<Instant>>,
     images: Option<PathBuf>,
     lore_seeker_images: Option<PathBuf>,
@@ -147,7 +151,7 @@ struct ArtHandlerConfig {
 }
 
 impl ArtHandlerConfig {
-    fn scryfall_request(&self, url: &Url) -> Result<reqwest::Response, reqwest::Error> {
+    fn scryfall_request(&self, url: &Url) -> Result<Response, reqwest::Error> {
         if let Some(next_request_time) = *self.scryfall_rate_limit.borrow() {
             let now = Instant::now();
             if next_request_time > now {
@@ -168,7 +172,7 @@ pub(crate) struct ArtHandler {
 }
 
 impl ArtHandler {
-    pub(crate) fn new(args: &ArgsRegular, client: reqwest::Client) -> ArtHandler {
+    pub(crate) fn new(args: &ArgsRegular, client: Client) -> ArtHandler {
         ArtHandler {
             set_images: HashMap::default(),
             config: ArtHandlerConfig {
@@ -213,7 +217,7 @@ impl ArtHandler {
         if !self.config.no_scryfall_images {
             let mut url = Url::parse("https://api.scryfall.com/cards/named").expect("failed to parse Scryfall API URL");
             url.query_pairs_mut().append_pair("exact", &card.to_string());
-            if let Ok(mut resp) = self.config.scryfall_request(&url) {
+            if let Ok(resp) = self.config.scryfall_request(&url) {
                 if let Ok(scryfall_data) = resp.json::<ScryfallData>() {
                     let artist = scryfall_data.artist;
                     let art_crop = if let Some(image_uris) = scryfall_data.image_uris {

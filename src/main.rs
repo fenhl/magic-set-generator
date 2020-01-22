@@ -20,6 +20,7 @@ use {
         },
         cardtype::CardType
     },
+    reqwest::blocking::Client,
     crate::{
         args::{
             Args,
@@ -59,7 +60,7 @@ macro_rules! verbose_eprintln {
 }
 
 fn main() -> Result<(), Error> {
-    let client = reqwest::Client::builder()
+    let client = Client::builder()
         .default_headers({
             let mut headers = reqwest::header::HeaderMap::new();
             headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static(concat!("json-to-mse/", env!("CARGO_PKG_VERSION"))));

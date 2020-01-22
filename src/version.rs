@@ -7,6 +7,7 @@ use {
     },
     dirs::home_dir,
     itertools::Itertools as _,
+    reqwest::blocking::Client,
     crate::{
         github::Repo,
         util::*
@@ -37,7 +38,7 @@ pub(crate) fn self_update() -> Result<(), Error> {
 }
 
 /// Returns `Ok(false)` if `json-to-mse` is up to date, or `Ok(true)` if an update is available.
-pub(crate) fn updates_available(client: &reqwest::Client) -> Result<bool, Error> {
+pub(crate) fn updates_available(client: &Client) -> Result<bool, Error> {
     let repo = Repo::new("fenhl", "json-to-mse");
     if let Some(release) = repo.latest_release(client)? {
         let current_hash = if let Some((tag,)) = repo.tags(&client)?.into_iter().filter(|tag| tag.name == release.tag_name).collect_tuple() {

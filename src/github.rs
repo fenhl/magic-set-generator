@@ -1,6 +1,9 @@
 use {
     std::fmt,
-    reqwest::StatusCode,
+    reqwest::{
+        StatusCode,
+        blocking::Client
+    },
     serde::Deserialize,
     //serde_json::json,
     //url::Url
@@ -54,7 +57,7 @@ impl Repo {
         }
     }
 
-    pub(crate) fn branch(&self, client: &reqwest::Client, name: impl fmt::Display) -> Result<Branch, reqwest::Error> {
+    pub(crate) fn branch(&self, client: &Client, name: impl fmt::Display) -> Result<Branch, reqwest::Error> {
         Ok(
             client.get(&format!("https://api.github.com/repos/{}/{}/branches/{}", self.user, self.name, name))
                 .send()?
@@ -63,7 +66,7 @@ impl Repo {
         )
     }
 
-    pub(crate) fn latest_release(&self, client: &reqwest::Client) -> Result<Option<Release>, reqwest::Error> {
+    pub(crate) fn latest_release(&self, client: &Client) -> Result<Option<Release>, reqwest::Error> {
         let response = client.get(&format!("https://api.github.com/repos/{}/{}/releases/latest", self.user, self.name))
             .send()?;
         if response.status() == StatusCode::NOT_FOUND { return Ok(None); } // no releases yet
@@ -75,7 +78,7 @@ impl Repo {
 
     /*
     /// Creates a draft release, which can be published using `Repo::publish_release`.
-    pub(crate) fn create_release(&self, client: &reqwest::Client, name: String, tag_name: String, body: String) -> Result<Release, reqwest::Error> {
+    pub(crate) fn create_release(&self, client: &Client, name: String, tag_name: String, body: String) -> Result<Release, reqwest::Error> {
         Ok(
             client.post(&format!("https://api.github.com/repos/{}/{}/releases", self.user, self.name))
                 .json(&json!({
@@ -90,7 +93,7 @@ impl Repo {
         )
     }
 
-    pub(crate) fn publish_release(&self, client: &reqwest::Client, release: Release) -> Result<Release, reqwest::Error> {
+    pub(crate) fn publish_release(&self, client: &Client, release: Release) -> Result<Release, reqwest::Error> {
         Ok(
             client.patch(&format!("https://api.github.com/repos/{}/{}/releases/{}", self.user, self.name, release.id))
                 .json(&json!({"draft": false}))
@@ -100,7 +103,7 @@ impl Repo {
         )
     }
 
-    pub(crate) fn release_attach(&self, client: &reqwest::Client, release: &Release, name: &str, content_type: &'static str, body: impl Into<reqwest::Body>) -> Result<ReleaseAsset, reqwest::Error> {
+    pub(crate) fn release_attach(&self, client: &Client, release: &Release, name: &str, content_type: &'static str, body: impl Into<reqwest::Body>) -> Result<ReleaseAsset, reqwest::Error> {
         let mut headers = reqwest::header::HeaderMap::new();
         headers.insert(reqwest::header::CONTENT_TYPE, reqwest::header::HeaderValue::from_static(content_type));
         Ok(
@@ -115,7 +118,7 @@ impl Repo {
     }
     */
 
-    pub(crate) fn tags(&self, client: &reqwest::Client) -> Result<Vec<Tag>, reqwest::Error> {
+    pub(crate) fn tags(&self, client: &Client) -> Result<Vec<Tag>, reqwest::Error> {
         Ok(
             client.get(&format!("https://api.github.com/repos/{}/{}/tags", self.user, self.name))
                 .send()?

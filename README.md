@@ -19,7 +19,7 @@
 4. Some features may require MSE templates not packaged with MSE. You can get them from one of the following sources:
     * Cajun's Megafile (recommended):
         1. If you don't have MSE yet, download the Advanced Magic Set Editor files from <http://magicseteditor.boards.net/page/downloads>.
-        2. Download the Megafile from <http://magicseteditor.boards.net/thread/77/cajun-templates-updates-sorting-update>.
+        2. Download the Megafile from <http://magicseteditor.boards.net/thread/77>.
         3. Merge the Megafile contents into your MSE `data` folder.
     * The Custom Magic template pack. To install, join [the Custom Magic Discord server](https://discord.gg/FbMK9UE) and follow the instructions in the message pinned in #resources. (Download the Full MTG pack, not the Basic M15 pack or the M15 pack.)
 
@@ -47,7 +47,7 @@ Sections marked **(NYI)** are not yet implemented in `json-to-mse` version 2.
 
 The script takes any number of command line arguments. Arguments are interpreted as follows:
 
-* Arguments starting with a `-` are interpreted as options (see below).
+* Arguments starting with `-` are interpreted as options (see below).
 * Arguments starting with `!` are special commands. The following commands are currently supported:
     * `!all`: Generate all cards present in the database (see `--db` below), except tokens and un-cards.
     * **(NYI)** `!tappedout <deck-id>`: Download the given decklist from [tappedout.net](http://tappedout.net/) and generate all cards from it.
@@ -71,10 +71,10 @@ json-to-mse 'Dryad Arbor' -o example.mse-set
 
 How card artwork is handled is determined as follows:
 
-1. If `--no-images` is set, all artwork is left blank. Skip all following steps.
+1. If `--no-images` is set, all artwork is left blank. All following steps are skipped.
 2. If `--images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used. (If the card name contains the symbols `:`, `"`, and/or `?`, these should be omitted from the file name.) After `--images`, `--scryfall-images` and `--lore-seeker-images` are checked.
-3. If neither `--no-scryfall-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
-4. If neither `--no-lore-seeker-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+3. If neither `--no-scryfall-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also be saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+4. If neither `--no-lore-seeker-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also be saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
 5. If none of the previous steps were successful, the artwork for that card is left blank.
 
 ## Command-line options
@@ -92,7 +92,7 @@ How card artwork is handled is determined as follows:
 * `-i`, `--input=<path>`: Read card names from the file or directory located at `<path>`. This can be specified multiple times to combine multiple input paths into one MSE set file. The following formats are understood:
     * A plain text file with one card name per line. Special lines are also supported as with directly specified arguments (see “advanced usage” above). `!` commands and their arguments should be on the same line, with arguments shell-quoted if necessary.
     * **(NYI)** A directory containing images named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`. This will set `--images` to this directory if it's not already set (see below), and generate the named cards.
-* `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output.
+* `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output. Any existing file at that path will be deleted!
 * `-v`, `--verbose`: Check for self-updates (unless `--offline` is given), report progress while generating the set file, and give more detailed error messages if anything goes wrong.
 * **(NYI)** `--allow-uncards`: This script has no official support for silver-bordered “un-cards” and other shenanigans like [1996 World Champion](https://lore-seeker.cards/card/pcel/1). As a result, most un-cards will be redered incorrectly, so the script will refuse to generate them unless this option is used. Reports of issues encountered while using this option will be closed as invalid.
 * `--auto-card-numbers`: Display automatically-assigned collector numbers on the cards, below the text box.
@@ -111,13 +111,13 @@ How card artwork is handled is determined as follows:
     * `json-to-mse` won't check for self-updates, even in `--verbose` mode.
     * It won't attempt to download the card database. Instead, if `--db` isn't given, it expects a local copy of [the Lore Seeker repository](https://github.com/fenhl/lore-seeker). See `--db` for details.
     * It won't attempt to use [Lore Seeker](https://lore-seeker.cards/) for syntax queries (arguments starting with `=`). Instead, `find_cards` is required if any queries are performed. See `--find-cards` for details.
-* **(NYI)** `--plane-templates=<templates>`: Specify which templates to use for planes and, as a comma-separated list of any number of the following. The default is `plane`. If multiple templates are specified, each plane and phenomenon card will appear multiple times in the set file.
+* **(NYI)** `--plane-templates=<templates>`: Specify which templates to use for planes and phenomena, as a comma-separated list of any number of the following. The default is `large`. If multiple templates are specified, each plane and phenomenon card will appear multiple times in the set file.
     * `large`: The default Planechase template.
     * `mini`: A smaller version of the Planechase template, same size as regular cards. Very small text.
     * `basic`: The default template for regular cards.
-* `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. By default, these cards are not rendered using a correct oversized template, use this option to fix this.
+* `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. Any existing file at that path will be deleted! By default, these cards are not rendered using a correct oversized template, use this option to fix this.
 * `--[no-]scryfall-images[=<path>]`: See [Image handling](#image-handling).
 * `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
 * `--update`: Attempt to update `json-to-mse` to the latest version instead of doing anything else.
-* `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. By default, these cards are not rendered using the correct oversized template, use this option to fix this.
+* `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. Any existing file at that path will be deleted! By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * `--version`: Print version information instead of doing anything else.

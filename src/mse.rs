@@ -1,5 +1,6 @@
 use {
     std::{
+        fmt,
         io::{
             self,
             prelude::*
@@ -56,6 +57,16 @@ pub(crate) enum MseGame {
     Vanguard
 }
 
+impl fmt::Display for MseGame {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            MseGame::Magic => write!(f, "magic"),
+            MseGame::Archenemy => write!(f, "archenemy"),
+            MseGame::Vanguard => write!(f, "vanguard")
+        }
+    }
+}
+
 #[derive(Debug)]
 pub(crate) enum Data {
     Flat(String),
@@ -77,6 +88,29 @@ impl From<DataFile> for Data {
 impl<K: Into<String>> FromIterator<(K, Data)> for Data {
     fn from_iter<I: IntoIterator<Item = (K, Data)>>(items: I) -> Data {
         Data::Subfile(DataFile::from_iter(items))
+    }
+}
+
+impl Data {
+    fn contains(&self, key: impl ToString) -> bool {
+        match self {
+            Data::Flat(_) => false,
+            Data::Subfile(f) => f.contains(key)
+        }
+    }
+
+    fn expect_subfile_mut(&mut self, msg: &str) -> &mut DataFile {
+        match self {
+            Data::Flat(_) => { panic!("{}", msg); }
+            Data::Subfile(f) => f
+        }
+    }
+
+    fn render(&self) -> String {
+        match self {
+            Data::Flat(text) => text.clone(),
+            Data::Subfile(f) => f.render()
+        }
     }
 }
 
@@ -126,8 +160,14 @@ impl DataFile {
     }
 
     pub(crate) fn add_card(&mut self, card: &Card, mse_game: MseGame, args: &ArgsRegular, art_handler: &mut ArtHandler) -> Result<(), Error> {
-        self.push("card", DataFile::from_card(card, mse_game, args, art_handler));
-        //TODO add stylesheet?
+        let card_data = DataFile::from_card(card, mse_game, args, art_handler);
+        if let Some(stylesheet) = card_data.get("stylesheet") {
+            let prefixed_stylesheet = format!("{}-{}", mse_game, stylesheet.render());
+            if !self["styling"].contains(&prefixed_stylesheet) {
+                self["styling"].expect_subfile_mut("found flat set styling data").push(prefixed_stylesheet, set_styling_data(args, &stylesheet.render()));
+            }
+        }
+        self.push("card", card_data);
         Ok(())
     }
 
@@ -219,13 +259,13 @@ impl DataFile {
         //let mut has_miracle = false; //TODO
         //let mut is_draft_matters = false; //TODO
         let abilities = card.abilities();
+        let mut separated_text_boxes =
+            if card.is_leveler()
+            || card.type_line() >= CardType::Planeswalker
+            || card.type_line() >= EnchantmentType::Saga
+            || card.type_line() >= EnchantmentType::Discovery
+        { Some(Vec::default()) } else { None };
         if !abilities.is_empty() {
-            let mut separated_text_boxes =
-                if card.is_leveler()
-                || card.type_line() >= CardType::Planeswalker
-                || card.type_line() >= EnchantmentType::Saga
-                || card.type_line() >= EnchantmentType::Discovery
-            { Some(Vec::default()) } else { None };
             for ability in &abilities {
                 match ability {
                     Ability::Other(text) => { //TODO special handling for loyalty abilities
@@ -262,8 +302,8 @@ impl DataFile {
                     }
                 }
             }
-            if let Some(separated_text_boxes) = separated_text_boxes {
-                for (i, text_box) in separated_text_boxes.into_iter().enumerate() {
+            if let Some(ref separated_text_boxes) = separated_text_boxes {
+                for (i, text_box) in separated_text_boxes.iter().enumerate() {
                     result.push(
                         if i == 0 && card.is_leveler() {
                             format!("rule text")
@@ -347,6 +387,24 @@ impl DataFile {
                         result.push_styling(args, stylesheet, "frames", "nyx");
                     }
                 }
+                "m15-mainframe-dfc" => {
+                    let back = match card.layout() {
+                        Layout::DoubleFaced { back, .. } |
+                        Layout::Meld { back, .. } => back,
+                        layout => { panic!("unexpected layout for m15-mainframe-dfc: {:?}", layout); }
+                    };
+                    if card.type_line() >= CardType::Planeswalker {
+                        let num_text_boxes = match separated_text_boxes {
+                            Some(boxes) => boxes.len(),
+                            None => 2 //TODO verbose warning
+                        };
+                        result.push_styling(args, stylesheet, "front style", format!("{} ability planeswalker", num_text_boxes));
+                    }
+                    if back.type_line() >= CardType::Planeswalker {
+                        let num_text_boxes = 3; //TODO
+                        result.push_styling(args, stylesheet, "back style", format!("{} ability planeswalker", num_text_boxes));
+                    }
+                }
                 _ => {}
             }
         }
@@ -355,7 +413,15 @@ impl DataFile {
 
     fn contains(&self, key: impl ToString) -> bool {
         let key = key.to_string();
-        self.items.iter().any(|(k, _)| k == &key)
+        self.items.iter().any(|(k, _)| *k == key)
+    }
+
+    fn get(&self, key: impl ToString) -> Option<&Data> {
+        let key = key.to_string();
+        for (k, v) in &self.items {
+            if *k == key { return Some(v); }
+        }
+        None
     }
 
     fn push(&mut self, key: impl ToString, value: impl Into<Data>) {
@@ -371,6 +437,12 @@ impl DataFile {
             Data::Flat(text) => { panic!("found flat styling data: {:?}", text); }
             Data::Subfile(f) => { f.push(key, value); }
         }
+    }
+
+    fn render(&self) -> String {
+        let mut buf = Vec::default();
+        self.write_inner(&mut buf, 0).expect("failed to render MSE data file");
+        String::from_utf8(buf).expect("MSE data file is not valid UTF-8")
     }
 
     fn write_inner(&self, buf: &mut impl Write, indent: usize) -> Result<(), io::Error> {
@@ -546,6 +618,9 @@ fn set_styling_data(args: &ArgsRegular, stylesheet: &str) -> DataFile {
             ("other options", Data::from("brown legendary vehicle pt, ancestral generic mana")),
             ("use holofoil stamps", Data::from(if args.holofoil_stamps { "yes" } else { "no" })),
             ("center text", Data::from("short text only"))
+        ]),
+        "m15-mainframe-dfc" => DataFile::from_iter(vec![
+            ("other options", Data::from(format!("use hovering pt, ancestral generic mana{}", if args.holofoil_stamps { ", use holofoil stamps" } else { "" })))
         ]),
         _ => DataFile::default()
     }

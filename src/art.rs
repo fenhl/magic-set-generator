@@ -192,7 +192,7 @@ impl ArtHandler {
         Some(image_arc)
     }
 
-    pub(crate) fn open_images(&mut self) -> impl Iterator<Item = Result<Box<dyn Read>, Error>> {
+    pub(crate) fn open_images(&mut self) -> impl Iterator<Item = Result<Box<dyn Read>, Error>> + '_ {
         let config = self.config.clone();
         self.set_images.values().map(move |img| img.lock().open(&config))
     }

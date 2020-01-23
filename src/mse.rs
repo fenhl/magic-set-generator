@@ -220,6 +220,9 @@ impl DataFile {
             }
         }
         //TODO frame color & color indicator
+        if let Some(indicator) = card.color_indicator() {
+            push_alt!("indicator", indicator.canonical_order().into_iter().join(", "));
+        }
         // type line
         if mse_game == MseGame::Archenemy {
             // Archenemy templates don't have a separate subtypes field, so include them with the card types
@@ -386,6 +389,9 @@ impl DataFile {
                     if card.type_line() >= CardType::Enchantment && card.type_line().types().iter().filter(|&&card_type| card_type != CardType::Tribal).count() >= 2 {
                         result.push_styling(args, stylesheet, "frames", "nyx");
                     }
+                    if card.color_indicator().is_some() {
+                        result.push_styling(args, stylesheet, "color indicator dot", "yes");
+                    }
                 }
                 "m15-mainframe-dfc" => {
                     let back = match card.layout() {
@@ -396,7 +402,7 @@ impl DataFile {
                     if card.type_line() >= CardType::Planeswalker {
                         let num_text_boxes = match separated_text_boxes {
                             Some(boxes) => boxes.len(),
-                            None => 2 //TODO verbose warning
+                            None => 3 //TODO verbose warning
                         };
                         result.push_styling(args, stylesheet, "front style", format!("{} ability planeswalker", num_text_boxes));
                     }
@@ -404,6 +410,21 @@ impl DataFile {
                         let num_text_boxes = 3; //TODO
                         result.push_styling(args, stylesheet, "back style", format!("{} ability planeswalker", num_text_boxes));
                     }
+                }
+                "m15-mainframe-planeswalker" => {
+                    if card.color_indicator().is_some() {
+                        result.push_styling(args, stylesheet, "color indicator dot", "yes");
+                    }
+                    let num_text_boxes = match separated_text_boxes {
+                        Some(boxes) => boxes.len(),
+                        None => 3 //TODO verbose warning
+                    };
+                    result.push_styling(args, stylesheet, "use separate textboxes", match num_text_boxes {
+                        2 => "two",
+                        3 => "three",
+                        4 => "four",
+                        _ => "three" //TODO verbose warning
+                    });
                 }
                 _ => {}
             }
@@ -622,6 +643,11 @@ fn set_styling_data(args: &ArgsRegular, stylesheet: &str) -> DataFile {
         ]),
         "m15-mainframe-dfc" => DataFile::from_iter(vec![
             ("other options", Data::from(format!("use hovering pt, ancestral generic mana{}", if args.holofoil_stamps { ", use holofoil stamps" } else { "" })))
+        ]),
+        "m15-mainframe-planeswalker" => DataFile::from_iter(vec![
+            ("use separate textboxes", Data::from("three")),
+            ("other options", Data::from("ancestral generic mana")),
+            ("holofoil stamped rares", Data::from(if args.holofoil_stamps { "yes" } else { "no" }))
         ]),
         _ => DataFile::default()
     }

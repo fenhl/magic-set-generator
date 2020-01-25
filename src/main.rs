@@ -21,7 +21,7 @@ use {
         cardtype::CardType
     },
     reqwest::blocking::Client,
-    crate::{
+    json_to_mse::{
         args::{
             Args,
             Output
@@ -31,16 +31,10 @@ use {
             DataFile,
             MseGame
         },
-        util::Error
+        util::Error,
+        version
     }
 };
-
-mod args;
-mod art;
-mod github;
-mod mse;
-mod util;
-mod version;
 
 macro_rules! verbose_eprint {
     ($args:expr, $($fmt:tt)+) => {

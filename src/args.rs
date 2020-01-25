@@ -61,7 +61,7 @@ const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Er
 ];
 
 #[derive(SmartDefault)]
-pub(crate) enum Output {
+pub enum Output {
     File(PathBuf),
     #[default]
     Stdout
@@ -80,7 +80,7 @@ impl FromStr for Output {
 }
 
 impl Output {
-    pub(crate) fn write_set_file(self, set_file: DataFile, art_handler: &mut ArtHandler) -> Result<(), Error> {
+    pub fn write_set_file(self, set_file: DataFile, art_handler: &mut ArtHandler) -> Result<(), Error> {
         match self {
             Output::File(path) => {
                 set_file.write_to(File::create(path)?, art_handler)?;
@@ -96,31 +96,31 @@ impl Output {
 }
 
 #[derive(SmartDefault)]
-pub(crate) struct ArgsRegular {
-    pub(crate) all_command: bool,
-    pub(crate) auto_card_numbers: bool,
+pub struct ArgsRegular {
+    pub all_command: bool,
+    pub auto_card_numbers: bool,
     #[default(Color { r: 222, g: 127, b: 50, a: 1.0 })]
-    pub(crate) border_color: Color,
-    pub(crate) cards: BTreeSet<String>,
+    pub border_color: Color,
+    pub cards: BTreeSet<String>,
     #[default = "NOT FOR SALE"]
-    pub(crate) copyright: String,
-    pub(crate) database: Option<PathBuf>,
-    pub(crate) holofoil_stamps: bool,
-    pub(crate) images: Option<PathBuf>,
+    pub copyright: String,
+    pub database: Option<PathBuf>,
+    pub holofoil_stamps: bool,
+    pub images: Option<PathBuf>,
     include_schemes: Option<bool>,
     include_vanguards: Option<bool>,
-    pub(crate) lore_seeker_images: Option<PathBuf>,
-    pub(crate) no_images: bool,
+    pub lore_seeker_images: Option<PathBuf>,
+    pub no_images: bool,
     no_lore_seeker_images: bool,
     no_scryfall_images: bool,
-    pub(crate) offline: bool,
-    pub(crate) output: Output,
-    pub(crate) schemes_output: Option<Output>,
-    pub(crate) scryfall_images: Option<PathBuf>,
+    pub offline: bool,
+    pub output: Output,
+    pub schemes_output: Option<Output>,
+    pub scryfall_images: Option<PathBuf>,
     #[default = "PROXY"]
-    pub(crate) set_code: String,
-    pub(crate) vanguards_output: Option<Output>,
-    pub(crate) verbose: bool
+    pub set_code: String,
+    pub vanguards_output: Option<Output>,
+    pub verbose: bool
 }
 
 impl ArgsRegular {
@@ -187,11 +187,11 @@ impl ArgsRegular {
         }
     }
 
-    pub(crate) fn include_schemes(&self) -> bool {
+    pub fn include_schemes(&self) -> bool {
         self.include_schemes.unwrap_or(self.schemes_output.is_none())
     }
 
-    pub(crate) fn include_vanguards(&self) -> bool {
+    pub fn include_vanguards(&self) -> bool {
         self.include_vanguards.unwrap_or(self.vanguards_output.is_none())
     }
 
@@ -204,7 +204,7 @@ impl ArgsRegular {
     }
 }
 
-pub(crate) enum Args {
+pub enum Args {
     Regular(ArgsRegular),
     Help,
     Update,
@@ -218,7 +218,7 @@ enum HandleShortArgResult {
 }
 
 impl Args {
-    pub(crate) fn new() -> Result<Args, Error> {
+    pub fn new() -> Result<Args, Error> {
         let mut raw_args = env::args().skip(1);
         let mut args = ArgsRegular::default();
         while let Some(arg) = raw_args.next() {

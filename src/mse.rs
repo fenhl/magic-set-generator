@@ -51,7 +51,7 @@ use {
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum MseGame {
+pub enum MseGame {
     Magic,
     Archenemy,
     Vanguard
@@ -68,7 +68,7 @@ impl fmt::Display for MseGame {
 }
 
 #[derive(Debug)]
-pub(crate) enum Data {
+pub enum Data {
     Flat(String),
     Subfile(DataFile)
 }
@@ -115,7 +115,7 @@ impl Data {
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct DataFile {
+pub struct DataFile {
     items: Vec<(String, Data)>
 }
 
@@ -147,19 +147,19 @@ impl DataFile {
         ])
     }
 
-    pub(crate) fn new(args: &ArgsRegular, num_cards: usize) -> DataFile {
+    pub fn new(args: &ArgsRegular, num_cards: usize) -> DataFile {
         DataFile::new_inner(args, num_cards, "magic", "MTG JSON card import")
     }
 
-    pub(crate) fn new_schemes(args: &ArgsRegular, num_cards: usize) -> DataFile {
+    pub fn new_schemes(args: &ArgsRegular, num_cards: usize) -> DataFile {
         DataFile::new_inner(args, num_cards, "archenemy", "MTG JSON card import: Archenemy schemes")
     }
 
-    pub(crate) fn new_vanguards(args: &ArgsRegular, num_cards: usize) -> DataFile {
+    pub fn new_vanguards(args: &ArgsRegular, num_cards: usize) -> DataFile {
         DataFile::new_inner(args, num_cards, "vanguard", "MTG JSON card import: Vanguard avatars")
     }
 
-    pub(crate) fn add_card(&mut self, card: &Card, mse_game: MseGame, args: &ArgsRegular, art_handler: &mut ArtHandler) -> Result<(), Error> {
+    pub fn add_card(&mut self, card: &Card, mse_game: MseGame, args: &ArgsRegular, art_handler: &mut ArtHandler) -> Result<(), Error> {
         let card_data = DataFile::from_card(card, mse_game, args, art_handler);
         if let Some(stylesheet) = card_data.get("stylesheet") {
             let prefixed_stylesheet = format!("{}-{}", mse_game, stylesheet.render());
@@ -489,7 +489,7 @@ impl DataFile {
         Ok(())
     }
 
-    pub(crate) fn write_to(self, buf: impl Write + Seek, art_handler: &mut ArtHandler) -> Result<(), Error> {
+    pub fn write_to(self, buf: impl Write + Seek, art_handler: &mut ArtHandler) -> Result<(), Error> {
         let mut zip = ZipWriter::new(buf);
         zip.start_file("set", FileOptions::default())?;
         self.write_inner(&mut zip, 0)?;

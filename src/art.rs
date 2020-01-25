@@ -166,13 +166,13 @@ impl ArtHandlerConfig {
     }
 }
 
-pub(crate) struct ArtHandler {
+pub struct ArtHandler {
     set_images: HashMap<Card, Arc<Mutex<Image>>>,
     config: ArtHandlerConfig
 }
 
 impl ArtHandler {
-    pub(crate) fn new(args: &ArgsRegular, client: Client) -> ArtHandler {
+    pub fn new(args: &ArgsRegular, client: Client) -> ArtHandler {
         ArtHandler {
             set_images: HashMap::default(),
             config: ArtHandlerConfig {

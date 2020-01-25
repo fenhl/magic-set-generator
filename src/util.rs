@@ -57,7 +57,7 @@ impl StrExt for str {
 }
 
 #[derive(Debug, From)]
-pub(crate) enum Error {
+pub enum Error {
     #[from(ignore)]
     Args(String),
     #[from(ignore)]
@@ -85,3 +85,13 @@ impl From<Infallible> for Error {
         match never {}
     }
 }
+
+pub trait NeverHack {
+    type Output;
+}
+
+impl<T> NeverHack for fn() -> T {
+    type Output = T;
+}
+
+pub type Never = <fn() -> ! as NeverHack>::Output;

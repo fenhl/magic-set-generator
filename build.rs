@@ -30,7 +30,7 @@ fn main() -> Result<(), io::Error> {
     let mut f = File::create(Path::new(&env::var("OUT_DIR").unwrap()).join("version.rs"))?;
     writeln!(f, "/// The hash of the current commit of the json-to-mse repo at compile time.")?;
     match get_git_hash() {
-        Ok(hash) => { writeln!(f, "pub(crate) const GIT_COMMIT_HASH: &str = \"{}\";", hash)?; }
+        Ok(hash) => { writeln!(f, "pub const GIT_COMMIT_HASH: &str = \"{}\";", hash)?; }
         Err(e) => { panic!("Cannot get git commit: {}\n{:?}", e, e); }
     }
     Ok(())

@@ -60,7 +60,7 @@ const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Er
     ("vanguards-output", None, vanguards_output)
 ];
 
-#[derive(SmartDefault)]
+#[derive(SmartDefault, Clone)]
 pub enum Output {
     File(PathBuf),
     #[default]
@@ -95,7 +95,7 @@ impl Output {
     }
 }
 
-#[derive(SmartDefault)]
+#[derive(SmartDefault, Clone)]
 pub struct ArgsRegular {
     pub all_command: bool,
     pub auto_card_numbers: bool,

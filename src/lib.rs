@@ -20,6 +20,7 @@ use {
         }
     },
     gitdir::Host as _,
+    lazy_static::lazy_static,
     mtg::{
         card::{
             Db,
@@ -27,6 +28,7 @@ use {
         },
         cardtype::CardType
     },
+    regex::Regex,
     reqwest::blocking::Client,
     crate::{
         args::{
@@ -57,6 +59,10 @@ macro_rules! verbose_eprintln {
             eprintln!($($fmt)+);
         }
     };
+}
+
+lazy_static! {
+    static ref SPLIT_CARD_REGEX: Regex = Regex::new("^(.+?) ?/+ ?.+$").expect("failed to build split card regex");
 }
 
 pub fn client() -> Result<Client, Error> {
@@ -99,7 +105,12 @@ pub fn run(client: Client, args: ArgsRegular) -> Result<(), Error> {
         args.cards.iter()
             //TODO also read card names from args.decklists
             //TODO also read card names from queries
-            .map(|card_name| db.card(card_name).ok_or_else(|| Error::CardNotFound(card_name.clone())))
+            .map(|card_name| card_name.replace('’', "'"))
+            .map(|card_name| match SPLIT_CARD_REGEX.captures(&card_name) {
+                Some(captures) => captures[1].to_owned(),
+                None => card_name.to_owned()
+            })
+            .map(|card_name| db.card(&card_name).ok_or_else(|| Error::CardNotFound(card_name)))
             .collect::<Result<BTreeSet<_>, _>>()?
     }.into_iter()
         .flat_map(|card| if let Layout::Meld { top, bottom, .. } = card.layout() {

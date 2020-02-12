@@ -1644,6 +1644,7 @@ dependencies = [
  "gitdir",
  "iced",
  "itertools",
+ "lazy_static 1.4.0",
  "lore-seeker",
  "mtg",
  "parking_lot 0.10.0",

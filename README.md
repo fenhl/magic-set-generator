@@ -9,14 +9,15 @@
 1. Install Rust:
     * On Windows, download and run [rustup-init.exe](https://win.rustup.rs/) and follow its instructions.
     * On other platforms, please see [the Rust website](https://www.rust-lang.org/learn/get-started) for instructions.
-2. Open a command line:
+2. (Skip this step if you're not on Windows.) If you're on Windows, you'll also need to download and install [Visual Studio](https://visualstudio.microsoft.com/vs/) (the Community edition should work). On the “Workloads” screen of the installer, make sure “Desktop development with C++” is selected.
+3. Open a command line:
     * On Windows, right-click the start button, then click “Windows PowerShell” or “Command Prompt”.
     * On other platforms, look for an app named “Terminal” or similar.
-3. In the command line, run the following command. Depending on your computer, this may take a while. You can continue with step 4 while it's running.
+4. In the command line, run the following command. Depending on your computer, this may take a while. You can continue with step 5 while it's running.
     ```
     cargo install --git=https://github.com/fenhl/json-to-mse --branch=riir
     ```
-4. Some features may require MSE templates not packaged with MSE. You can get them from one of the following sources:
+5. Some features may require MSE templates not packaged with MSE. You can get them from one of the following sources:
     * Cajun's Megafile (recommended):
         1. If you don't have MSE yet, download the Advanced Magic Set Editor files from <http://magicseteditor.boards.net/page/downloads>.
         2. Download the Megafile from <http://magicseteditor.boards.net/thread/77>.

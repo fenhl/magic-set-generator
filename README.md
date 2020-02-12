@@ -14,6 +14,7 @@
     * On Windows, right-click the start button, then click “Windows PowerShell” or “Command Prompt”.
     * On other platforms, look for an app named “Terminal” or similar.
 4. In the command line, run the following command. Depending on your computer, this may take a while. You can continue with step 5 while it's running.
+
     ```
     cargo install --git=https://github.com/fenhl/json-to-mse --branch=riir
     ```
@@ -30,6 +31,7 @@
     * On Windows, locate the folder in File Explorer, then right-click it while holding shift and select “Open PowerShell window here” or “Open command prompt here”.
     * On other platforms, open a command line and navigate to the folder using `cd`. For example, if you want to save in your user folder → games → magic → sets, run the command `cd games/magic/sets`.
 2. In the command line, run the following command:
+
     ```
     json-to-mse Counterspell "Dryad Arbor" -o example.mse-set
     ```
@@ -41,6 +43,8 @@
     ```
     json-to-mse -i cards.txt -o example.mse-set
     ```
+3. `-i` and `-o` aren't the only options available. The full list is described below in the section “Command-line options”, but here's one that's especially important. `json-to-mse` normally downloads card art from [Scryfall](https://scryfall.com/) each time it runs, but you can speed up subsequent runs (and avoid getting yourself blocked if you download the same images over and over again) by creating a folder where it should save these images, and then adding the following option each time you use `json-to-mse`. For example, if you created a folder named `card images` inside the folder that you opened in step 1, you can run `json-to-mse --images="card images" -i cards.txt -o example.mse-set`.
+4. Another useful option is `-v` if you want to see more information about what `json-to-mse` is doing. This will also make `json-to-mse` check if any updates are available (and tell you how to update).
 
 ## Advanced usage
 

@@ -41,11 +41,11 @@ impl CommandOutputExt for Command {
     type Ok = Output;
 
     fn check(&mut self, name: &'static str) -> Result<Output, Error> {
-        let output = self.output().at_unknown()?; //TODO use annotate instead of at_unknown
+        let output = self.output().annotate(name)?;
         if output.status.success() {
             Ok(output)
         } else {
-            Err(Error::CommandExit(name))
+            Err(Error::CommandExit(name, output))
         }
     }
 }
@@ -68,6 +68,8 @@ impl StrExt for str {
 #[derive(Debug, From)]
 pub enum Error {
     #[from(ignore)]
+    Annotated(String, Box<Error>),
+    #[from(ignore)]
     Args(String),
     #[from(ignore)]
     CardGen(String, Box<Error>),
@@ -75,7 +77,7 @@ pub enum Error {
     CardNotFound(String),
     ColorParse(css_color_parser::ColorParseError),
     #[from(ignore)]
-    CommandExit(&'static str),
+    CommandExit(&'static str, Output),
     Db(DbError),
     GitDir(gitdir::host::github::Error),
     InvalidHeaderValue(reqwest::header::InvalidHeaderValue),
@@ -99,6 +101,63 @@ pub enum Error {
 impl From<Infallible> for Error {
     fn from(never: Infallible) -> Error {
         match never {}
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Error::Annotated(msg, e) => write!(f, "{}: {}", msg, e),
+            Error::Args(msg) => msg.fmt(f),
+            Error::CardGen(card_name, e) => write!(f, "error generating {}: {}", card_name, e),
+            Error::CardNotFound(card_name) => write!(f, "no card named {:?} found", card_name),
+            Error::ColorParse(e) => e.fmt(f),
+            Error::CommandExit(cmd, ref output) => write!(f, "subprocess {} exited with status {}", cmd, output.status),
+            Error::Db(e) => write!(f, "card database error: {:?}", e), //TODO impl Display for DbError
+            Error::GitDir(e) => write!(f, "gitdir error: {:?}", e), //TODO impl Display for gitdir Error
+            Error::InvalidHeaderValue(e) => e.fmt(f),
+            Error::Io(e, Some(path)) => write!(f, "I/O error at {}: {}", path.display(), e),
+            Error::Io(e, None) => write!(f, "I/O error: {}", e),
+            Error::Json(e) => e.fmt(f),
+            Error::LoreSeeker(e) => write!(f, "Lore Seeker error: {:?}", e), //TODO impl Display for lore_seeker::Error
+            Error::MissingAsset => write!(f, "The downlad for your OS is missing from the latest GitHub release."),
+            Error::MissingEnvar(var) => write!(f, "missing environment variable: {:?}", var),
+            Error::MissingHomeDir => write!(f, "Could not find your user folder."),
+            Error::MissingPackage => write!(f, "The binary to be released was not found in Cargo.toml"),
+            Error::MissingRelease => write!(f, "The program does not appear to be installed via `cargo install`, but no releases were found on the GitHub repo."),
+            Error::Reqwest(e) => if let Some(url) = e.url() {
+                write!(f, "error downloading {}: {}", url, e)
+            } else {
+                write!(f, "reqwest error: {}", e)
+            },
+            Error::SameVersion => write!(f, "The release being created has the same version as the latest release."),
+            Error::SemVer(e) => e.fmt(f),
+            Error::VersionCommand => write!(f, "Could not check version of the installed update."),
+            Error::VersionRegression => write!(f, "The release being created has a lower version than the latest release."),
+            Error::Zip(e) => e.fmt(f)
+        }
+    }
+}
+
+pub trait IntoResultExt {
+    type T;
+
+    fn annotate(self, note: impl ToString) -> Result<Self::T, Error>;
+}
+
+impl<T, E: Into<Error>> IntoResultExt for Result<T, E> {
+    type T = T;
+
+    fn annotate(self, note: impl ToString) -> Result<T, Error> {
+        self.map_err(|e| Error::Annotated(note.to_string(), Box::new(e.into())))
+    }
+}
+
+impl<T> IntoResultExt for io::Result<T> {
+    type T = T;
+
+    fn annotate(self, note: impl ToString) -> Result<T, Error> {
+        self.map_err(|e| Error::Annotated(note.to_string(), Box::new(e.at_unknown())))
     }
 }
 
@@ -130,39 +189,5 @@ impl<T, E: IoResultExt> IoResultExt for Result<T, E> {
 
     fn at_unknown(self) -> Result<T, E::T> {
         self.map_err(|e| e.at_unknown())
-    }
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Error::Args(msg) => msg.fmt(f),
-            Error::CardGen(card_name, e) => write!(f, "error generating {}: {}", card_name, e),
-            Error::CardNotFound(card_name) => write!(f, "no card named {:?} found", card_name),
-            Error::ColorParse(e) => e.fmt(f),
-            Error::CommandExit(cmd) => write!(f, "subprocess {:?} exited with an error", cmd),
-            Error::Db(e) => write!(f, "card database error: {:?}", e), //TODO impl Display for DbError
-            Error::GitDir(e) => write!(f, "gitdir error: {:?}", e), //TODO impl Display for gitdir Error
-            Error::InvalidHeaderValue(e) => e.fmt(f),
-            Error::Io(e, Some(path)) => write!(f, "I/O error at {}: {}", path.display(), e),
-            Error::Io(e, None) => write!(f, "I/O error: {}", e),
-            Error::Json(e) => e.fmt(f),
-            Error::LoreSeeker(e) => write!(f, "Lore Seeker error: {:?}", e), //TODO impl Display for lore_seeker::Error
-            Error::MissingAsset => write!(f, "The downlad for your OS is missing from the latest GitHub release."),
-            Error::MissingEnvar(var) => write!(f, "missing environment variable: {:?}", var),
-            Error::MissingHomeDir => write!(f, "Could not find your user folder."),
-            Error::MissingPackage => write!(f, "The binary to be released was not found in Cargo.toml"),
-            Error::MissingRelease => write!(f, "The program does not appear to be installed via `cargo install`, but no releases were found on the GitHub repo."),
-            Error::Reqwest(e) => if let Some(url) = e.url() {
-                write!(f, "error downloading {}: {}", url, e)
-            } else {
-                write!(f, "reqwest error: {}", e)
-            },
-            Error::SameVersion => write!(f, "The release being created has the same version as the latest release."),
-            Error::SemVer(e) => e.fmt(f),
-            Error::VersionCommand => write!(f, "Could not check version of the installed update."),
-            Error::VersionRegression => write!(f, "The release being created has a lower version than the latest release."),
-            Error::Zip(e) => e.fmt(f)
-        }
     }
 }

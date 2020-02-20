@@ -16,6 +16,7 @@ use {
         util::{
             CommandOutputExt as _,
             Error,
+            IntoResultExt as _,
             IoResultExt as _
         },
         version::version
@@ -46,7 +47,7 @@ fn main() -> Result<(), Error> {
     let lock_dir = Path::new(&env::var_os("TEMP").ok_or(Error::MissingEnvar("TEMP"))?).join("syncbin-startup-rust.lock");
     let lock = DirLock::new_sync(&lock_dir);
     Command::new("rustup").arg("update").arg("stable").check("rustup")?;
-    Command::new("rustup").arg("update").arg("stable-u686-pc-windows-msvc").check("rustup")?;
+    Command::new("rustup").arg("update").arg("stable-i686-pc-windows-msvc").check("rustup")?;
     drop(lock);
     Command::new("cargo").arg("build").arg("--bin=msg-gui").arg("--release").check("cargo")?;
     Command::new("cargo").arg("+stable-i686-pc-windows-msvc").arg("build").arg("--bin=msg-gui").arg("--release").arg("--target-dir=target-x86").check("cargo")?;
@@ -54,8 +55,8 @@ fn main() -> Result<(), Error> {
         let mut release_notes_file = tempfile::Builder::new()
             .prefix("msg-release-notes")
             .suffix(".md")
-            .tempfile().at_unknown()?;
-        Command::new("nano").arg(release_notes_file.path()).check("nano")?;
+            .tempfile().annotate("failed to create tempfile")?;
+        Command::new("C:\\Users\\Fenhl\\AppData\\Local\\atom\\bin\\atom.cmd").arg("--wait").arg(release_notes_file.path()).check("atom")?;
         let mut buf = String::default();
         release_notes_file.read_to_string(&mut buf).at(release_notes_file.path())?;
         buf

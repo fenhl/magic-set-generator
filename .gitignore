@@ -1,5 +1,6 @@
 # Rust
 /target
+/target-x86
 **/*.rs.bk
 
 # GitHub API OAuth token for the release script

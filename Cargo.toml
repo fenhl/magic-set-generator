@@ -1,0 +1,66 @@
+[package]
+name = "msegen"
+version = "2.0.0-beta.1"
+authors = ["Fenhl <fenhl@fenhl.net>"]
+edition = "2018"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "msg"
+path = "src/main.rs"
+doc = false
+
+[[bin]]
+name = "msg-gui"
+path = "src/bin/gui.rs"
+doc = false
+
+[[bin]]
+name = "msg-release"
+path = "src/bin/release.rs"
+doc = false
+
+[build-dependencies]
+git2 = "0.11"
+
+[dependencies]
+css-color-parser = "0"
+derive_more = "0"
+dir-lock = "0.2"
+dirs = "2"
+iced = "0.1.0-beta"
+itertools = "0.8"
+lazy_static = "1"
+parking_lot = "0"
+regex = "1"
+semver = "0.9"
+serde = "1"
+serde_json = "1"
+shlex = "0"
+smart-default = "0"
+tempfile = "3"
+zip = "0"
+
+[target.'cfg(not(windows))'.dependencies]
+termion = "1"
+
+[dependencies.gitdir]
+git = "https://github.com/fenhl/rust-gitdir"
+
+[dependencies.lore-seeker]
+git = "https://github.com/fenhl/lore-seeker-discord"
+default-features = false
+
+[dependencies.mtg]
+git = "https://github.com/fenhl/rust-mtg"
+features = ["custom"]
+
+[dependencies.reqwest]
+version = "0.10"
+features = ["blocking", "stream"]
+
+[dependencies.url]
+version = "2"
+features = ["serde"]

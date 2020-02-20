@@ -4,10 +4,7 @@ use {
     std::{
         env,
         fs::File,
-        io::{
-            self,
-            prelude::*
-        },
+        io::prelude::*,
         path::Path
     },
     git2::{
@@ -25,13 +22,12 @@ fn get_git_hash() -> Result<Oid, git2::Error> {
     )
 }
 
-fn main() -> Result<(), io::Error> {
+fn main() {
     println!("cargo:rerun-if-changed=nonexistent.foo"); // check a nonexistent file to make sure build script is always run (see https://github.com/rust-lang/cargo/issues/4213 and https://github.com/rust-lang/cargo/issues/5663)
-    let mut f = File::create(Path::new(&env::var("OUT_DIR").unwrap()).join("version.rs"))?;
-    writeln!(f, "/// The hash of the current commit of the json-to-mse repo at compile time.")?;
-    match get_git_hash() {
-        Ok(hash) => { writeln!(f, "pub const GIT_COMMIT_HASH: &str = \"{}\";", hash)?; }
+    let mut f = File::create(Path::new(&env::var("OUT_DIR").unwrap()).join("version.rs")).unwrap();
+    writeln!(f, "/// The hash of the current commit of the magic-set-generator repo at compile time.").unwrap();
+    writeln!(f, "pub const GIT_COMMIT_HASH: &str = \"{}\";", match get_git_hash() {
+        Ok(hash) => hash,
         Err(e) => { panic!("Cannot get git commit: {}\n{:?}", e, e); }
-    }
-    Ok(())
+    }).unwrap();
 }

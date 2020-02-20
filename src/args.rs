@@ -18,7 +18,10 @@ use {
     crate::{
         art::ArtHandler,
         mse::DataFile,
-        util::Error
+        util::{
+            Error,
+            IoResultExt as _
+        }
     }
 };
 #[cfg(not(windows))] use {
@@ -83,12 +86,12 @@ impl Output {
     pub fn write_set_file(self, set_file: DataFile, art_handler: &mut ArtHandler) -> Result<(), Error> {
         match self {
             Output::File(path) => {
-                set_file.write_to(File::create(path)?, art_handler)?;
+                set_file.write_to(File::create(&path).at(path)?, art_handler)?;
             }
             Output::Stdout => {
                 let mut buf = Cursor::<Vec<_>>::default();
                 set_file.write_to(&mut buf, art_handler)?;
-                io::copy(&mut buf, &mut stdout())?;
+                io::copy(&mut buf, &mut stdout()).at_unknown()?;
             }
         }
         Ok(())
@@ -394,9 +397,9 @@ fn include_vanguards_on(args: &mut ArgsRegular) -> Result<(), Error> {
 }
 
 fn input(args: &mut ArgsRegular, in_path: &str) -> Result<(), Error> {
-    BufReader::new(File::open(in_path)?)
+    BufReader::new(File::open(in_path).at(in_path)?)
         .lines()
-        .map(|line| line.map_err(Error::from).and_then(|line| args.handle_line(line)))
+        .map(|line| line.at(in_path).and_then(|line| args.handle_line(line)))
         .collect::<Result<_, _>>()?;
     Ok(())
 }

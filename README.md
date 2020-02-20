@@ -1,8 +1,12 @@
-`json-to-mse` is a command-line tool which converts [MTG JSON](https://mtgjson.com/) card data into [Magic Set Editor](https://magicseteditor.boards.net/) set files.
+**Magic Set Generator** (previously known as `json-to-mse`) is a tool which generates [Magic Set Editor](https://magicseteditor.boards.net/) set files from a list of card names (or other sources). It is available as a Windows app and as a cross-platform command-line tool.
 
-# Usage
+Download the app: [Windows (64-bit)](https://github.com/fenhl/magic-set-generator/releases/download/latest/msg-win64.exe) • [Windows (32-bit)](https://github.com/fenhl/magic-set-generator/releases/download/latest/msg-win32.exe)
 
-**Note:** This is an alpha preview of `json-to-mse` version 2. It is not yet feature complete. If you encounter any bugs or missing features, please [open an issue](https://github.com/fenhl/json-to-mse/issues/new) or let me know on Discord.
+**Note:** The app currently has limited functionality. For advanced configuration, please use the command-line tool.
+
+# Command-line tool
+
+**Note:** This is a beta preview of Magic Set Generator version 2. It is not yet feature complete. If you encounter any bugs or missing features, please [open an issue](https://github.com/fenhl/magic-set-generator/issues/new) or let me know on Discord.
 
 ## Installation
 
@@ -16,7 +20,7 @@
 4. In the command line, run the following command. Depending on your computer, this may take a while. You can continue with step 5 while it's running.
 
     ```
-    cargo install --git=https://github.com/fenhl/json-to-mse --branch=riir
+    cargo install --git=https://github.com/fenhl/magic-set-generator
     ```
 5. Some features may require MSE templates not packaged with MSE. You can get them from one of the following sources:
     * Cajun's Megafile (recommended):
@@ -33,7 +37,7 @@
 2. In the command line, run the following command:
 
     ```
-    json-to-mse Counterspell "Dryad Arbor" -o example.mse-set
+    msg Counterspell "Dryad Arbor" -o example.mse-set
     ```
 
     This will create an MSE set file containing the cards [Counterspell](https://lore-seeker.cards/card/ss1/4) and [Dryad Arbor](https://lore-seeker.cards/card/fut/174) and save it as `example.mse-set` in the folder you selected. (Note that card names containing spaces must be enclosed in quotation marks.)
@@ -41,14 +45,14 @@
     You can also save your card names as a plain text file in the same folder (one card name per line), and use that file to generate the cards, like this: (let's assume the text file is called `cards.txt`)
 
     ```
-    json-to-mse -i cards.txt -o example.mse-set
+    msg -i cards.txt -o example.mse-set
     ```
-3. `-i` and `-o` aren't the only options available. The full list is described below in the section “Command-line options”, but here's one that's especially important. `json-to-mse` normally downloads card art from [Scryfall](https://scryfall.com/) each time it runs, but you can speed up subsequent runs (and avoid getting yourself blocked if you download the same images over and over again) by creating a folder where it should save these images, and then adding the following option each time you use `json-to-mse`. For example, if you created a folder named `card images` inside the folder that you opened in step 1, you can run `json-to-mse --images="card images" -i cards.txt -o example.mse-set`.
-4. Another useful option is `-v` if you want to see more information about what `json-to-mse` is doing. This will also make `json-to-mse` check if any updates are available (and tell you how to update).
+3. `-i` and `-o` aren't the only options available. The full list is described below in the section “Command-line options”, but here's one that's especially important. Magic Set Generator normally downloads card art from [Scryfall](https://scryfall.com/) each time it runs, but you can speed up subsequent runs (and avoid getting yourself blocked if you download the same images over and over again) by creating a folder where it should save these images, and then adding the following option each time you use Magic Set Generator. For example, if you created a folder named `card images` inside the folder that you opened in step 1, you can run `msg --images="card images" -i cards.txt -o example.mse-set`.
+4. Another useful option is `-v` if you want to see more information about what MSG is doing. This will also make MSG check if any updates are available (and tell you how to update).
 
 ## Advanced usage
 
-Sections marked **(NYI)** are not yet implemented in `json-to-mse` version 2.
+Sections marked **(NYI)** are not yet implemented in MSG version 2.
 
 The script takes any number of command line arguments. Arguments are interpreted as follows:
 
@@ -63,13 +67,13 @@ The script takes any number of command line arguments. Arguments are interpreted
 If your shell supports input/output redirection, you can also pipe arguments into the script (again, one argument per line, and currently not supported on Windows), and pipe the output into a `.zip` file. For example,
 
 ```
-echo 'Dryad Arbor' | json-to-mse > example.mse-set
+echo 'Dryad Arbor' | msg > example.mse-set
 ```
 
 is equivalent to
 
 ```
-json-to-mse 'Dryad Arbor' -o example.mse-set
+msg 'Dryad Arbor' -o example.mse-set
 ```
 
 ## Image handling
@@ -78,13 +82,13 @@ How card artwork is handled is determined as follows:
 
 1. If `--no-images` is set, all artwork is left blank. All following steps are skipped.
 2. If `--images` is set to a directory containing a file named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`, that image will be used. (If the card name contains the symbols `:`, `"`, and/or `?`, these should be omitted from the file name.) After `--images`, `--scryfall-images` and `--lore-seeker-images` are checked.
-3. If neither `--no-scryfall-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also be saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
-4. If neither `--no-lore-seeker-images` nor `--offline` are set, `json-to-mse` will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also be saved there as `<card name>.png`. Otherwise, `json-to-mse` will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+3. If neither `--no-scryfall-images` nor `--offline` are set, MSG will attempt to download the card artwork from [Scryfall](https://scryfall.com/). If successful, that image is used. If `--scryfall-images` is set to a directory, the image will also be saved there as `<card name>.png`. Otherwise, MSG will attempt to save the image to `--images`, or simply discard it if that isn't set either.
+4. If neither `--no-lore-seeker-images` nor `--offline` are set, MSG will attempt to download the card artwork from [Lore Seeker](https://lore-seeker.cards/). If successful, that image is used. If `--lore-seeker-images` is set to a directory, the image will also be saved there as `<card name>.png`. Otherwise, MSG will attempt to save the image to `--images`, or simply discard it if that isn't set either.
 5. If none of the previous steps were successful, the artwork for that card is left blank.
 
 ## Command-line options
 
-`json-to-mse` accepts the following command line options:
+MSG accepts the following command line options:
 
 * `-b`, `--border=<color>`: Set the card border color. Supported colors are:
     * `b` or `black`
@@ -99,7 +103,7 @@ How card artwork is handled is determined as follows:
     * **(NYI)** A directory containing images named `<card name>.png`, `<card name>.jpg`, or `<card name>.jpeg`. This will set `--images` to this directory if it's not already set (see below), and generate the named cards.
 * `-o`, `--output=<path>`: Write the zipped MSE set file to the specified path, instead of the standard output. Any existing file at that path will be deleted!
 * `-v`, `--verbose`: Check for self-updates (unless `--offline` is given), report progress while generating the set file, and give more detailed error messages if anything goes wrong.
-* **(NYI)** `--allow-uncards`: This script has no official support for silver-bordered “un-cards” and other shenanigans like [1996 World Champion](https://lore-seeker.cards/card/pcel/1). As a result, most un-cards will be redered incorrectly, so the script will refuse to generate them unless this option is used. Reports of issues encountered while using this option will be closed as invalid.
+* **(NYI)** `--allow-uncards`: This script has no official support for silver-bordered “un-cards” and other shenanigans like [1996 World Champion](https://lore-seeker.cards/card/pcel/1). As a result, most un-cards will be rendered incorrectly, so the script will refuse to generate them unless this option is used. Reports of issues encountered while using this option will be closed as invalid.
 * `--auto-card-numbers`: Display automatically-assigned collector numbers on the cards, below the text box.
 * `--copyright=<message>`: The copyright message, appearing in the lower right of the card frame. Defaults to `NOT FOR SALE`.
 * `--db=<path>`: The path from which to load the card database. In `--offline` mode, this defaults to `data\sets` in the [gitdir](https://github.com/fenhl/gitdir) master for [Lore Seeker](https://github.com/fenhl/lore-seeker). Otherwise, the database is downloaded from [mtgjson.com](https://mtgjson.com/) by default. The following formats are understood:
@@ -113,7 +117,7 @@ How card artwork is handled is determined as follows:
 * `--[no-]lore-seeker-images[=<path>]`: See [Image handling](#image-handling).
 * `--offline`: This option has the following effects:
     * It enables `--no-lore-seeker-images` and `--no-scryfall-images`.
-    * `json-to-mse` won't check for self-updates, even in `--verbose` mode.
+    * MSG won't check for self-updates, even in `--verbose` mode.
     * It won't attempt to download the card database. Instead, if `--db` isn't given, it expects a local copy of [the Lore Seeker repository](https://github.com/fenhl/lore-seeker). See `--db` for details.
     * It won't attempt to use [Lore Seeker](https://lore-seeker.cards/) for syntax queries (arguments starting with `=`). Instead, `find_cards` is required if any queries are performed. See `--find-cards` for details.
 * **(NYI)** `--plane-templates=<templates>`: Specify which templates to use for planes and phenomena, as a comma-separated list of any number of the following. The default is `large`. If multiple templates are specified, each plane and phenomenon card will appear multiple times in the set file.
@@ -123,6 +127,6 @@ How card artwork is handled is determined as follows:
 * `--schemes-output=<path>`: Save schemes to a separate MSE set file at the specified path. Any existing file at that path will be deleted! By default, these cards are not rendered using a correct oversized template, use this option to fix this.
 * `--[no-]scryfall-images[=<path>]`: See [Image handling](#image-handling).
 * `--set-code=<code>`: The set code of the generated set. Defaults to `PROXY`.
-* `--update`: Attempt to update `json-to-mse` to the latest version instead of doing anything else.
+* `--update`: Attempt to update MSG to the latest version instead of doing anything else.
 * `--vanguards-output=<path>`: Save vanguards to a separate MSE set file at the specified path. Any existing file at that path will be deleted! By default, these cards are not rendered using the correct oversized template, use this option to fix this.
 * `--version`: Print version information instead of doing anything else.

@@ -1,6 +1,6 @@
 [package]
-name = "json-to-mse"
-version = "2.0.0-alpha.1"
+name = "msegen"
+version = "2.0.0-beta.1"
 authors = ["Fenhl <fenhl@fenhl.net>"]
 edition = "2018"
 
@@ -8,13 +8,18 @@ edition = "2018"
 path = "src/lib.rs"
 
 [[bin]]
-name = "json-to-mse"
+name = "msg"
 path = "src/main.rs"
 doc = false
 
 [[bin]]
-name = "json-to-mse-gui"
-path = "src/gui.rs"
+name = "msg-gui"
+path = "src/bin/gui.rs"
+doc = false
+
+[[bin]]
+name = "msg-release"
+path = "src/bin/release.rs"
 doc = false
 
 [build-dependencies]
@@ -23,16 +28,19 @@ git2 = "0.11"
 [dependencies]
 css-color-parser = "0"
 derive_more = "0"
+dir-lock = "0.2"
 dirs = "2"
 iced = "0.1.0-beta"
-itertools = "0"
+itertools = "0.8"
 lazy_static = "1"
 parking_lot = "0"
 regex = "1"
+semver = "0.9"
 serde = "1"
 serde_json = "1"
 shlex = "0"
 smart-default = "0"
+tempfile = "3"
 zip = "0"
 
 [target.'cfg(not(windows))'.dependencies]

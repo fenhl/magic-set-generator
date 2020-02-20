@@ -45,8 +45,10 @@ use {
         art::ArtHandler,
         util::{
             Error,
+            IoResultExt as _,
             StrExt as _
-        }
+        },
+        version
     }
 };
 
@@ -124,7 +126,12 @@ impl DataFile {
         let mut set_info = DataFile::from_iter(vec![
             ("title", Data::from(title)),
             ("copyright", Data::from(&args.copyright[..])),
-            ("description", Data::from(format!("{} automatically imported from MTG JSON using json-to-mse.", if num_cards == 1 { "This card was" } else { "These cards were" }))),
+            ("description", Data::from(format!(
+                "{} automatically generated using Magic Set Generator version {} ({}).",
+                if num_cards == 1 { "This card was" } else { "These cards were" },
+                env!("CARGO_PKG_VERSION"),
+                &version::GIT_COMMIT_HASH[..7]
+            ))),
             ("set code", Data::from(&args.set_code[..])),
             ("set language", Data::from("EN")),
             ("mark errors", Data::from("no")),
@@ -492,11 +499,11 @@ impl DataFile {
     pub fn write_to(self, buf: impl Write + Seek, art_handler: &mut ArtHandler) -> Result<(), Error> {
         let mut zip = ZipWriter::new(buf);
         zip.start_file("set", FileOptions::default())?;
-        self.write_inner(&mut zip, 0)?;
+        self.write_inner(&mut zip, 0).at_unknown()?;
         for result in art_handler.open_images() {
             let (i, mut image) = result?;
             zip.start_file(format!("image{}", i), FileOptions::default())?;
-            io::copy(&mut image, &mut zip)?;
+            io::copy(&mut image, &mut zip).at_unknown()?;
         }
         Ok(())
     }

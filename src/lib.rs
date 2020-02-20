@@ -1,4 +1,4 @@
-//#![deny(rust_2018_idioms, unused, unused_import_braces, unused_qualifications, warnings)]
+#![deny(rust_2018_idioms, unused, unused_import_braces, unused_qualifications, warnings)]
 
 pub mod args;
 pub mod art;
@@ -40,7 +40,10 @@ use {
             DataFile,
             MseGame
         },
-        util::Error
+        util::{
+            Error,
+            IoResultExt as _
+        }
     }
 };
 
@@ -48,7 +51,7 @@ macro_rules! verbose_eprint {
     ($args:expr, $($fmt:tt)+) => {
         if $args.verbose {
             eprint!($($fmt)+);
-            stderr().flush()?;
+            stderr().flush().at_unknown()?;
         }
     };
 }
@@ -69,7 +72,7 @@ pub fn client() -> Result<Client, Error> {
     Ok(Client::builder()
         .default_headers({
             let mut headers = reqwest::header::HeaderMap::new();
-            headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static(concat!("json-to-mse/", env!("CARGO_PKG_VERSION"))));
+            headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static(concat!("magic-set-generator/", env!("CARGO_PKG_VERSION"))));
             headers
         })
         .build()?
@@ -79,18 +82,18 @@ pub fn client() -> Result<Client, Error> {
 pub fn run(client: Client, args: ArgsRegular) -> Result<(), Error> {
     if args.verbose && !args.offline {
         eprint!("[....] checking for updates");
-        stderr().flush()?;
+        stderr().flush().at_unknown()?;
         if version::updates_available(&client)? {
-            eprintln!("\r[ !! ] an update is available, install with `json-to-mse --update`");
+            eprintln!("\r[ !! ] an update is available, install with `msg --update`");
         } else {
-            eprintln!("\r[ ok ] json-to-mse is up to date");
+            eprintln!("\r[ ok ] Magic Set Generator is up to date");
         }
     }
     let db = if let Some(ref db_path) = args.database {
         if db_path.is_dir() {
             Db::from_sets_dir(db_path, args.verbose)?
         } else {
-            Db::from_mtg_json(serde_json::from_reader(File::open(db_path)?)?, args.verbose)?
+            Db::from_mtg_json(serde_json::from_reader(File::open(db_path).at(db_path)?)?, args.verbose)?
         }
     } else if args.offline {
         Db::from_sets_dir(gitdir::GitHub.repo("fenhl/lore-seeker").master()?.join("data").join("sets"), args.verbose)?
@@ -176,13 +179,13 @@ pub fn run(client: Client, args: ArgsRegular) -> Result<(), Error> {
     verbose_eprint!(args, "[....] adding images and saving\r[....]");
     match args.output {
         Output::File(path) => {
-            set_file.write_to(File::create(path)?, &mut art_handler)?;
+            set_file.write_to(File::create(&path).at(path)?, &mut art_handler)?;
         }
         Output::Stdout => {
             let mut buf = Cursor::<Vec<_>>::default();
             set_file.write_to(&mut buf, &mut art_handler)?;
             verbose_eprint!(args, "\r[=...]");
-            io::copy(&mut buf, &mut stdout())?;
+            io::copy(&mut buf, &mut stdout()).at_unknown()?;
         }
     }
     verbose_eprint!(args, "\r[==..]");

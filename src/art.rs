@@ -26,7 +26,10 @@ use {
     url::Url,
     crate::{
         args::ArgsRegular,
-        util::Error
+        util::{
+            Error,
+            IoResultExt as _
+        }
     }
 };
 
@@ -103,14 +106,14 @@ impl Image {
         match self.source {
             ImageSource::Path(ref path) => File::open(path)
                 .map(|f| Box::new(f) as Box<dyn Read>)
-                .map_err(Error::from),
+                .at(path),
             ImageSource::ScryfallUrl(ref url) => {
                 let mut resp = Image::scryfall_download(config, url)?;
                 if let Some(ref img_dir) = config.scryfall_images.as_ref().or(config.images.as_ref()) {
                     let img_path = img_dir.join(format!("{}.png", self.filename()));
-                    io::copy(&mut resp, &mut File::create(&img_path)?)?;
+                    io::copy(&mut resp, &mut File::create(&img_path).at(&img_path)?).at(&img_path)?;
                     //TODO save artist credit in exif data
-                    File::open(img_path).map(|f| Box::new(f) as Box<dyn Read>).map_err(Error::from)
+                    File::open(&img_path).map(|f| Box::new(f) as Box<dyn Read>).at(img_path)
                 } else {
                     Ok(Box::new(resp))
                 }
@@ -120,9 +123,9 @@ impl Image {
                     .or_else(|_| lore_seeker::get(format!("/art/{}/{}.png", set_code, collector_number)))?;
                 if let Some(ref img_dir) = config.lore_seeker_images.as_ref().or(config.images.as_ref()) {
                     let img_path = img_dir.join(format!("{}.jpg", self.filename()));
-                    io::copy(&mut resp, &mut File::create(&img_path)?)?;
+                    io::copy(&mut resp, &mut File::create(&img_path).at(&img_path)?).at(&img_path)?;
                     //TODO save artist credit in exif data, if not already present
-                    File::open(img_path).map(|f| Box::new(f) as Box<dyn Read>).map_err(Error::from)
+                    File::open(&img_path).map(|f| Box::new(f) as Box<dyn Read>).at(img_path)
                 } else {
                     Ok(Box::new(resp))
                 }

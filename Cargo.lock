@@ -1139,7 +1139,7 @@ dependencies = [
  "gfx-hal",
  "libloading",
  "log",
- "parking_lot 0.9.0",
+ "parking_lot",
  "range-alloc",
  "raw-window-handle",
  "smallvec 0.6.13",
@@ -1195,7 +1195,7 @@ dependencies = [
  "log",
  "metal",
  "objc",
- "parking_lot 0.9.0",
+ "parking_lot",
  "range-alloc",
  "raw-window-handle",
  "smallvec 0.6.13",
@@ -2277,7 +2277,7 @@ dependencies = [
 
 [[package]]
 name = "msegen"
-version = "2.0.0-beta.1"
+version = "2.0.0-beta.2"
 dependencies = [
  "css-color-parser",
  "derive_more",
@@ -2290,7 +2290,7 @@ dependencies = [
  "lazy_static 1.4.0",
  "lore-seeker",
  "mtg",
- "parking_lot 0.10.0",
+ "parking_lot",
  "regex",
  "reqwest 0.10.1",
  "semver",
@@ -2592,18 +2592,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f842b1982eb6c2fe34036a4fbfb06dd185a3f5c8edfaacdf7d1ea10b07de6252"
 dependencies = [
  "lock_api",
- "parking_lot_core 0.6.2",
+ "parking_lot_core",
  "rustc_version",
-]
-
-[[package]]
-name = "parking_lot"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92e98c49ab0b7ce5b222f2cc9193fc4efe11c6d0bd4f648e374684a6857b1cfc"
-dependencies = [
- "lock_api",
- "parking_lot_core 0.7.0",
 ]
 
 [[package]]
@@ -2618,20 +2608,6 @@ dependencies = [
  "redox_syscall",
  "rustc_version",
  "smallvec 0.6.13",
- "winapi 0.3.8",
-]
-
-[[package]]
-name = "parking_lot_core"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7582838484df45743c8434fbff785e8edf260c28748353d44bc0da32e0ceabf1"
-dependencies = [
- "cfg-if",
- "cloudabi",
- "libc",
- "redox_syscall",
- "smallvec 1.2.0",
  "winapi 0.3.8",
 ]
 
@@ -3505,7 +3481,7 @@ dependencies = [
  "command_attr",
  "flate2",
  "log",
- "parking_lot 0.9.0",
+ "parking_lot",
  "reqwest 0.10.1",
  "rustls",
  "serde",
@@ -3959,7 +3935,7 @@ dependencies = [
  "log",
  "mio",
  "num_cpus",
- "parking_lot 0.9.0",
+ "parking_lot",
  "slab",
  "tokio-executor",
  "tokio-io",
@@ -4557,7 +4533,7 @@ dependencies = [
  "gfx-hal",
  "lazy_static 1.4.0",
  "log",
- "parking_lot 0.9.0",
+ "parking_lot",
  "raw-window-handle",
  "rendy-descriptor",
  "rendy-memory",
@@ -4650,7 +4626,7 @@ dependencies = [
  "libc",
  "log",
  "objc",
- "parking_lot 0.9.0",
+ "parking_lot",
  "percent-encoding 2.1.0",
  "raw-window-handle",
  "smithay-client-toolkit",

@@ -12,9 +12,9 @@ use {
         Version
     },
     serde::Deserialize,
-    serde_json::json,
-    url::Url
+    serde_json::json
 };
+#[cfg(windows)] use url::Url;
 
 #[derive(Deserialize)]
 pub(crate) struct Branch {
@@ -23,7 +23,7 @@ pub(crate) struct Branch {
 
 #[derive(Deserialize)]
 pub struct Release {
-    pub(crate) assets: Vec<ReleaseAsset>,
+    #[cfg(windows)] pub(crate) assets: Vec<ReleaseAsset>,
     //pub(crate) body: String,
     pub(crate) id: u64,
     //pub(crate) name: String,
@@ -39,8 +39,8 @@ impl Release {
 
 #[derive(Deserialize)]
 pub struct ReleaseAsset {
-    pub(crate) name: String,
-    pub(crate) browser_download_url: Url
+    #[cfg(windows)] pub(crate) name: String,
+    #[cfg(windows)] pub(crate) browser_download_url: Url
 }
 
 #[derive(Deserialize)]

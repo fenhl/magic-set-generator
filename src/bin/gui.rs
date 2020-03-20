@@ -8,6 +8,11 @@ use {
         path::PathBuf,
         sync::Arc
     },
+    gres::{
+        Percent,
+        Progress as _,
+        Task as _
+    },
     iced::{
         Application,
         Command,
@@ -20,6 +25,7 @@ use {
     reqwest::blocking::Client,
     smart_default::SmartDefault,
     msegen::{
+        Run,
         args::{
             ArgsRegular,
             Output
@@ -35,10 +41,14 @@ use {
 enum Message {
     /// Handled by `ArgsState`
     Args(ArgsMessage),
+    /// Sent when a set has been generated successfully.
+    Done,
     /// Sent when the GUI is started.
     Init,
+    /// Sent when an error occurs during set generation.
+    GenError(String),
     /// Sent when the user presses the Generate button
-    Generate
+    Generate(Option<Run>)
 }
 
 #[derive(SmartDefault)]
@@ -47,7 +57,8 @@ struct JsonToMse {
     #[default(msegen::client().expect("failed to create HTTP client"))]
     client: Client,
     update_progress: Arc<RwLock<UpdateProgress>>,
-    start_button: button::State
+    #[default(Ok(button::State::default()))]
+    run: Result<button::State, (Percent, String)>
 }
 
 impl Application for JsonToMse {
@@ -67,6 +78,14 @@ impl Application for JsonToMse {
                 msg.handle(&mut self.args);
                 Command::none()
             }
+            Message::Done => {
+                self.run = Ok(button::State::default());
+                Command::none()
+            }
+            Message::GenError(msg) => {
+                self.run = Err((Percent::MAX, format!("failed to generate set file: {}", msg)));
+                Command::none()
+            }
             Message::Init => {
                 match version::self_update(&self.client) { //TODO make async
                     Ok(Some(new)) => { *self.update_progress.write() = UpdateProgress::RestartToUpdate(new); }
@@ -75,22 +94,38 @@ impl Application for JsonToMse {
                 }
                 Command::none()
             }
-            Message::Generate => {
-                msegen::run(self.client.clone(), self.args.args.clone()).expect("failed to generate set file");
-                Command::none()
+            Message::Generate(run) => {
+                let run = if let Some(run) = run {
+                    self.run = Err((run.progress(), run.to_string()));
+                    run
+                } else {
+                    Run::new(self.client.clone(), self.args.args.clone())
+                };
+                async {
+                    match run.run().await {
+                        Ok(Ok(())) => Message::Done,
+                        Ok(Err(e)) => Message::GenError(e.to_string()),
+                        Err(run) => Message::Generate(Some(run))
+                    }
+                }.into()
             }
         }
     }
 
     fn view(&mut self) -> Element<'_, Message> {
-        Column::new()
+        let mut col = Column::new()
             .push(Text::new(format!("{}", self.update_progress.read())))
-            .push(self.args.view())
-            .push(
-                Button::new(&mut self.start_button, Text::new("Generate"))
-                    .on_press(Message::Generate)
-            )
-            .into()
+            .push(self.args.view());
+        match self.run {
+            Ok(ref mut start_button) => {
+                col = col.push(
+                    Button::new(start_button, Text::new("Generate"))
+                        .on_press(Message::Generate(None))
+                );
+            }
+            Err((_, ref run)) => { col = col.push(Text::new(run)); }
+        }
+        col.into()
     }
 }
 

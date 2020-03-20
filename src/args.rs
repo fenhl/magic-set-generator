@@ -63,7 +63,7 @@ const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Er
     ("vanguards-output", None, vanguards_output)
 ];
 
-#[derive(SmartDefault, Clone)]
+#[derive(Debug, SmartDefault, Clone)]
 pub enum Output {
     File(PathBuf),
     #[default]
@@ -98,7 +98,7 @@ impl Output {
     }
 }
 
-#[derive(SmartDefault, Clone)]
+#[derive(Debug, SmartDefault, Clone)]
 pub struct ArgsRegular {
     pub all_command: bool,
     pub auto_card_numbers: bool,
@@ -278,7 +278,7 @@ impl Args {
                 // also read card names/commands from stdin
                 loop {
                     let mut buf = String::default();
-                    if stdin.read_line(&mut buf)? == 0 { break; }
+                    if stdin.read_line(&mut buf).at_unknown()? == 0 { break; }
                     args.handle_line(buf)?;
                 }
             }

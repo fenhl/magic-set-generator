@@ -26,6 +26,8 @@ doc = false
 git2 = "0.11"
 
 [dependencies]
+async-std = "1"
+async-trait = "0.1"
 css-color-parser = "0"
 derive_more = "0"
 dir-lock = "0.2"
@@ -48,6 +50,9 @@ termion = "1"
 
 [dependencies.gitdir]
 git = "https://github.com/fenhl/rust-gitdir"
+
+[dependencies.gres]
+git = "https://github.com/fenhl/gres" #TODO publish on crates.io
 
 [dependencies.lore-seeker]
 git = "https://github.com/fenhl/lore-seeker-discord"

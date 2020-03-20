@@ -4,14 +4,12 @@ use {
     std::{
         env::current_exe,
         fmt,
-        fs::File,
         process::{
             Command,
             Stdio
         }
     },
     dirs::home_dir,
-    itertools::Itertools as _,
     lazy_static::lazy_static,
     regex::Regex,
     reqwest::blocking::Client,
@@ -22,7 +20,13 @@ use {
         util::*
     }
 };
-#[cfg(windows)] use std::fs;
+#[cfg(windows)] use {
+    std::fs::{
+        self,
+        File
+    },
+    itertools::Itertools as _
+};
 
 include!(concat!(env!("OUT_DIR"), "/version.rs")); // defines GIT_COMMIT_HASH
 
@@ -103,20 +107,21 @@ pub fn self_update(client: &Client) -> Result<Option<Version>, Error> {
             .stdout;
         Ok(Some(VERSION_REGEX.captures(&String::from_utf8_lossy(&ver_out)).ok_or(Error::VersionCommand)?[1].parse()?)) //TODO return None if commit hashes match
     } else {
-        // update to the latest release, or the latest commit if no releases exist
-        fs::rename(&current_exe, tempfile::Builder::new().prefix("magic-set-generator").suffix(".old").tempfile().at_unknown()?).at(&current_exe)?;
-        let repo = Repo::new("fenhl", "magic-set-generator");
-        if let Some(release) = repo.latest_release(client)? {
-            let new_ver = release.version()?;
-            let (asset,) = release.assets.into_iter()
-                .filter(|asset| asset.name.ends_with(PLATFORM_SUFFIX))
-                .collect_tuple().ok_or(Error::MissingAsset)?;
-            let mut response = client.get(asset.browser_download_url).send()?.error_for_status()?;
-            response.copy_to(&mut File::open(&current_exe).at(current_exe)?)?;
-            Ok(Some(new_ver))
-        } else {
-            Err(Error::MissingRelease)
+        // update to the latest release
+        #[cfg(windows)] {
+            fs::rename(&current_exe, tempfile::Builder::new().prefix("magic-set-generator").suffix(".old").tempfile().at_unknown()?).at(&current_exe)?;
+            let repo = Repo::new("fenhl", "magic-set-generator");
+            if let Some(release) = repo.latest_release(client)? {
+                let new_ver = release.version()?;
+                let (asset,) = release.assets.into_iter()
+                    .filter(|asset| asset.name.ends_with(PLATFORM_SUFFIX))
+                    .collect_tuple().ok_or(Error::MissingAsset)?;
+                let mut response = client.get(asset.browser_download_url).send()?.error_for_status()?;
+                response.copy_to(&mut File::open(&current_exe).at(current_exe)?)?;
+                return Ok(Some(new_ver));
+            }
         }
+        Err(Error::MissingRelease) //TODO fall back to latest commit
     }
 }
 

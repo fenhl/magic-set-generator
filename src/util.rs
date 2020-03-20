@@ -72,7 +72,7 @@ pub enum Error {
     #[from(ignore)]
     Args(String),
     #[from(ignore)]
-    CardGen(String, Box<Error>),
+    CardGen(String, String),
     #[from(ignore)]
     CardNotFound(String),
     ColorParse(css_color_parser::ColorParseError),
@@ -109,7 +109,7 @@ impl fmt::Display for Error {
         match self {
             Error::Annotated(msg, e) => write!(f, "{}: {}", msg, e),
             Error::Args(msg) => msg.fmt(f),
-            Error::CardGen(card_name, e) => write!(f, "error generating {}: {}", card_name, e),
+            Error::CardGen(card_name, msg) => write!(f, "error generating {}: {}", card_name, msg),
             Error::CardNotFound(card_name) => write!(f, "no card named {:?} found", card_name),
             Error::ColorParse(e) => e.fmt(f),
             Error::CommandExit(cmd, ref output) => write!(f, "subprocess {} exited with status {}", cmd, output.status),

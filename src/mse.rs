@@ -69,7 +69,7 @@ impl fmt::Display for MseGame {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Data {
     Flat(String),
     Subfile(DataFile)
@@ -116,7 +116,7 @@ impl Data {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct DataFile {
     items: Vec<(String, Data)>
 }

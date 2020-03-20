@@ -51,6 +51,7 @@ struct ScryfallImageUris {
     art_crop: Url
 }
 
+#[derive(Debug)]
 enum ImageSource {
     Path(PathBuf),
     ScryfallUrl(Url),
@@ -60,6 +61,7 @@ enum ImageSource {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct Image {
     pub artist: Option<String>,
     card: Card,
@@ -169,6 +171,7 @@ impl ArtHandlerConfig {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ArtHandler {
     set_images: HashMap<Card, Arc<Mutex<Image>>>,
     config: ArtHandlerConfig

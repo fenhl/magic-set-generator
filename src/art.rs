@@ -2,7 +2,10 @@ use {
     std::{
         cell::RefCell,
         collections::HashMap,
-        fs::File,
+        fs::{
+            self,
+            File
+        },
         io::{
             self,
             prelude::*
@@ -15,6 +18,7 @@ use {
             Instant
         }
     },
+    directories::ProjectDirs,
     itertools::Itertools as _,
     mtg::card::Card,
     parking_lot::Mutex,
@@ -111,7 +115,8 @@ impl Image {
                 .at(path),
             ImageSource::ScryfallUrl(ref url) => {
                 let mut resp = Image::scryfall_download(config, url)?;
-                if let Some(ref img_dir) = config.scryfall_images.as_ref().or(config.images.as_ref()) {
+                if let Some(ref img_dir) = config.scryfall_images.as_ref().or(config.images.as_ref()).or(img_cache().as_ref()) {
+                    fs::create_dir_all(img_dir).at(img_dir)?;
                     let img_path = img_dir.join(format!("{}.png", self.filename()));
                     io::copy(&mut resp, &mut File::create(&img_path).at(&img_path)?).at(&img_path)?;
                     //TODO save artist credit in exif data
@@ -123,7 +128,8 @@ impl Image {
             ImageSource::LoreSeekerUrl { ref set_code, ref collector_number } => {
                 let mut resp = lore_seeker::get(format!("/art/{}/{}.jpg", set_code, collector_number))
                     .or_else(|_| lore_seeker::get(format!("/art/{}/{}.png", set_code, collector_number)))?;
-                if let Some(ref img_dir) = config.lore_seeker_images.as_ref().or(config.images.as_ref()) {
+                if let Some(ref img_dir) = config.lore_seeker_images.as_ref().or(config.images.as_ref()).or(img_cache().as_ref()) {
+                    fs::create_dir_all(img_dir).at(img_dir)?;
                     let img_path = img_dir.join(format!("{}.jpg", self.filename()));
                     io::copy(&mut resp, &mut File::create(&img_path).at(&img_path)?).at(&img_path)?;
                     //TODO save artist credit in exif data, if not already present
@@ -213,7 +219,11 @@ impl ArtHandler {
     pub(crate) fn register_image_for(&mut self, card: &Card) -> Option<Arc<Mutex<Image>>> {
         if self.config.no_images { return None; }
         if let Some(image) = self.set_images.get(card) { return Some(Arc::clone(image)); }
-        for img_dir in &[&self.config.images, &self.config.scryfall_images, &self.config.lore_seeker_images] {
+        let mut img_dirs = vec![self.config.images.clone(), self.config.scryfall_images.clone(), self.config.lore_seeker_images.clone()];
+        if self.config.images.is_none() && (self.config.scryfall_images.is_none() || self.config.lore_seeker_images.is_none()) {
+            img_dirs.push(img_cache());
+        }
+        for img_dir in img_dirs {
             if let Some(path) = img_dir {
                 for file_ext in &["png", "PNG", "jpg", "JPG", "jpeg", "JPEG"] {
                     let image_path = path.join(format!("{}.{}", normalized_image_name(card), file_ext));
@@ -259,6 +269,11 @@ impl ArtHandler {
         }
         None
     }
+}
+
+fn img_cache() -> Option<PathBuf> {
+    #[cfg(unix)] { xdg_basedir::get_cache_home().ok().and_then(|cache_home| cache_home.join("magic-set-generator").join("img")) }
+    #[cfg(not(unix))] { ProjectDirs::from("net", "Fenhl", "Magic Set Generator").map(|proj_dirs| proj_dirs.cache_dir().join("img")) }
 }
 
 fn normalized_image_name(card: &Card) -> String {

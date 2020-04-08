@@ -45,6 +45,12 @@ smart-default = "0"
 tempfile = "3"
 zip = "0"
 
+[target.'cfg(unix)'.dependencies]
+xdg-basedir = "1"
+
+[target.'cfg(not(unix))'.dependencies]
+directories = "2"
+
 [target.'cfg(not(windows))'.dependencies]
 termion = "1"
 

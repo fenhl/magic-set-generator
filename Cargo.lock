@@ -2307,7 +2307,6 @@ dependencies = [
  "derive_more",
  "dir-lock",
  "directories",
- "dirs 2.0.2",
  "git2",
  "gitdir",
  "gres",

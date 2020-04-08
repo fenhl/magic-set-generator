@@ -9,7 +9,7 @@ use {
             Stdio
         }
     },
-    dirs::home_dir,
+    directories::BaseDirs,
     lazy_static::lazy_static,
     regex::Regex,
     reqwest::blocking::Client,
@@ -25,6 +25,7 @@ use {
         self,
         File
     },
+    directories::ProjectDirs,
     itertools::Itertools as _
 };
 
@@ -67,7 +68,7 @@ pub fn self_update(client: &Client) -> Result<Option<Version>, Error> {
         return Ok(None);
     }
     let current_exe = current_exe().at_unknown()?;
-    let cargo_bin = home_dir().ok_or(Error::MissingHomeDir)?.join(".cargo").join("bin");
+    let cargo_bin = BaseDirs::new().ok_or(Error::MissingHomeDir)?.home_dir().join(".cargo").join("bin");
     #[cfg(windows)] let cargo_installed_path = cargo_bin.join("msg.exe");
     #[cfg(windows)] let tmp_path = cargo_bin.join("msg.exe.old");
     #[cfg(windows)] { if tmp_path.exists() { fs::remove_file(&tmp_path).at(&tmp_path)?; } }
@@ -109,7 +110,7 @@ pub fn self_update(client: &Client) -> Result<Option<Version>, Error> {
     } else {
         // update to the latest release
         #[cfg(windows)] {
-            fs::rename(&current_exe, tempfile::Builder::new().prefix("magic-set-generator").suffix(".old").tempfile().at_unknown()?).at(&current_exe)?;
+            fs::rename(&current_exe, tempfile::Builder::new().prefix("magic-set-generator").suffix(".old").tempfile_in(ProjectDirs::from("net", "Fenhl", "Magic Set Generator").ok_or(Error::MissingHomeDir)?.cache_dir()).at_unknown()?).at(&current_exe)?;
             let repo = Repo::new("fenhl", "magic-set-generator");
             if let Some(release) = repo.latest_release(client)? {
                 let new_ver = release.version()?;
@@ -127,7 +128,7 @@ pub fn self_update(client: &Client) -> Result<Option<Version>, Error> {
 
 /// Returns `Ok(false)` if MSG is up to date, or `Ok(true)` if an update is available.
 pub fn updates_available(client: &Client) -> Result<bool, Error> {
-    let cargo_bin = home_dir().ok_or(Error::MissingHomeDir)?.join(".cargo").join("bin");
+    let cargo_bin = BaseDirs::new().ok_or(Error::MissingHomeDir)?.home_dir().join(".cargo").join("bin");
     #[cfg(windows)] let cargo_installed_path = cargo_bin.join("msg.exe");
     #[cfg(not(windows))] let cargo_installed_path = cargo_bin.join("msg");
     #[cfg(windows)] let cargo_gui_installed_path = cargo_bin.join("msg-gui.exe");

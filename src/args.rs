@@ -1,6 +1,9 @@
 use {
     std::{
-        collections::BTreeSet,
+        collections::{
+            BTreeSet,
+            HashSet
+        },
         env,
         fs::File,
         io::{
@@ -118,6 +121,7 @@ pub struct ArgsRegular {
     no_scryfall_images: bool,
     pub offline: bool,
     pub output: Output,
+    pub queries: HashSet<String>,
     pub schemes_output: Option<Output>,
     pub scryfall_images: Option<PathBuf>,
     #[default = "PROXY"]
@@ -183,8 +187,10 @@ impl ArgsRegular {
             Err(Error::Args(format!("unknown command: !{}", cmd_name)))
         } else if line.starts_with('#') {
             Ok(()) // comment line
+        } else if line.starts_with('=') {
+            self.queries.insert(line[1..].to_string());
+            Ok(())
         } else {
-            //TODO queries
             self.cards.insert(line.into());
             Ok(())
         }
@@ -267,8 +273,9 @@ impl Args {
                 }
             } else if arg.starts_with('#') {
                 // comment arg
+            } else if arg.starts_with('=') {
+                args.queries.insert(arg[1..].to_string());
             } else {
-                //TODO queries
                 args.cards.insert(arg);
             }
         }

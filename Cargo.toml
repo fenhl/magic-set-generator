@@ -9,7 +9,7 @@ path = "src/lib.rs"
 
 [[bin]]
 name = "msg"
-path = "src/main.rs"
+path = "src/bin/cli.rs"
 doc = false
 
 [[bin]]

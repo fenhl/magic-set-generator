@@ -18,6 +18,7 @@ use {
         Command,
         Element,
         Settings,
+        executor,
         widget::*
     },
     itertools::Itertools as _,
@@ -62,9 +63,11 @@ struct JsonToMse {
 }
 
 impl Application for JsonToMse {
+    type Executor = executor::Default;
     type Message = Message;
+    type Flags = ();
 
-    fn new() -> (JsonToMse, Command<Message>) {
+    fn new((): ()) -> (JsonToMse, Command<Message>) {
         (JsonToMse::default(), async { Message::Init }.into())
     }
 
@@ -74,10 +77,7 @@ impl Application for JsonToMse {
 
     fn update(&mut self, message: Message) -> Command<Message> {
         match message {
-            Message::Args(msg) => {
-                msg.handle(&mut self.args);
-                Command::none()
-            }
+            Message::Args(msg) => self.args.handle(msg),
             Message::Done => {
                 self.run = Ok(button::State::default());
                 Command::none()
@@ -129,6 +129,17 @@ impl Application for JsonToMse {
     }
 }
 
+#[derive(Debug, Clone)]
+enum ArgsMessage {
+    NewCardNameChange(String),
+    AddCard,
+    QueryChange(String),
+    Search,
+    OutputChange(String),
+    RemoveCard(String),
+    ShowHideCards
+}
+
 #[derive(Default)]
 struct ArgsState {
     args: ArgsRegular,
@@ -137,10 +148,60 @@ struct ArgsState {
     new_card_name: String,
     new_card_state: text_input::State,
     add_card_button: button::State,
+    query: String,
+    query_state: text_input::State,
+    query_error: Option<String>,
+    run_query_button: button::State,
     save_state: text_input::State
 }
 
 impl ArgsState {
+    fn handle(&mut self, message: ArgsMessage) -> Command<Message> {
+        match message {
+            ArgsMessage::NewCardNameChange(new_card_name) => { self.new_card_name = new_card_name; }
+            ArgsMessage::AddCard => {
+                let new_card_name = mem::take(&mut self.new_card_name);
+                if self.args.cards.insert(new_card_name) {
+                    if let Some(ref mut btns) = self.card_delete_buttons {
+                        btns.push(button::State::default());
+                    }
+                }
+            }
+            ArgsMessage::QueryChange(new_query) => { self.query = new_query; }
+            ArgsMessage::Search => {
+                let query = mem::take(&mut self.query);
+                match lore_seeker::resolve_query(&query) { //TODO async
+                    Ok((_, cards)) => {
+                        self.query_error = None;
+                        self.args.cards.extend(cards.into_iter().map(|(card_name, _)| card_name));
+                        if let Some(ref mut btns) = self.card_delete_buttons {
+                            btns.resize_with(self.args.cards.len(), button::State::default);
+                        }
+                    }
+                    Err(e) => { self.query_error = Some(e.to_string()); }
+                }
+            }
+            ArgsMessage::OutputChange(new_path) => if new_path.is_empty() {
+                self.args.output = Output::Stdout;
+            } else {
+                self.args.output = Output::File(PathBuf::from(new_path));
+            },
+            ArgsMessage::RemoveCard(card_name) => if self.args.cards.remove(&card_name) {
+                if let Some(ref mut btns) = self.card_delete_buttons {
+                    btns.pop();
+                }
+            }
+            ArgsMessage::ShowHideCards => if self.card_delete_buttons.is_some() {
+                self.card_delete_buttons = None;
+            } else {
+                let mut btns = Vec::default();
+                btns.resize_with(self.args.cards.len(), button::State::default);
+                self.card_delete_buttons = Some(btns);
+            }
+        }
+        Command::none()
+    }
+
     fn view(&mut self) -> Element<'_, Message> {
         let mut col = Column::new()
             .push(Row::new()
@@ -152,59 +213,26 @@ impl ArgsState {
                 col = col.push(Row::new().push(Text::new(card_name.clone())).push(Button::new(btn, Text::new("Remove")).on_press(Message::Args(ArgsMessage::RemoveCard(card_name)))));
             }
         }
-        col.push(Row::new()
+        col = col
+            .push(Row::new()
                 .push(Text::new("Add card: "))
                 .push(TextInput::new(&mut self.new_card_state, "", &self.new_card_name, |new_card| Message::Args(ArgsMessage::NewCardNameChange(new_card))).on_submit(Message::Args(ArgsMessage::AddCard)))
                 .push(Button::new(&mut self.add_card_button, Text::new("Add")).on_press(Message::Args(ArgsMessage::AddCard)))
             )
-            .push(Row::new().push(Text::new("Save as: ")).push(TextInput::new(&mut self.save_state, "C:\\path\\to\\output.mse-set", &match self.args.output {
+            .push(Row::new()
+                .push(Text::new("Add cards from Lore Seeker search: "))
+                .push(TextInput::new(&mut self.query_state, "", &self.query, |new_query| Message::Args(ArgsMessage::QueryChange(new_query))).on_submit(Message::Args(ArgsMessage::Search)))
+                .push(Button::new(&mut self.run_query_button, Text::new("Add")).on_press(Message::Args(ArgsMessage::Search)))
+            );
+        if let Some(ref msg) = self.query_error {
+            col = col.push(Row::new().push(Text::new(msg)));
+        }
+        col.push(Row::new().push(Text::new("Save as: ")).push(TextInput::new(&mut self.save_state, "C:\\path\\to\\output.mse-set", &match self.args.output {
                 Output::File(ref path) => format!("{}", path.display()),
                 Output::Stdout => String::default()
             }, |new_path| Message::Args(ArgsMessage::OutputChange(new_path)))))
             .push(Text::new("more options coming soon™")) //TODO support remaining args
             .into()
-    }
-}
-
-#[derive(Debug, Clone)]
-enum ArgsMessage {
-    AddCard,
-    NewCardNameChange(String),
-    OutputChange(String),
-    RemoveCard(String),
-    ShowHideCards
-}
-
-impl ArgsMessage {
-    fn handle(self, args: &mut ArgsState) {
-        match self {
-            ArgsMessage::AddCard => {
-                let new_card_name = mem::take(&mut args.new_card_name);
-                if args.args.cards.insert(new_card_name) {
-                    if let Some(ref mut btns) = args.card_delete_buttons {
-                        btns.push(button::State::default());
-                    }
-                }
-            }
-            ArgsMessage::NewCardNameChange(new_card_name) => { args.new_card_name = new_card_name; },
-            ArgsMessage::OutputChange(new_path) => if new_path.is_empty() {
-                args.args.output = Output::Stdout;
-            } else {
-                args.args.output = Output::File(PathBuf::from(new_path));
-            },
-            ArgsMessage::RemoveCard(card_name) => if args.args.cards.remove(&card_name) {
-                if let Some(ref mut btns) = args.card_delete_buttons {
-                    btns.pop();
-                }
-            },
-            ArgsMessage::ShowHideCards => if args.card_delete_buttons.is_some() {
-                args.card_delete_buttons = None;
-            } else {
-                let mut btns = Vec::default();
-                btns.resize_with(args.args.cards.len(), button::State::default);
-                args.card_delete_buttons = Some(btns);
-            }
-        }
     }
 }
 

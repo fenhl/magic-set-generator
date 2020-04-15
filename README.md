@@ -61,7 +61,7 @@ The script takes any number of command line arguments. Arguments are interpreted
     * `!all`: Generate all cards present in the database (see `--db` below), except tokens and un-cards.
     * **(NYI)** `!tappedout <deck-id>`: Download the given decklist from [tappedout.net](http://tappedout.net/) and generate all cards from it.
 * Arguments starting with `#` are ignored. This can be used in input files (see `-i` below) to write comments.
-* **(NYI)** Arguments starting with `=` are parsed according to [Lore Seeker syntax](https://lore-seeker.cards/help/syntax) to generate all cards from the result. This requires an internet connection or a `find_cards` script compatible with the one from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` and `--offline` below.
+* Arguments starting with `=` are parsed according to [Lore Seeker syntax](https://lore-seeker.cards/help/syntax) to generate all cards from the result. This requires an internet connection or a `find_cards` script compatible with the one from [magic-search-engine](https://github.com/taw/magic-search-engine), see also `--find-cards` and `--offline` below.
 * Any other arguments are interpreted as card names. This can be used to specify cards to generate instead of, or in addition to, those read from an input file.
 
 If your shell supports input/output redirection, you can also pipe arguments into the script (again, one argument per line, and currently not supported on Windows), and pipe the output into a `.zip` file. For example,

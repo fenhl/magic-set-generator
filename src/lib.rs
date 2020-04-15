@@ -81,10 +81,18 @@ pub enum Run {
         args: ArgsRegular,
         updates_available: Option<bool>
     },
+    ResolveQueries {
+        client: Client,
+        args: ArgsRegular,
+        db: Db,
+        queries: Vec<String>,
+        cards: BTreeSet<String>
+    },
     NormalizeCardNames {
         client: Client,
         args: ArgsRegular,
-        db: Db
+        db: Db,
+        cards: BTreeSet<String>
     },
     CreateSetMetadata {
         client: Client,
@@ -157,12 +165,16 @@ impl Progress for Run {
             Run::NotStarted { .. } => Percent::default(),
             Run::CheckForUpdates { .. } => Percent::new(1),
             Run::LoadDb { .. } => Percent::new(2),
-            Run::NormalizeCardNames { .. } => Percent::new(3),
-            Run::CreateSetMetadata { .. } => Percent::new(4),
+            Run::ResolveQueries { .. } => Percent::new(3),
+            Run::NormalizeCardNames { .. } => Percent::new(4),
+            Run::CreateSetMetadata { .. } => Percent::new(5),
             Run::AddNextCard { added_cards, cards, .. } => {
+                const MIN: u8 = 6; // one above highest value of previous step
+                const MAX: u8 = 93; // one below lowest value of next step
+
                 let total_cards = added_cards + cards.len();
-                let progress = 88.min(89 * added_cards / total_cards) as u8;
-                Percent::new(5 + progress)
+                let progress = (MAX - MIN).min(((1 + MAX - MIN) as usize * added_cards / total_cards) as u8);
+                Percent::new(MIN + progress)
             }
             Run::GenerateStylesheetSettings { .. } => Percent::new(94),
             Run::GenerateFooters { .. } => Percent::new(95),
@@ -180,6 +192,7 @@ impl fmt::Display for Run {
             Run::NotStarted { .. } => write!(f, "not started"),
             Run::CheckForUpdates { .. } => write!(f, "checking for updates"),
             Run::LoadDb { .. } => write!(f, "loading card database"),
+            Run::ResolveQueries { .. } => write!(f, "resolving queries"),
             Run::NormalizeCardNames { .. } => write!(f, "normalizing card names"),
             Run::CreateSetMetadata { .. } => write!(f, "generating set metadata"),
             Run::AddNextCard { added_cards, ref cards, failed, .. } => if failed == 0 {
@@ -213,7 +226,7 @@ impl Task<Result<(), Error>> for Run {
                 updates_available: Some(task_try!(version::updates_available(&client))),
                 client, args
             }),
-            Run::LoadDb { client, args, .. } => Err(Run::NormalizeCardNames {
+            Run::LoadDb { client, args, .. } => Err(Run::ResolveQueries {
                 db: if let Some(ref db_path) = args.database {
                     if db_path.is_dir() {
                         task_try!(Db::from_sets_dir(db_path, args.verbose))
@@ -225,15 +238,31 @@ impl Task<Result<(), Error>> for Run {
                 } else {
                     task_try!(Db::download(args.verbose))
                 },
+                cards: args.cards.clone(),
+                queries: args.queries.iter().cloned().collect(),
                 client, args
             }),
-            Run::NormalizeCardNames { client, args, db } => Err(Run::CreateSetMetadata {
-                cards: if args.all_command {
+            Run::ResolveQueries { client, args, db, mut queries, mut cards } => if args.all_command {
+                Err(Run::CreateSetMetadata {
+                    client, args,
+                    cards: db.into_iter().collect()
+                })
+            } else {
+                if let Some(query) = queries.pop() {
+                    cards.extend(task_try!(lore_seeker::resolve_query(&query)).1.into_iter().map(|(card_name, _)| card_name)); //TODO async
+                }
+                Err(if queries.is_empty() {
+                    Run::NormalizeCardNames { client, args, db, cards }
+                } else {
+                    Run::ResolveQueries { client, args, db, queries, cards }
+                })
+            },
+            Run::NormalizeCardNames { client, args, db, cards } => Err(Run::CreateSetMetadata {
+                cards: if args.all_command { //TODO remove if still not required after adding !tappedout
                     db.into_iter().collect()
                 } else {
-                    task_try!(args.cards.iter()
+                    task_try!(cards.into_iter()
                         //TODO also read card names from args.decklists
-                        //TODO also read card names from queries
                         .map(|card_name| card_name.replace('’', "'"))
                         .map(|card_name| match SPLIT_CARD_REGEX.captures(&card_name) {
                             Some(captures) => captures[1].to_owned(),

@@ -69,10 +69,10 @@ pub fn self_update(client: &Client) -> Result<Option<Version>, Error> {
     }
     let current_exe = current_exe().at_unknown()?;
     let cargo_bin = BaseDirs::new().ok_or(Error::MissingHomeDir)?.home_dir().join(".cargo").join("bin");
-    #[cfg(windows)] let cargo_installed_path = cargo_bin.join("msg.exe");
-    #[cfg(windows)] let tmp_path = cargo_bin.join("msg.exe.old");
+    #[cfg(windows)] let cargo_installed_path = cargo_bin.join("msegen.exe");
+    #[cfg(windows)] let tmp_path = cargo_bin.join("msegen.exe.old");
     #[cfg(windows)] { if tmp_path.exists() { fs::remove_file(&tmp_path).at(&tmp_path)?; } }
-    #[cfg(not(windows))] let cargo_installed_path = cargo_bin.join("msg");
+    #[cfg(not(windows))] let cargo_installed_path = cargo_bin.join("msegen");
     #[cfg(windows)] let cargo_gui_installed_path = cargo_bin.join("msg-gui.exe");
     #[cfg(windows)] let tmp_gui_path = cargo_bin.join("msg-gui.exe.old");
     #[cfg(windows)] { if tmp_gui_path.exists() { fs::remove_file(&tmp_gui_path).at(&tmp_gui_path)?; } }
@@ -89,7 +89,7 @@ pub fn self_update(client: &Client) -> Result<Option<Version>, Error> {
         let ver_out = Command::new(cargo_installed_path)
             .arg("--version")
             .stdout(Stdio::piped())
-            .check("msg")?
+            .check("msegen")?
             .stdout;
         Ok(Some(VERSION_REGEX.captures(&String::from_utf8_lossy(&ver_out)).ok_or(Error::VersionCommand)?[1].parse()?)) //TODO return None if commit hashes match
     } else if current_exe == cargo_gui_installed_path {
@@ -129,8 +129,8 @@ pub fn self_update(client: &Client) -> Result<Option<Version>, Error> {
 /// Returns `Ok(false)` if MSG is up to date, or `Ok(true)` if an update is available.
 pub fn updates_available(client: &Client) -> Result<bool, Error> {
     let cargo_bin = BaseDirs::new().ok_or(Error::MissingHomeDir)?.home_dir().join(".cargo").join("bin");
-    #[cfg(windows)] let cargo_installed_path = cargo_bin.join("msg.exe");
-    #[cfg(not(windows))] let cargo_installed_path = cargo_bin.join("msg");
+    #[cfg(windows)] let cargo_installed_path = cargo_bin.join("msegen.exe");
+    #[cfg(not(windows))] let cargo_installed_path = cargo_bin.join("msegen");
     #[cfg(windows)] let cargo_gui_installed_path = cargo_bin.join("msg-gui.exe");
     #[cfg(not(windows))] let cargo_gui_installed_path = cargo_bin.join("msg-gui");
     let repo = Repo::new("fenhl", "magic-set-generator");

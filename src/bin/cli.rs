@@ -72,7 +72,7 @@ fn main() -> Result<(), Error> {
                         eprint!("[....] checking for updates");
                         stderr().flush().at_unknown()?;
                     }
-                    Run::LoadDb { updates_available: Some(true), .. } => { eprintln!("\r[ !! ] an update is available, install with `msg --update`"); }
+                    Run::LoadDb { updates_available: Some(true), .. } => { eprintln!("\r[ !! ] an update is available, install with `msegen --update`"); }
                     Run::LoadDb { updates_available: Some(false), .. } => { eprintln!("\r[ ok ] Magic Set Generator is up to date"); }
                     Run::NormalizeCardNames { .. } => { verbose_eprint!(args, "[....] normalizing card names"); }
                     Run::CreateSetMetadata { ref cards, .. } => {

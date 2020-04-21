@@ -8,7 +8,7 @@ edition = "2018"
 path = "src/lib.rs"
 
 [[bin]]
-name = "msg"
+name = "msegen"
 path = "src/bin/cli.rs"
 doc = false
 

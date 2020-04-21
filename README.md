@@ -37,7 +37,7 @@ Download the app: [Windows (64-bit)](https://github.com/fenhl/magic-set-generato
 2. In the command line, run the following command:
 
     ```
-    msg Counterspell "Dryad Arbor" -o example.mse-set
+    msegen Counterspell "Dryad Arbor" -o example.mse-set
     ```
 
     This will create an MSE set file containing the cards [Counterspell](https://lore-seeker.cards/card/ss1/4) and [Dryad Arbor](https://lore-seeker.cards/card/fut/174) and save it as `example.mse-set` in the folder you selected. (Note that card names containing spaces must be enclosed in quotation marks.)
@@ -45,9 +45,9 @@ Download the app: [Windows (64-bit)](https://github.com/fenhl/magic-set-generato
     You can also save your card names as a plain text file in the same folder (one card name per line), and use that file to generate the cards, like this: (let's assume the text file is called `cards.txt`)
 
     ```
-    msg -i cards.txt -o example.mse-set
+    msegen -i cards.txt -o example.mse-set
     ```
-3. `-i` and `-o` aren't the only options available. The full list is described below in the section “Command-line options”, but here's one that's especially important. Magic Set Generator normally downloads card art from [Scryfall](https://scryfall.com/) each time it runs, but you can speed up subsequent runs (and avoid getting yourself blocked if you download the same images over and over again) by creating a folder where it should save these images, and then adding the following option each time you use Magic Set Generator. For example, if you created a folder named `card images` inside the folder that you opened in step 1, you can run `msg --images="card images" -i cards.txt -o example.mse-set`.
+3. `-i` and `-o` aren't the only options available. The full list is described below in the section “Command-line options”, but here's one that's especially important. Magic Set Generator normally downloads card art from [Scryfall](https://scryfall.com/) each time it runs, but you can speed up subsequent runs (and avoid getting yourself blocked if you download the same images over and over again) by creating a folder where it should save these images, and then adding the following option each time you use Magic Set Generator. For example, if you created a folder named `card images` inside the folder that you opened in step 1, you can run `msegen --images="card images" -i cards.txt -o example.mse-set`.
 4. Another useful option is `-v` if you want to see more information about what MSG is doing. This will also make MSG check if any updates are available (and tell you how to update).
 
 ## Advanced usage
@@ -67,13 +67,13 @@ The script takes any number of command line arguments. Arguments are interpreted
 If your shell supports input/output redirection, you can also pipe arguments into the script (again, one argument per line, and currently not supported on Windows), and pipe the output into a `.zip` file. For example,
 
 ```
-echo 'Dryad Arbor' | msg > example.mse-set
+echo 'Dryad Arbor' | msegen > example.mse-set
 ```
 
 is equivalent to
 
 ```
-msg 'Dryad Arbor' -o example.mse-set
+msegen 'Dryad Arbor' -o example.mse-set
 ```
 
 ## Image handling

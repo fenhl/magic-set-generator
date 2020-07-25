@@ -114,6 +114,7 @@ MSG accepts the following command line options:
 * `--[no-]images[=<path>]`: See [Image handling](#image-handling).
 * `--[no-]include-schemes`: Enable or disable the inclusion of schemes as regular-sized cards in the main set file. This is on by default unless `--schemes-output` is given.
 * `--[no-]include-vanguards`: Enable or disable the inclusion of vanguards as regular-sized cards in the main set file. This is on by default unless `--vanguards-output` is given.
+* `--lore-seeker-hostname=<host>`: Use this hostname for all Lore Seeker requests. Defaults to `lore-seeker.cards`.
 * `--[no-]lore-seeker-images[=<path>]`: See [Image handling](#image-handling).
 * `--offline`: This option has the following effects:
     * It enables `--no-lore-seeker-images` and `--no-scryfall-images`.

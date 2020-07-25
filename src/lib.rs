@@ -249,7 +249,7 @@ impl Task<Result<(), Error>> for Run {
                 })
             } else {
                 if let Some(query) = queries.pop() {
-                    cards.extend(task_try!(lore_seeker::resolve_query(&query)).1.into_iter().map(|(card_name, _)| card_name)); //TODO async
+                    cards.extend(task_try!(lore_seeker::resolve_query(args.lore_seeker_hostname.as_deref(), &query)).1.into_iter().map(|(card_name, _)| card_name)); //TODO async
                 }
                 Err(if queries.is_empty() {
                     Run::NormalizeCardNames { client, args, db, cards }

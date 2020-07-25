@@ -2251,7 +2251,7 @@ dependencies = [
 [[package]]
 name = "lore-seeker"
 version = "0.1.0"
-source = "git+https://github.com/fenhl/lore-seeker-discord#8f73e9fae9a85cc6fdbaa7575102a4c43ad01f03"
+source = "git+https://github.com/fenhl/lore-seeker-discord#b30eef822feaaa4654d40434fed23e40d299197c"
 dependencies = [
  "derive_more",
  "env_logger",

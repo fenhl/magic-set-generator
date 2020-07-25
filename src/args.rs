@@ -52,12 +52,13 @@ const FLAGS: [(&str, Option<char>, fn(&mut ArgsRegular) -> Result<(), Error>); 1
     ("verbose", Some('v'), verbose)
 ];
 
-const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 11] = [
+const OPTIONS: [(&str, Option<char>, fn(&mut ArgsRegular, &str) -> Result<(), Error>); 12] = [
     ("border", Some('b'), border),
     ("copyright", None, copyright),
     ("db", None, database),
     ("images", None, images),
     ("input", Some('i'), input),
+    ("lore-seeker-hostname", None, lore_seeker_hostname),
     ("lore-seeker-images", None, lore_seeker_images),
     ("output", Some('o'), output),
     ("schemes-output", None, schemes_output),
@@ -115,6 +116,7 @@ pub struct ArgsRegular {
     pub images: Option<PathBuf>,
     include_schemes: Option<bool>,
     include_vanguards: Option<bool>,
+    pub lore_seeker_hostname: Option<String>,
     pub lore_seeker_images: Option<PathBuf>,
     pub no_images: bool,
     no_lore_seeker_images: bool,
@@ -408,6 +410,11 @@ fn input(args: &mut ArgsRegular, in_path: &str) -> Result<(), Error> {
         .lines()
         .map(|line| line.at(in_path).and_then(|line| args.handle_line(line)))
         .collect::<Result<_, _>>()?;
+    Ok(())
+}
+
+fn lore_seeker_hostname(args: &mut ArgsRegular, hostname: &str) -> Result<(), Error> {
+    args.lore_seeker_hostname = Some(hostname.into());
     Ok(())
 }
 

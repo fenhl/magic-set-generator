@@ -126,8 +126,8 @@ impl Image {
                 }
             }
             ImageSource::LoreSeekerUrl { ref set_code, ref collector_number } => {
-                let mut resp = lore_seeker::get(format!("/art/{}/{}.jpg", set_code, collector_number))
-                    .or_else(|_| lore_seeker::get(format!("/art/{}/{}.png", set_code, collector_number)))?;
+                let mut resp = lore_seeker::get(config.lore_seeker_hostname.as_deref(), format!("/art/{}/{}.jpg", set_code, collector_number))
+                    .or_else(|_| lore_seeker::get(config.lore_seeker_hostname.as_deref(), format!("/art/{}/{}.png", set_code, collector_number)))?;
                 if let Some(ref img_dir) = config.lore_seeker_images.as_ref().or(config.images.as_ref()).or(img_cache().as_ref()) {
                     fs::create_dir_all(img_dir).at(img_dir)?;
                     let img_path = img_dir.join(format!("{}.jpg", self.filename()));
@@ -152,6 +152,7 @@ impl Image {
 #[derive(Debug, Clone)]
 struct ArtHandlerConfig {
     client: Client,
+    lore_seeker_hostname: Option<String>,
     scryfall_rate_limit: RefCell<Option<Instant>>,
     images: Option<PathBuf>,
     lore_seeker_images: Option<PathBuf>,
@@ -189,6 +190,7 @@ impl ArtHandler {
             set_images: HashMap::default(),
             config: ArtHandlerConfig {
                 client,
+                lore_seeker_hostname: args.lore_seeker_hostname.clone(),
                 scryfall_rate_limit: RefCell::default(),
                 images: args.images.clone(),
                 lore_seeker_images: args.lore_seeker_images.clone(),
@@ -257,7 +259,7 @@ impl ArtHandler {
             }
         }
         if !self.config.no_lore_seeker_images {
-            if let Ok((_, results)) = lore_seeker::resolve_query(&format!("!{}", card)) {
+            if let Ok((_, results)) = lore_seeker::resolve_query(self.config.lore_seeker_hostname.as_deref(), &format!("!{}", card)) {
                 if let Some(((_, url),)) = results.into_iter().collect_tuple() {
                     if let Some(segments) = url.path_segments() {
                         if let Some(("card", set_code, collector_number)) = segments.collect_tuple() {

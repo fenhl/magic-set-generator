@@ -170,7 +170,7 @@ impl ArgsState {
             ArgsMessage::QueryChange(new_query) => { self.query = new_query; }
             ArgsMessage::Search => {
                 let query = mem::take(&mut self.query);
-                match lore_seeker::resolve_query(&query) { //TODO async
+                match lore_seeker::resolve_query(None, &query) { //TODO async, allow changing Lore Seeker hostname
                     Ok((_, cards)) => {
                         self.query_error = None;
                         self.args.cards.extend(cards.into_iter().map(|(card_name, _)| card_name));

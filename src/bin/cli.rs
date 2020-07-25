@@ -35,7 +35,7 @@ macro_rules! verbose_eprintln {
     };
 }
 
-fn main() -> Result<(), Error> {
+fn main_inner() -> Result<(), Error> {
     let client = msegen::client()?;
     // parse arguments
     let args = match Args::new()? {
@@ -115,4 +115,12 @@ fn main() -> Result<(), Error> {
         }
     }
     Ok(())
+}
+
+fn main() {
+    if let Err(e) = main_inner() {
+        eprintln!("error in Magic Set Generator: {}", e);
+        eprintln!("If you need help with this, please open an issue at https://github.com/fenhl/magic-set-generator/issues/new and include the following info:");
+        eprintln!("{:?}", e);
+    }
 }

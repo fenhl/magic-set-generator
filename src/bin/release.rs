@@ -59,11 +59,12 @@ fn main() -> Result<(), Error> {
     eprintln!("building msg-win32.exe");
     Command::new("cargo").arg("+stable-i686-pc-windows-msvc").arg("build").arg("--bin=msg-gui").arg("--release").arg("--target-dir=target-x86").check("cargo")?;
     let release_notes = {
+        eprintln!("editing release notes");
         let mut release_notes_file = tempfile::Builder::new()
             .prefix("msg-release-notes")
             .suffix(".md")
             .tempfile().annotate("failed to create tempfile")?;
-        Command::new("C:\\Users\\Fenhl\\AppData\\Local\\atom\\bin\\atom.cmd").arg("--wait").arg(release_notes_file.path()).check("atom")?;
+        Command::new("C:\\Program Files\\Microsoft VS Code\\bin\\code.cmd").arg("--wait").arg(release_notes_file.path()).check("code")?;
         let mut buf = String::default();
         release_notes_file.read_to_string(&mut buf).at(release_notes_file.path())?;
         buf

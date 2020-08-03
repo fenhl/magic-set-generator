@@ -13,7 +13,7 @@ Download the app: [Windows (64-bit)](https://github.com/fenhl/magic-set-generato
 1. Install Rust:
     * On Windows, download and run [rustup-init.exe](https://win.rustup.rs/) and follow its instructions.
     * On other platforms, please see [the Rust website](https://www.rust-lang.org/learn/get-started) for instructions.
-2. (Skip this step if you're not on Windows.) If you're on Windows, you'll also need to download and install [Visual Studio](https://visualstudio.microsoft.com/vs/) (the Community edition should work). On the “Workloads” screen of the installer, make sure “Desktop development with C++” is selected.
+2. (Skip this step if you're not on Windows.) If you're on Windows, you'll also need to download and install [Visual Studio](https://visualstudio.microsoft.com/vs/) (the Community edition should work). On the “Workloads” screen of the installer, make sure “Desktop development with C++” is selected. (Note that [Visual Studio Code](https://code.visualstudio.com/) is not the same thing as Visual Studio. You need VS, not VS Code.)
 3. Open a command line:
     * On Windows, right-click the start button, then click “Windows PowerShell” or “Command Prompt”.
     * On other platforms, look for an app named “Terminal” or similar.

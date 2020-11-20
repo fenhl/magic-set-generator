@@ -2405,14 +2405,14 @@ dependencies = [
 [[package]]
 name = "lore-seeker"
 version = "0.1.0"
-source = "git+https://github.com/fenhl/lore-seeker-discord?branch=main#f1c477fb8d165249048e4ddf59e86260eef439dd"
+source = "git+https://github.com/cs-ech/lore-seeker-discord?branch=main#f1c477fb8d165249048e4ddf59e86260eef439dd"
 dependencies = [
  "derive_more",
  "env_logger",
  "itertools 0.9.0",
  "kuchiki",
  "log",
- "mtg",
+ "mtg 0.2.0 (git+https://github.com/fenhl/rust-mtg)",
  "rand 0.7.3",
  "reqwest 0.9.24",
  "serde",
@@ -2630,7 +2630,7 @@ dependencies = [
  "itertools 0.8.2",
  "lazy_static 1.4.0",
  "lore-seeker",
- "mtg",
+ "mtg 0.2.0 (git+https://github.com/fenhl/rust-mtg?branch=main)",
  "parking_lot 0.11.1",
  "regex",
  "reqwest 0.10.9",
@@ -2644,6 +2644,25 @@ dependencies = [
  "url 2.2.0",
  "xdg-basedir",
  "zip",
+]
+
+[[package]]
+name = "mtg"
+version = "0.2.0"
+source = "git+https://github.com/fenhl/rust-mtg?branch=main#6ce30b3a98dc96ae64cf82d5c2491a6e420b61a2"
+dependencies = [
+ "caseless",
+ "derive_more",
+ "enum-iterator",
+ "itertools 0.8.2",
+ "lazy_static 1.4.0",
+ "num",
+ "regex",
+ "reqwest 0.9.24",
+ "serde",
+ "serde_json",
+ "serde_plain",
+ "topological-sort",
 ]
 
 [[package]]

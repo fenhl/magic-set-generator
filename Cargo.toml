@@ -60,12 +60,13 @@ git = "https://github.com/fenhl/gres" #TODO publish on crates.io
 branch = "main"
 
 [dependencies.lore-seeker]
-git = "https://github.com/fenhl/lore-seeker-discord"
+git = "https://github.com/cs-ech/lore-seeker-discord"
 branch = "main"
 default-features = false
 
 [dependencies.mtg]
 git = "https://github.com/fenhl/rust-mtg"
+branch = "main"
 features = ["custom"]
 
 [dependencies.reqwest]

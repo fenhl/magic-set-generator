@@ -53,12 +53,15 @@ termion = "1"
 
 [dependencies.gitdir]
 git = "https://github.com/fenhl/rust-gitdir"
+branch = "main"
 
 [dependencies.gres]
 git = "https://github.com/fenhl/gres" #TODO publish on crates.io
+branch = "main"
 
 [dependencies.lore-seeker]
 git = "https://github.com/fenhl/lore-seeker-discord"
+branch = "main"
 default-features = false
 
 [dependencies.mtg]

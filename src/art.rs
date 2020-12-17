@@ -18,7 +18,6 @@ use {
             Instant
         }
     },
-    directories::ProjectDirs,
     itertools::Itertools as _,
     mtg::card::Card,
     parking_lot::Mutex,
@@ -36,6 +35,7 @@ use {
         }
     }
 };
+#[cfg(not(unix))] use directories::ProjectDirs;
 
 #[derive(Debug, Deserialize)]
 struct ScryfallData {
@@ -274,7 +274,7 @@ impl ArtHandler {
 }
 
 fn img_cache() -> Option<PathBuf> {
-    #[cfg(unix)] { xdg_basedir::get_cache_home().ok().and_then(|cache_home| cache_home.join("magic-set-generator").join("img")) }
+    #[cfg(unix)] { xdg_basedir::get_cache_home().ok().map(|cache_home| cache_home.join("magic-set-generator").join("img")) }
     #[cfg(not(unix))] { ProjectDirs::from("net", "Fenhl", "Magic Set Generator").map(|proj_dirs| proj_dirs.cache_dir().join("img")) }
 }
 

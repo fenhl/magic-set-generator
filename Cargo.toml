@@ -29,7 +29,6 @@ git2 = "0.11"
 async-std = "1"
 async-trait = "0.1"
 css-color-parser = "0"
-derive_more = "0"
 dir-lock = "0.2"
 directories = "2"
 iced = "0.1.0-beta"
@@ -50,6 +49,11 @@ xdg-basedir = "1"
 
 [target.'cfg(not(windows))'.dependencies]
 termion = "1"
+
+[dependencies.derive_more]
+version = "0.99"
+default-features = false
+features = ["from"]
 
 [dependencies.gitdir]
 git = "https://github.com/fenhl/rust-gitdir"

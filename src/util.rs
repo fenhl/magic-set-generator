@@ -92,7 +92,7 @@ pub enum Error {
     MissingRelease,
     Reqwest(reqwest::Error),
     SameVersion,
-    SemVer(semver::SemVerError),
+    SemVer(semver::Error),
     VersionCommand,
     VersionRegression,
     Zip(zip::result::ZipError)

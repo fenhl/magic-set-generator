@@ -15,6 +15,7 @@ use {
     },
     iced::{
         Application,
+        Clipboard,
         Command,
         Element,
         Settings,
@@ -75,7 +76,7 @@ impl Application for JsonToMse {
         format!("Magic Set Generator")
     }
 
-    fn update(&mut self, message: Message) -> Command<Message> {
+    fn update(&mut self, message: Message, _: &mut Clipboard) -> Command<Message> {
         match message {
             Message::Args(msg) => self.args.handle(msg),
             Message::Done => {
@@ -236,6 +237,6 @@ impl ArgsState {
     }
 }
 
-fn main() {
-    JsonToMse::run(Settings::default());
+fn main() -> iced::Result {
+    JsonToMse::run(Settings::default())
 }

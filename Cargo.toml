@@ -23,26 +23,26 @@ path = "src/bin/release.rs"
 doc = false
 
 [build-dependencies]
-git2 = "0.11"
+git2 = "0.13"
 
 [dependencies]
 async-std = "1"
 async-trait = "0.1"
-css-color-parser = "0"
-dir-lock = "0.2"
-directories = "2"
-iced = "0.1.0-beta"
-itertools = "0.8"
+css-color-parser = "0.1"
+dir-lock = "0.3"
+directories = "3"
+iced = "0.3"
+itertools = "0.10"
 lazy_static = "1"
-parking_lot = "0"
+parking_lot = "0.11"
 regex = "1"
-semver = "0.9"
+semver = "1"
 serde = "1"
 serde_json = "1"
-shlex = "0"
-smart-default = "0"
+shlex = "1"
+smart-default = "0.6"
 tempfile = "3"
-zip = "0"
+zip = "0.5"
 
 [target.'cfg(unix)'.dependencies]
 xdg-basedir = "1"
@@ -74,8 +74,9 @@ branch = "main"
 features = ["custom"]
 
 [dependencies.reqwest]
-version = "0.10"
-features = ["blocking", "stream"]
+version = "0.11"
+default-features = false
+features = ["blocking", "json", "rustls-tls", "stream", "trust-dns"]
 
 [dependencies.url]
 version = "2"

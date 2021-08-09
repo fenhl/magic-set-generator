@@ -29,7 +29,7 @@ fn release_client() -> Result<reqwest::blocking::Client, Error> { //TODO return 
     File::open("assets/release-token").at("assets/release-token")?.read_to_string(&mut token).at("assets/release-token")?;
     headers.insert(reqwest::header::AUTHORIZATION, reqwest::header::HeaderValue::from_str(&format!("token {}", token))?);
     headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static(concat!("magic-set-generator/", env!("CARGO_PKG_VERSION"))));
-    Ok(reqwest::blocking::Client::builder().default_headers(headers).timeout(Duration::from_secs(600)).build()?)
+    Ok(reqwest::blocking::Client::builder().default_headers(headers).timeout(Duration::from_secs(600)).use_rustls_tls().build()?)
 }
 
 fn main() -> Result<(), Error> {

@@ -16,7 +16,8 @@ use {
             self,
             Cursor,
             stdout
-        }
+        },
+        time::Duration
     },
     async_trait::async_trait,
     gitdir::Host as _,
@@ -362,11 +363,9 @@ impl Task<Result<(), Error>> for Run {
 
 pub fn client() -> Result<Client, Error> {
     Ok(Client::builder()
-        .default_headers({
-            let mut headers = reqwest::header::HeaderMap::new();
-            headers.insert(reqwest::header::USER_AGENT, reqwest::header::HeaderValue::from_static(concat!("magic-set-generator/", env!("CARGO_PKG_VERSION"))));
-            headers
-        })
+        .user_agent(concat!("magic-set-generator/", env!("CARGO_PKG_VERSION")))
+        .timeout(Duration::from_secs(30))
+        .use_rustls_tls()
         .build()?
     )
 }

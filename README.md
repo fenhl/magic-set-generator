@@ -1,3 +1,5 @@
+**This project is looking for maintainers!** I am currently taking a break from Magic, so I'm not working on this tool right now. If you would like to revive the project, let me know.
+
 **Magic Set Generator** (previously known as `json-to-mse`) is a tool which generates [Magic Set Editor](https://magicseteditor.boards.net/) set files from a list of card names (or other sources). It is available as a Windows app and as a cross-platform command-line tool.
 
 Download the app: [Windows (64-bit)](https://github.com/fenhl/magic-set-generator/releases/latest/download/msg-win64.exe) • [Windows (32-bit)](https://github.com/fenhl/magic-set-generator/releases/latest/download/msg-win32.exe)

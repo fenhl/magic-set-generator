@@ -23,7 +23,7 @@ path = "src/bin/release.rs"
 doc = false
 
 [build-dependencies]
-git2 = "0.13"
+git2 = "0.16"
 
 [dependencies]
 async-std = "1"
